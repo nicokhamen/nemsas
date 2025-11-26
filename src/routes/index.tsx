@@ -19,8 +19,9 @@ import Corporate from "../pages/enrollee/registration/Corporate";
 import { NemsasManagement } from "../pages/nemsas/NemsasManagement";
 import AllProviders from "../pages/provider/AllProviders";
 import { ProviderRegistration } from "../pages/provider/Registration";
-import { Claims } from "../pages/payments/Claims";
+import { VettingClaims } from "../pages/vetting/VettingClaims";
 import ProviderDetails from "../pages/provider/ProviderDetails";
+import EBillCapture from "../pages/provider";
 // import Claims from "../pages/payments/Claims";
 
 
@@ -47,7 +48,7 @@ const AppRoutes = () => {
           {/* Individual Provider route */}
           <Route path="providers/:id" element={<Layout><ProviderDetails /></Layout>} />
           
-          <Route path="enrollee/">
+          <Route path="nemsas/">
        
            <Route path="dashboard" element={<Layout><Dashboard /></Layout>} />
             <Route path="enrollees" element={<Layout><EnrolleesPage /></Layout>} />
@@ -59,8 +60,10 @@ const AppRoutes = () => {
                <Route path="provider/registration" element={<Layout><ProviderRegistration /></Layout>} />
               
 
-               <Route path="payments/claims" element={<Layout><Claims /></Layout>} />
+               <Route path="vetting/claims" element={<Layout><VettingClaims /></Layout>} />
+             
           </Route>
+            <Route path="emergency/bill-capture" element={<Layout><EBillCapture/></Layout>} />
         </Route>
          
       </Routes>

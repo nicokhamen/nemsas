@@ -18,35 +18,26 @@ export const ADMIN_SIDEBAR: SidebarItem[] = [
     icon: <DashboardIcon className="w-5 h-5" />,
     label: "Dashboard",
     active: false,
-    path: "/enrollee/dashboard"
+    path: "/nemsas/dashboard"
   },
-  // {
-  //   icon: <EnrolleeIcon className="w-5 h-5" />,
-  //   label: "Enrollees",
-  //   active: false,
-  //   children: [
-  //     { icon: null, label: "All Enrollees", active: false, path:"/enrollee/enrollees" },
-  //     { icon: null, label: "Enrollee Registration", active: false, path: "/enrollee/registration/individual" },
-   
-  //   ]
-  // },
+
   {
     icon: <EnrolleeIcon className="w-5 h-5" />,
     label: "Providers",
     active: false,
     children: [
-      { icon: null, label: "All Providers", active: false, path: "/enrollee/providers/all" },
-      { icon: null, label: "Providers Registration", active: false, path: "/enrollee/provider/registration" }
+      { icon: null, label: "All Providers", active: false, path: "/nemsas/providers/all" },
+      { icon: null, label: "Providers Registration", active: false, path: "/nemsas/provider/registration" }
     ]
   },
   {
     icon: <EnrolleeIcon className="w-5 h-5" />,
-    label: "Claims",
+    label: "Nemsas",
     active: false,
     children: [
-      { icon: null, label: "Emergency Claims", active: false, path: "/enrollee/payments/claims" },
-      { icon: null, label: "Authorization", active: false, path: "/enrollee/payments/authorization" },
-      { icon: null, label: "Tracker", active: false, path: "/enrollee/payments/tracker" }
+      { icon: null, label: "Emergency Claims Vetting", active: false, path: "/nemsas/vetting/claims" },
+      { icon: null, label: "Authorization", active: false, path: "/nemsas/payments/authorization" },
+      { icon: null, label: "Tracker", active: false, path: "/nemsas/payments/tracker" }
     ]
   },
     {
@@ -69,14 +60,14 @@ export const ADMIN_SIDEBAR: SidebarItem[] = [
 
 // Provider Sidebar
 export const PROVIDER_SIDEBAR: SidebarItem[] = [
-  {  icon: <DashboardIcon className="w-5 h-5" />, label: "Dashboard", active: false, path: "/enrollee/dashboard" },
+  // {  icon: <DashboardIcon className="w-5 h-5" />, label: "Dashboard", active: false, path: "/enrollee/dashboard" },
    {
     icon: <EnrolleeIcon className="w-5 h-5" />,
     label: "Claims",
     active: false,
     children: [
       { icon: null, label: "Claims Management", active: false, path: "/claims" },
-      { icon: null, label: "Emergency Claims", active: false, path: "/nemsas-management" }
+      { icon: null, label: "Emergency Bill Centre", active: false, path: "/nemsas-management" }
     ]
   },
   // { icon: <EnrolleeIcon className="w-5 h-5" />, label: "Enrollee Management", active: false, path: "/enrollee-management" },

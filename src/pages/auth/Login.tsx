@@ -3,12 +3,13 @@ import { useNavigate, useLocation } from "react-router-dom";
 import Input from "../../components/form/Input";
 import { useForm } from "react-hook-form";
 // import HimisLogo from "../../assets/himis-logo";
-import Button from "../../components/ui/Button";
+
 import type { LoginForm } from "../../types/LoginForm";
 import { useAuth } from "../../hooks/useAuth";
 import type { LocationWithState } from "../../types/route";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import nemsasImage from '../../assets/nemsas.jpg';
+import { LogIn } from "lucide-react";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -95,13 +96,23 @@ const Login: React.FC = () => {
               </label>
             </div>
 
-            <Button
-              type="submit"
-              className="w-full bg-[#DC2626]-900 text-white py-2 rounded-md hover:bg-[#DC2626]-800 transition-colors"
-              disabled={loading}
-            >
-              {loading ? "Logging in..." : "Login"}
-            </Button>
+       <button
+  type="submit"
+  className="w-full flex items-center justify-center gap-2 text-[#DC2626] bg-transparent border border-[#DC2626] py-2 rounded-md hover:bg-[#DC2626] hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+  disabled={loading}
+>
+  {loading ? (
+    <>
+      <LogIn className="w-4 h-4" />
+      Logging in...
+    </>
+  ) : (
+    <>
+      <LogIn className="w-4 h-4" />
+      Login
+    </>
+  )}
+</button>
           </form>
 
           <p className="text-center mt-4 text-sm text-gray-600 cursor-pointer hover:underline">

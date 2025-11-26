@@ -40,7 +40,6 @@ import {
   TableRow,
 } from "../../components/table";
 import { Pagination } from "../../components/pagination";
-import { useNavigate } from "react-router-dom";
 
 // Helper: backend now returns textual claimStatus; keep numeric fallback for legacy responses
 const legacyStatusCodeMap: Record<number, string> = {
@@ -68,7 +67,7 @@ const statusColor: Record<string, string> = {
   Paid: "#6b6f80",
 };
 
-export const NemsasManagement = () => {
+export const VettingClaims = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showNemsasClaimModal, setShowNemsasClaimModal] = useState(false);
   const [showBatchUploadModal, setShowBatchUploadModal] = useState(false);
@@ -99,11 +98,6 @@ export const NemsasManagement = () => {
     error,
   } = useAppSelector((state) => state.nemsas);
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
-
-  const routeToEmergencyBillPage = () => {
-    navigate("/emergency/bill-capture")
-  }
 
   // Get user data from Redux auth state
   const currentUser = useSelector((state: RootState) => state.auth.user);
@@ -360,7 +354,7 @@ export const NemsasManagement = () => {
           {/* Header */}
           <div className="flex flex-wrap gap-4 justify-between items-center p-6">
             <div className="flex items-center gap-8">
-              <FormHeader>NEMSAS Claims Management</FormHeader>
+              <FormHeader>Submitted Claims</FormHeader>
               <input
                 type="text"
                 placeholder="Search claims"
@@ -384,13 +378,13 @@ export const NemsasManagement = () => {
               >
                 Export
               </Button>
-              <button
-                onClick={routeToEmergencyBillPage}
-                   title="Create Emergency Bill"
+              {/* <button
+                onClick={() => setShowCreateModal(true)}
+                   title="Create new Claim"
                 className="text-red-600 bg-white hover:bg-gray-100 border border-red-600 px-3 py-2 rounded-md transition-colors"
               >
                 +
-              </button>
+              </button> */}
             </div>
           </div>
 
@@ -475,7 +469,7 @@ export const NemsasManagement = () => {
                 description="No claims found for your provider."
                 action={
                   <Button onClick={() => setShowCreateModal(true)}>
-                    + Create new claim 
+                   No Submitted Claims
                   </Button>
                 }
               />

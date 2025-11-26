@@ -294,7 +294,7 @@ const NemsasClaimModal: React.FC<SingleClaimModalProps> = ({
               <div className="col-span-1 px-2 py-3 text-[10px] font-medium text-gray-500 text-center">#</div>
               <div className="col-span-4 px-2 py-3 text-[10px] font-medium text-gray-500">Name</div>
               <div className="col-span-3 px-2 py-3 text-[10px] font-medium text-gray-500">Amount</div>
-              <div className="col-span-3 px-2 py-3 text-[10px] font-medium text-gray-500">Status</div>
+              {/* <div className="col-span-3 px-2 py-3 text-[10px] font-medium text-gray-500">Status</div> */}
               <div className="col-span-2 px-2 py-3 text-[10px] font-medium text-gray-500">Qty</div>
               <div className="col-span-1 px-2 py-3 text-[10px] font-medium text-gray-500 text-center">X</div>
             </div>
@@ -310,7 +310,7 @@ const NemsasClaimModal: React.FC<SingleClaimModalProps> = ({
                   <div className="col-span-3 px-2 py-2">
                     <input value={item.amount} onChange={(e) => handleItemChange(idx, "amount", e.target.value)} placeholder="0.00" type="number" min="0" step="0.01" required className="w-full px-2 py-1 border border-gray-300 rounded text-[11px]" />
                   </div>
-                  <div className="col-span-3 px-2 py-2">
+                  {/* <div className="col-span-3 px-2 py-2">
                     <select
                       value={item.claimStatus}
                       onChange={(e) => handleItemChange(idx, "claimStatus", e.target.value)}
@@ -320,7 +320,7 @@ const NemsasClaimModal: React.FC<SingleClaimModalProps> = ({
                         <option key={opt} value={opt}>{opt}</option>
                       ))}
                     </select>
-                  </div>
+                  </div> */}
                   <div className="col-span-2 px-2 py-2">
                     <input value={item.quantity} onChange={(e) => handleItemChange(idx, "quantity", e.target.value)} type="number" min="1" step="1" className="w-full px-2 py-1 border border-gray-300 rounded text-[11px]" />
                   </div>
@@ -358,6 +358,7 @@ const NemsasClaimModal: React.FC<SingleClaimModalProps> = ({
             
             {/* Validation messages */}
             {!isFormValid() && (
+              <>
               <div className="text-xs text-gray-500 max-w-xs">
                 {!claimName && <div>• Enter claim name</div>}
                 {!claimDate && <div>• Select claim date</div>}
@@ -373,7 +374,9 @@ const NemsasClaimModal: React.FC<SingleClaimModalProps> = ({
                 {!authUser?.providerId && (
                   <div>• Logged in user has no providerId</div>
                 )}
+                
               </div>
+              </>
             )}
             
             {submitError && (
