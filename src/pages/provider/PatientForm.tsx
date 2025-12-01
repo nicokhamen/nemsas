@@ -9,6 +9,8 @@ import Input from "../../components/form/Input";
 import FormSelect from "../../components/form/FormSelect";
 import { insuranceTypeOptions } from "../../utils/insuranceTypeUtils";
 import { genderTypeOptions } from "../../utils/genderType";
+import ConfirmModal from "../../components/ui/ConfirmModal";
+
 
 interface FormData {
   hospitalNumber: string;
@@ -45,17 +47,44 @@ export default function PatientForm({ onPatientRegistered }: PatientFormProps) {
     phoneNumber: "",
   });
 
+  // State for confirm modal
+  const [showConfirmModal, setShowConfirmModal] = React.useState(false);
+  const [isFormValid, setIsFormValid] = React.useState(false);
+
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
   };
-    const handleSelectChange = (field: keyof FormData, value: string) => {
+
+  const handleSelectChange = (field: keyof FormData, value: string) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
+  };
+
+  // Validate form before showing confirmation
+  const validateForm = () => {
+    const requiredFields: (keyof FormData)[] = [
+      "hospitalNumber",
+      "firstName",
+      "lastName",
+      "insuranceStatus",
+      "dateOfBirth",
+      "gender",
+      "address",
+      "email",
+      "phoneNumber",
+    ];
+
+    const isValid = requiredFields.every(
+      (field) => formData[field] && formData[field].trim() !== ""
+    );
+
+    setIsFormValid(isValid && Boolean(selectedProviderId));
+    return isValid && Boolean(selectedProviderId);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -63,6 +92,22 @@ export default function PatientForm({ onPatientRegistered }: PatientFormProps) {
 
     if (!selectedProviderId) {
       alert("Please select a provider first");
+      return;
+    }
+
+    // Validate form
+    if (!validateForm()) {
+      alert("Please fill in all required fields");
+      return;
+    }
+
+    // Show confirmation modal
+    setShowConfirmModal(true);
+  };
+
+  // This is the actual submission function that gets called after confirmation
+  const submitPatientData = () => {
+    if (!selectedProviderId || !isFormValid) {
       return;
     }
 
@@ -83,6 +128,9 @@ export default function PatientForm({ onPatientRegistered }: PatientFormProps) {
 
     console.log("Sending patient data:", patientData);
     dispatch(registerPatient(patientData));
+    
+    // Close modal after submission
+    setShowConfirmModal(false);
   };
 
   // Clear state when component unmounts
@@ -118,6 +166,26 @@ export default function PatientForm({ onPatientRegistered }: PatientFormProps) {
 
   return (
     <>
+      <ConfirmModal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={submitPatientData}
+        title="Confirm Patient Registration"
+        message="Please ensure all patient information is correct. Once submitted, this information cannot be edited or corrected. Double-check the following:
+        
+        • Hospital Number
+        • Patient Name
+        • Date of Birth
+        • Insurance Status
+        • Contact Information
+        
+        Are you sure you want to proceed with this registration?"
+        confirmText="Yes, Register Patient"
+        cancelText="No, Go Back"
+        type="warning"
+        isLoading={loading}
+      />
+
       <div className="max-w-3xl mx-auto p-6">
         {/* Display error message */}
         {error && (
@@ -171,10 +239,12 @@ export default function PatientForm({ onPatientRegistered }: PatientFormProps) {
 
           <div className="flex flex-col">
             <label className="font-medium mb-1">Insurance Status</label>
-                    <FormSelect 
+            <FormSelect
               label="Insurance Status"
               value={formData.insuranceStatus}
-              onChange={(e) => handleSelectChange("insuranceStatus", e.target.value)}
+              onChange={(e) =>
+                handleSelectChange("insuranceStatus", e.target.value)
+              }
               required
             >
               <option value="">Select Insurance Status</option>
@@ -199,7 +269,7 @@ export default function PatientForm({ onPatientRegistered }: PatientFormProps) {
 
           <div className="flex flex-col">
             <label className="font-medium mb-1">Gender</label>
-           <FormSelect 
+            <FormSelect
               label="Gender"
               value={formData.gender}
               onChange={(e) => handleSelectChange("gender", e.target.value)}

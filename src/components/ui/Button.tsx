@@ -11,7 +11,7 @@ interface ButtonProps {
   className?: string;
   size?: "sm" | "md" | "lg";
   variant?: "solid" | "outline" | "text";
-  color?: "red" | "green" | "blue" | "gray"; // Add color prop
+  color?: "red" | "green" | "blue" | "gray"; 
 }
 
 const Button: React.FC<ButtonProps> = ({

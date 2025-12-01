@@ -42,6 +42,7 @@ import {
 import { Pagination } from "../../components/pagination";
 import { useNavigate } from "react-router-dom";
 
+
 // Helper: backend now returns textual claimStatus; keep numeric fallback for legacy responses
 const legacyStatusCodeMap: Record<number, string> = {
   0: "Pending",
@@ -89,6 +90,8 @@ export const NemsasManagement = () => {
   const [rowSelection, setRowSelection] = useState({});
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
+
+  const [isPatientSearchMode, setIsPatientSearchMode] = useState(false);
   
 
   const NEMSAS_ID = "2e4c6fa4-6ac3-43bb-b78f-326dccac110c";
@@ -178,40 +181,51 @@ export const NemsasManagement = () => {
   }, [reduxClaims]);
 
   // General claims fetch (ignores patientNumberFilter)
-  const loadClaims = useCallback(() => {
-    const providerIdToUse = currentUser?.providerId;
+const loadClaims = useCallback(() => {
+  // If we're in patient search mode, don't override with general fetch
+  if (isPatientSearchMode) return;
 
-    if (!providerIdToUse) {
-      console.error("No providerId on current user");
-      return;
-    }
+  const providerIdToUse = currentUser?.providerId;
+  if (!providerIdToUse) {
+    console.error("No providerId on current user");
+    return;
+  }
 
-    dispatch(
-      fetchNemsasClaims({
-        ProviderId: providerIdToUse,
-        NEMSASId: NEMSAS_ID,
-        StartDate: startDate ? new Date(startDate).toISOString() : undefined,
-        EndDate: endDate ? new Date(endDate).toISOString() : undefined,
-        ClaimStatus: claimStatus || undefined,
-        PageNumber: 1,
-        PageSize: 500,
-        SortBy: "createdDate",
-      })
-    );
-  }, [dispatch, currentUser?.providerId, startDate, endDate, claimStatus]);
+  dispatch(
+    fetchNemsasClaims({
+      ProviderId: providerIdToUse,
+      NEMSASId: NEMSAS_ID,
+      StartDate: startDate ? new Date(startDate).toISOString() : undefined,
+      EndDate: endDate ? new Date(endDate).toISOString() : undefined,
+      ClaimStatus: claimStatus || undefined,
+      PageNumber: 1,
+      PageSize: 500,
+      SortBy: "createdDate",
+    })
+  );
+}, [dispatch, currentUser?.providerId, startDate, endDate, claimStatus, isPatientSearchMode]);
 
   // Patient-specific search triggered only by button
-  const searchByPatient = useCallback(() => {
-    const providerIdToUse = currentUser?.providerId;
-    if (!providerIdToUse || !patientNumberFilter.trim()) return;
+const searchByPatient = useCallback(() => {
+  const providerIdToUse = currentUser?.providerId;
+  if (!providerIdToUse || !patientNumberFilter.trim()) return;
 
-    dispatch(
-      fetchNemsasClaimsByPatient({
-        patientNumber: patientNumberFilter.trim(),
-        ProviderId: providerIdToUse,
-      })
-    );
-  }, [dispatch, currentUser?.providerId, patientNumberFilter]);
+  setIsPatientSearchMode(true); // Switch to patient-only mode
+
+  dispatch(
+    fetchNemsasClaimsByPatient({
+      patientNumber: patientNumberFilter.trim(),
+      ProviderId: providerIdToUse,
+    })
+  );
+}, [dispatch, currentUser?.providerId, patientNumberFilter]);
+
+// New: Clear patient search and go back to normal list
+const clearPatientSearch = useCallback(() => {
+  setPatientNumberFilter("");
+  setIsPatientSearchMode(false);
+  loadClaims(); // Reload full list with current filters
+}, [loadClaims]);
 
   // Load claims when component mounts AND when currentUser is available
   useEffect(() => {
@@ -281,8 +295,8 @@ export const NemsasManagement = () => {
       enableHiding: false,
       cell: ({ row }) => (
         <button
-          variant="outline"
-          size="sm"
+          // variant="outline"
+          // size="sm"
           className="h-auto py-1 px-2 text-xs"
           onClick={(e) => {
             e.stopPropagation();
@@ -354,6 +368,7 @@ export const NemsasManagement = () => {
   }
 
   return (
+    <>
     <div className="p-6">
       <div className="bg-gray-100 overflow-scroll h-full">
         <div className="bg-white rounded-md flex flex-col mb-36">
@@ -415,39 +430,49 @@ export const NemsasManagement = () => {
                   className="p-2 border border-[#ccc] rounded-sm"
                 />
               </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-sm text-[#555]">Patient Number</label>
-                <div className="flex gap-1">
-                  <input
-                    type="text"
-                    value={patientNumberFilter}
-                    onChange={(e) => setPatientNumberFilter(e.target.value)}
-                    placeholder="e.g. 000001"
-                    className="p-2 border border-[#ccc] rounded-sm min-w-32"
-                  />
-                  <Button
-                    variant="outline"
-                    onClick={searchByPatient}
-                    disabled={!patientNumberFilter.trim()}
-                  >
-                    Search
-                  </Button>
-                </div>
-              </div>
+             <div className="flex flex-col gap-1">
+  <label className="text-sm text-[#555]">Patient Number</label>
+  <div className="flex gap-2 items-center">
+    <input
+      type="text"
+      value={patientNumberFilter}
+      onChange={(e) => setPatientNumberFilter(e.target.value)}
+      onKeyDown={(e) => e.key === "Enter" && patientNumberFilter.trim() && searchByPatient()}
+      placeholder="Enter patient number"
+      className="p-2 border border-[#ccc] rounded-sm min-w-48"
+      disabled={loading}
+    />
+    {isPatientSearchMode ? (
+      <Button variant="outline" onClick={clearPatientSearch} className="whitespace-nowrap">
+        Clear Search
+      </Button>
+    ) : (
+      <Button
+        variant="outline"
+        onClick={searchByPatient}
+        disabled={!patientNumberFilter.trim() || loading}
+      >
+        Search Patient
+      </Button>
+    )}
+  </div>
+
+</div>
               <div className="flex gap-1">
-                <Button variant="outline" onClick={loadClaims}>
-                  Apply Filters
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
+                <Button variant="outline"   onClick={() => {
                     setStartDate("");
                     setEndDate("");
                     setClaimStatus("");
                     setPatientNumberFilter("");
                     setSearchTerm("");
                     table.setColumnFilters([]);
-                  }}
+                  }}>
+                  Apply Filters
+                </Button>
+                <Button
+                  variant="outline"
+                
+                   onClick={loadClaims}
                 >
                   Reset
                 </Button>
@@ -475,7 +500,7 @@ export const NemsasManagement = () => {
                 description="No claims found for your provider."
                 action={
                   <Button onClick={() => setShowCreateModal(true)}>
-                    + Create new claim 
+                    + Create a new patient and Emergency Bill
                   </Button>
                 }
               />
@@ -677,5 +702,6 @@ export const NemsasManagement = () => {
         </div>
       </Modal>
     </div>
+    </>
   );
 };
