@@ -10,6 +10,10 @@ import providerReducer from "../slices/iProviderSlice"
 import claimDetailsReducer from "../slices/claimDetailSlice"
 import nemsasReducer from "../slices/nemsasSlice"
 import patientReducer from '../slices/patientSlice';
+import departmentReducer from "../slices/emergencyBillSlice"
+import serviceCategoryReducer from '../slices/serviceCategorySlice';
+import icdReducer from "../slices/icdSlice"
+import productReducer from "../slices/productSlice"
 
 export const store = configureStore({
   reducer: {
@@ -26,6 +30,10 @@ export const store = configureStore({
     nemsas: nemsasReducer,
     allProviders: providerReducer,
     patient: patientReducer,
+    departments: departmentReducer,
+    serviceCategories: serviceCategoryReducer,
+    icd: icdReducer,
+    products: productReducer,
     [providerApiSlice.reducerPath]: providerApiSlice.reducer,
   },
   middleware: (getDefaultMiddleware) =>

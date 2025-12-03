@@ -203,7 +203,7 @@ export default function PatientForm({ onPatientRegistered }: PatientFormProps) {
 
         <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4 mt-6">
           <div className="flex flex-col">
-            <label className="font-medium mb-1">Hospital Number</label>
+            <label className="font-medium mb-1">Patient Number</label>
             <Input
               type="text"
               value={formData.hospitalNumber}
@@ -211,7 +211,7 @@ export default function PatientForm({ onPatientRegistered }: PatientFormProps) {
                 handleInputChange("hospitalNumber", e.target.value)
               }
               required
-              label="Hospital Number"
+              label="Patient Number"
             />
           </div>
 
