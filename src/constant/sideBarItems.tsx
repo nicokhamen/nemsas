@@ -66,11 +66,11 @@ export const PROVIDER_SIDEBAR: SidebarItem[] = [
     label: "Claims",
     active: false,
     children: [
-      { icon: null, label: "Claims Management", active: false, path: "/claims" },
+      { icon: null, label: "Claims Management", active: false, path: "/claims-management" },
       { icon: null, label: "Emergency Bill Centre", active: false, path: "/nemsas-management" }
     ]
   },
-  // { icon: <EnrolleeIcon className="w-5 h-5" />, label: "Enrollee Management", active: false, path: "/enrollee-management" },
+  { icon: <EnrolleeIcon className="w-5 h-5" />, label: "MD Review & Endorsement", active: false, path: "/md-review" },
   { icon: <SettingsIcon className="w-5 h-5" />, label: "Settings", active: false, path: "/settings"  },
   {  icon: <SettingsIcon className="w-5 h-5" />, label: "Tariff", active: false, path: "/tariff"  },
 ];

@@ -2,7 +2,7 @@ import React from "react";
 
 interface DashboardCardProps {
   title: string;
-  value: number;
+  value: string | number;
   percentage?: string; 
   changeColor?: string; 
   indicatorColor: string;

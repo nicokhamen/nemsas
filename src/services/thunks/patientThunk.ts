@@ -10,11 +10,12 @@ export const registerPatient = createAsyncThunk<
   'patient/register',
   async (patientData, { rejectWithValue }) => {
     try {
-      
+       console.log("Sending patient registration request...");
       const response = await axiosInstance.post<PatientRegistrationResponse>(
-        '/patient', // Adjust the endpoint as needed
+        '/patient', 
         patientData
       );
+       console.log("Patient registration response:", response.data);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(

@@ -4,7 +4,6 @@ import { providerApiSlice } from "../slices/providerSlice";
 import authReducer from "../slices/authSlice";
 import { toastMiddleware } from "./middleware/toastMiddleware";
 import corporateReducer from "../slices/corporateSlice"
-import { enrolleeClassReducer, enrolleeTypeReducer, genderReducer, maritalStatusReducer, planTypeReducer, relationshipReducer } from "../slices/resourceSlice";
 import claimsReducer from "../slices/claimSlice"
 import providerReducer from "../slices/iProviderSlice"
 import claimDetailsReducer from "../slices/claimDetailSlice"
@@ -14,17 +13,15 @@ import departmentReducer from "../slices/emergencyBillSlice"
 import serviceCategoryReducer from '../slices/serviceCategorySlice';
 import icdReducer from "../slices/icdSlice"
 import productReducer from "../slices/productSlice"
+import encounterReducer from "../slices/encounterSlice"
+import emergencyClaimReducer from "../slices/emergencyClaimSlice"
+import emergencyClaimDetailReducer from "../slices/emergencyClaimDetailSlice"
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     corporate: corporateReducer,
-    gender: genderReducer,
-    maritalStatus: maritalStatusReducer,
-    relations: relationshipReducer,
-    enrolleeType: enrolleeTypeReducer,
-    planType: planTypeReducer,
-    enrolleeClass: enrolleeClassReducer,
+   
     claims: claimsReducer,
     claimDetails: claimDetailsReducer,
     nemsas: nemsasReducer,
@@ -34,6 +31,9 @@ export const store = configureStore({
     serviceCategories: serviceCategoryReducer,
     icd: icdReducer,
     products: productReducer,
+     encounter: encounterReducer,
+      emergencyClaim: emergencyClaimReducer,
+      emergencyClaimDetail: emergencyClaimDetailReducer,
     [providerApiSlice.reducerPath]: providerApiSlice.reducer,
   },
   middleware: (getDefaultMiddleware) =>

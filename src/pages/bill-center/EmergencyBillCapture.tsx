@@ -10,19 +10,17 @@ import {
 } from "../../utils/emergencyBillUtils";
 import {
   fetchDepartments,
-  fetchServiceCategories,
+  fetchServiceCategories, 
 } from "../../services/thunks/emergencyBillThunk";
 import { ICDSearch } from "../../components/ui/ICDSearch";
 import type { ICDItem } from "../../types/emergency-bill";
 import { FileUpload } from "../../components/FileUpload";
 import {
-  ProductServiceSearch,
-  type ProductServiceItem,
+  ProductServiceSearch
 } from "../../components/ui/ProductServiceSearch";
 import { ProductServiceTable } from "../../components/ui/ProductServiceTable";
 import type { ProductItem } from '../../types/productType';
-
-
+import { createEncounter } from "../../services/thunks/encounterThunk";
 
 // Define Diagnosis type
 interface Diagnosis {
@@ -33,7 +31,11 @@ interface Diagnosis {
   note: string;
 }
 
-export default function EmergencyBillCapture() {
+interface EmergencyBillCaptureProps {
+  patientId: string; // Passed from parent component
+}
+
+export default function EmergencyBillCapture({ patientId }: EmergencyBillCaptureProps) {
   const dispatch = useDispatch<AppDispatch>();
 
   // Department state
@@ -48,83 +50,56 @@ export default function EmergencyBillCapture() {
     (state: RootState) => state.serviceCategories
   );
 
+  const {
+    loading: billLoading,
+    error: billError,
+    success: billSuccess,
+  } = useSelector((state: RootState) => state.encounter);
+
   // Local state
-  const [selectedMedicalHistory, setSelectedMedicalHistory] = useState<
-    string[]
-  >([]);
+  const [selectedDepartment, setSelectedDepartment] = useState<string>("");
+  const [selectedServiceType, setSelectedServiceType] = useState<string>("");
+  const [encounterStartDateTime, setEncounterStartDateTime] = useState<string>(
+    new Date().toISOString().split('T')[0]
+  );
+  const [dischargeStatus, setDischargeStatus] = useState<string>("");
+  const [dischargeDate, setDischargeDate] = useState<string>("");
+  const [selectedMedicalHistory, setSelectedMedicalHistory] = useState<string[]>([]);
   const [selectedDiagnoses, setSelectedDiagnoses] = useState<string[]>([]);
-  const [diagnosisList, setDiagnosisList] = useState<Diagnosis[]>([
-    {
-      id: "1",
-      type: "ICD-10",
-      code: "E11.9",
-      name: "Type 2 diabetes mellitus",
-      note: "Type 2 diabetes mellitus without complications",
-    },
-  ]);
+  const [diagnosisList, setDiagnosisList] = useState<Diagnosis[]>([]);
+  const [attendingPhysician, setAttendingPhysician] = useState<string>("");
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [productServiceItems, setProductServiceItems] = useState<ProductItem[]>([]);
+  // const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [noteInput, setNoteInput] = useState("");
 
-  // file upload
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   // Refs to track fetched data
   const hasFetchedDepartmentsRef = useRef(false);
   const hasFetchedCategoriesRef = useRef(false);
 
-  const [productServiceItems, setProductServiceItems] = useState<ProductItem[]>([]);
-  // const [productServiceItems, setProductServiceItems] = useState<
-  //   ProductServiceItem[]
-  // >([
-  //   {
-  //     id: "1",
-  //     code: "LAB-001",
-  //     name: "Fasting lipid profile (CHEM PATH)",
-  //     description:
-  //       "Complete lipid panel including cholesterol, triglycerides, HDL, LDL",
-  //     category: "Laboratory",
-  //     price: 3150.0,
-  //     nhisPercent: 0,
-  //     nhisAmount: 0.0,
-  //     netAmount: 3150.0,
-  //     isCovered: false,
-  //     flag: "Not Covered",
-  //   },
-  //   {
-  //     id: "2",
-  //     code: "LAB-002",
-  //     name: "Full Blood Count (FBC) (RBC, WBC)",
-  //     description: "Complete blood count with differential",
-  //     category: "Laboratory",
-  //     price: 1500.0,
-  //     nhisPercent: 0,
-  //     nhisAmount: 0.0,
-  //     netAmount: 1500.0,
-  //     isCovered: true,
-  //     flag: "",
-  //   },
-  // ]);
-
- const handleProductServiceSelect = (item: ProductItem) => {
-  // Check if item already exists
-  const exists = productServiceItems.some(
-    (existingItem) => existingItem.id === item.id
-  );
-  if (!exists) {
-    setProductServiceItems((prev) => [...prev, item]);
-  }
-};
+  const handleProductServiceSelect = (item: ProductItem) => {
+    // Check if item already exists
+    const exists = productServiceItems.some(
+      (existingItem) => existingItem.id === item.id
+    );
+    if (!exists) {
+      setProductServiceItems((prev) => [...prev, item]);
+    }
+  };
 
   const handleUpdateQuantity = (id: string, newQuantity: number) => {
-  // For now, just update the item (quantity would affect price calculations)
-  console.log(`Update quantity for ${id} to ${newQuantity}`);
-  // In a real implementation, you would update the quantity in the state
-  // and recalculate the totals
-};
+    setProductServiceItems((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, quantity: newQuantity } : item
+      )
+    );
+  };
 
- const handleRemoveProductService = (id: string) => {
-  setProductServiceItems((prev) => prev.filter((item) => item.id !== id));
-};
+  const handleRemoveProductService = (id: string) => {
+    setProductServiceItems((prev) => prev.filter((item) => item.id !== id));
+  };
 
   // Fetch data on component mount
   useEffect(() => {
@@ -208,9 +183,104 @@ export default function EmergencyBillCapture() {
     setNoteInput("");
   };
 
+  // Handle form submission
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!patientId) {
+      alert("Please register a patient first");
+      return;
+    }
+
+    if (!selectedDepartment) {
+      alert("Please select a department");
+      return;
+    }
+
+    if (!selectedServiceType) {
+      alert("Please select a service type");
+      return;
+    }
+
+    // if (diagnosisList.length === 0) {
+    //   alert("Please add at least one diagnosis");
+    //   return;
+    // }
+
+    if (!attendingPhysician) {
+      alert("Please enter attending physician name");
+      return;
+    }
+
+    // Convert selected diagnoses to the required format
+    const diagnoses = diagnosisList
+      .filter((diagnosis) => selectedDiagnoses.includes(diagnosis.id))
+      .map((diagnosis) => ({
+        type: diagnosis.type,
+        code: diagnosis.code,
+        diagnosis: diagnosis.name,
+        note: diagnosis.note,
+      }));
+
+    // Convert selected medical history to service categories
+    const serviceCategories = selectedMedicalHistory.map((categoryId) => ({
+      serviceCategoryId: categoryId,
+    }));
+
+    // Convert product service items to the required format
+    const productServices = productServiceItems.map((item) => ({
+      productId: item.id,
+      quantity: item.quantity || 1,
+      price: item.price || 0,
+      flag: "ACTIVE", // You might want to make this dynamic
+    }));
+
+    // Prepare encounter data
+    const encounterData = {
+      patientId: patientId,
+      departmentId: selectedDepartment,
+      serviceType: selectedServiceType,
+      encounterStartDateTime: new Date(encounterStartDateTime).toISOString(),
+      dischargeStatus: dischargeStatus,
+      dischargeDate: dischargeDate ? new Date(dischargeDate).toISOString() : "",
+      diagnoses: diagnoses,
+      serviceCategories: serviceCategories,
+      productServices: productServices,
+      attendingPhysician: attendingPhysician,
+    };
+
+    console.log("Submitting encounter data:", encounterData);
+    
+    // Dispatch the createEncounter action
+    dispatch(createEncounter(encounterData));
+  };
+
+  // Handle successful submission
+  useEffect(() => {
+    if (billSuccess) {
+      alert("Emergency bill created successfully!");
+      // Reset form
+      setSelectedDepartment("");
+      setSelectedServiceType("");
+      setEncounterStartDateTime(new Date().toISOString().split('T')[0]);
+      setDischargeStatus("");
+      setDischargeDate("");
+      setSelectedMedicalHistory([]);
+      setSelectedDiagnoses([]);
+      setDiagnosisList([]);
+      setAttendingPhysician("");
+      setUploadedFiles([]);
+      setProductServiceItems([]);
+    }
+
+    if (billError) {
+      alert(`Error creating emergency bill: ${billError}`);
+    }
+  }, [billSuccess, billError]);
+
   return (
     <>
-      <form>
+      <form onSubmit={handleSubmit}>
         <div className="w-full min-h-screen bg-gray-50 p-4 md:p-6">
           <div className="max-w-7xl mx-auto">
             {/* Main Title */}
@@ -218,7 +288,20 @@ export default function EmergencyBillCapture() {
               <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
                 Emergency Bill Capture
               </h1>
+              {patientId && (
+                <p className="text-sm text-green-600 mt-1">
+                  Patient ID: {patientId}
+                </p>
+              )}
             </div>
+
+            {/* Display error message */}
+            {billError && (
+              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                {/* Error:{billError} */}
+                Error
+              </div>
+            )}
 
             {/* Main Card Container */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -232,7 +315,8 @@ export default function EmergencyBillCapture() {
                   <div>
                     <FormSelect
                       label="Enter name"
-                      name="department"
+                      value={selectedDepartment}
+                      onChange={(e) => setSelectedDepartment(e.target.value)}
                       required
                       isLoading={departmentsLoading}
                       error={departmentsError}
@@ -250,10 +334,11 @@ export default function EmergencyBillCapture() {
                   <div>
                     <FormSelect
                       label="Service Type"
-                      name="serviceType"
+                      value={selectedServiceType}
+                      onChange={(e) => setSelectedServiceType(e.target.value)}
                       required
                     >
-                      <option value="">-----</option>
+                      <option value="">Select Service Type</option>
                       {serviceTypeOptions.map((option) => (
                         <option key={option.value} value={option.value}>
                           {option.label}
@@ -271,20 +356,30 @@ export default function EmergencyBillCapture() {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Start Date */}
-                  <Input
-                    type="date"
-                    name="startDate"
-                    label="start date"
-                    placeholder="mm/dd/yyyy"
-                  />
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Start Date
+                    </label>
+                    <input
+                      type="date"
+                      value={encounterStartDateTime}
+                      onChange={(e) => setEncounterStartDateTime(e.target.value)}
+                      className="w-full border rounded-xl p-2"
+                      required
+                    />
+                  </div>
 
                   {/* Discharge Status */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Discharge status
                     </label>
-                    <FormSelect name="dischargeStatus" label="discharge Status">
-                      <option value="">---</option>
+                    <FormSelect
+                    label="Discharge Status"
+                      value={dischargeStatus}
+                      onChange={(e) => setDischargeStatus(e.target.value)}
+                    >
+                      <option value="">Select Discharge Status</option>
                       {dischargeTypeOptions.map((option) => (
                         <option key={option.value} value={option.value}>
                           {option.label}
@@ -294,12 +389,17 @@ export default function EmergencyBillCapture() {
                   </div>
 
                   {/* Discharge Date */}
-                  <Input
-                    type="date"
-                    label="discharge date"
-                    name="dischargeDate"
-                    placeholder="mm/dd/yyyy"
-                  />
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Discharge Date
+                    </label>
+                    <input
+                      type="date"
+                      value={dischargeDate}
+                      onChange={(e) => setDischargeDate(e.target.value)}
+                      className="w-full border rounded-xl p-2"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -507,7 +607,6 @@ export default function EmergencyBillCapture() {
                 <h2 className="text-lg font-semibold text-gray-800 mb-4">
                   Upload Supporting Documents
                 </h2>
-
                 <FileUpload onFilesSelected={handleFiles} />
               </div>
 
@@ -519,8 +618,10 @@ export default function EmergencyBillCapture() {
                 <div className="max-w-md">
                   <Input
                     type="text"
-                    name="physician"
+                    value={attendingPhysician}
+                    onChange={(e) => setAttendingPhysician(e.target.value)}
                     label="Enter physician name"
+                    required
                   />
                 </div>
               </div>
@@ -531,52 +632,41 @@ export default function EmergencyBillCapture() {
                   <h2 className="text-lg font-semibold text-gray-800 mb-4">
                     Product/Service:
                   </h2>
-                  <div className="max-w-md">
-                    <Input
-                      type="text"
-                      name="searchProduct"
-                      label="Search for Product/Service"
+                  <div className="max-w-3xl mb-6">
+                    <ProductServiceSearch
+                      onSelect={handleProductServiceSelect}
+                      selectedItems={productServiceItems}
                     />
+                    <p className="text-sm text-gray-500 mt-2">
+                      Type at least 2 characters to search for products or
+                      services
+                    </p>
                   </div>
+
+                  <ProductServiceTable
+                    items={productServiceItems}
+                    onUpdateQuantity={handleUpdateQuantity}
+                    onRemoveItem={handleRemoveProductService}
+                  />
                 </div>
 
-                {/* Product/Service Table */}
-                <div className="p-6">
-                  <div className="mb-6">
-                    <h2 className="text-lg font-semibold text-gray-800 mb-4">
-                      Product/Service:
-                    </h2>
-                    <div className="max-w-3xl mb-6">
-                      <ProductServiceSearch
-                        onSelect={handleProductServiceSelect}
-                        selectedItems={productServiceItems}
-                      />
-                      <p className="text-sm text-gray-500 mt-2">
-                        Type at least 2 characters to search for products or
-                        services
-                      </p>
-                    </div>
-
-                    <ProductServiceTable
-                      items={productServiceItems}
-                      onUpdateQuantity={handleUpdateQuantity}
-                      onRemoveItem={handleRemoveProductService}
-                    />
+                {/* Total Amount and Save Button */}
+                <div className="mt-8 flex justify-between items-center">
+                  <div className="text-lg font-semibold text-gray-800">
+                    Total Amount: ${productServiceItems.reduce((total, item) => total + (item.price || 0) * (item.quantity || 1), 0).toFixed(2)}
                   </div>
-
-                  {/* Total Amount and Save Button */}
-                  <div className="mt-8 flex justify-between items-center">
-                    <div className="text-lg font-semibold text-gray-800">
-                      Total Amount: ₦60,500
-                    </div>
-                    <div className="flex gap-3">
-                      <Button
-                        variant="outline"
-                        className="px-6 py-2.5 border-red-500 text-red-600 hover:bg-red-50"
-                      >
-                        Save
-                      </Button>
-                    </div>
+                  <div className="flex gap-3">
+                    <Button
+                      type="submit"
+                      disabled={billLoading}
+                      className={`px-6 py-2.5 ${
+                        billLoading
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-red-500 text-white hover:bg-red-600"
+                      }`}
+                    >
+                      {billLoading ? "Submitting..." : "Submit Emergency Bill"}
+                    </Button>
                   </div>
                 </div>
               </div>

@@ -16,7 +16,7 @@ import {
   fetchNemsasClaimsByPatient,
 } from "../../services/thunks/nemsasThunk";
 import { clearError } from "../../services/slices/nemsasSlice";
-import { useProviderContext } from "../../context/useProviderContext";
+// import { useProviderContext } from "../../context/useProviderContext";
 
 // Table imports
 import {
@@ -41,6 +41,7 @@ import {
 } from "../../components/table";
 import { Pagination } from "../../components/pagination";
 import { useNavigate } from "react-router-dom";
+import DashboardCard from "../../components/ui/DashboardCardItems/DashboardCard";
 
 // Helper: backend now returns textual claimStatus; keep numeric fallback for legacy responses
 const legacyStatusCodeMap: Record<number, string> = {
@@ -68,12 +69,12 @@ const statusColor: Record<string, string> = {
   Paid: "#6b6f80",
 };
 // format currency
-  const formatCurrency = (amount: number | undefined): string => {
-    if (amount === undefined || amount === null) return "0.00";
-    return amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, "$&,");
-  };
+const formatCurrency = (amount: number | undefined): string => {
+  if (amount === undefined || amount === null) return "0.00";
+  return amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, "$&,");
+};
 
-export const NemsasManagement = () => {
+export const MDReview = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showNemsasClaimModal, setShowNemsasClaimModal] = useState(false);
   const [showBatchUploadModal, setShowBatchUploadModal] = useState(false);
@@ -113,13 +114,12 @@ export const NemsasManagement = () => {
 
   // Get user data from Redux auth state
   const currentUser = useSelector((state: RootState) => state.auth.user);
-  const { selectedProviderId } = useProviderContext();
+//   const { selectedProviderId } = useProviderContext();
 
   // Export modal state
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [exportError, setExportError] = useState("");
-
 
   // Adapt mapping to new NEMSAS response schema
   interface NemsasClaimItem {
@@ -377,10 +377,42 @@ export const NemsasManagement = () => {
       <div className="p-6">
         <div className="bg-gray-100 overflow-scroll h-full">
           <div className="bg-white rounded-md flex flex-col mb-36">
+            <div className="flex flex-wrap gap-4 md:gap-6">
+              <div className="w-full sm:w-auto flex-1 min-w-[250px]">
+                <DashboardCard
+                  indicatorColor="bg-blue-100 text-blue-600"
+                  value={"1.4M"}
+                //   percentage="2.5% Last Month"
+                  changeColor="text-red-500"
+                  title="Total Amount"
+                />
+              </div>
+
+              <div className="w-full sm:w-auto flex-1 min-w-[250px]">
+                <DashboardCard
+                  indicatorColor="bg-green-100 text-green-600"
+                  value={89}
+                //   percentage="1.8% Last Month"
+                  changeColor="text-green-500"
+                  title="Total Patient"
+                />
+              </div>
+
+              <div className="w-full sm:w-auto flex-1 min-w-[250px]">
+                <DashboardCard
+                  indicatorColor="bg-yellow-100 text-yellow-600"
+                  value={"42%"}
+                //   percentage="0.9% Last Month"
+                  changeColor="text-blue-500"
+                  title="Bill Accuracy"
+                />
+              </div>
+            </div>
+
             {/* Header */}
             <div className="flex flex-wrap gap-4 justify-between items-center p-6">
               <div className="flex items-center gap-8">
-                <FormHeader>Emergency Bill Centre</FormHeader>
+                <FormHeader>MD Review & Endorsement</FormHeader>
                 <input
                   type="text"
                   placeholder="Search claims"
@@ -510,7 +542,7 @@ export const NemsasManagement = () => {
                   title="No claims available yet"
                   description="No claims found for your provider."
                   action={
-                    <Button  onClick={routeToEmergencyBillPage}>
+                    <Button onClick={routeToEmergencyBillPage}>
                       + Create a new patient and Emergency Bill
                     </Button>
                   }

@@ -59,6 +59,7 @@ export interface ServiceCategoryState {
 export interface ICDItem {
   code: string;
   name: string;
+  // type: 'ICD-10' | 'ICD-11';
 }
 
 export interface ICDResponse {
