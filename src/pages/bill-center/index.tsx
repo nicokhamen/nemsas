@@ -32,11 +32,11 @@ const EBillCapture: React.FC = () => {
     
     switch (activeTab) {
       case 'patient':
-        return <PatientForm onPatientRegistered={handlePatientRegistered} />;
+      return <PatientForm onPatientRegistered={handlePatientRegistered} />;
       case 'emergency':
         return<EmergencyBillCapture key={registeredPatientId} patientId={registeredPatientId} />
       default:
-        return <PatientForm onPatientRegistered={handlePatientRegistered} />;
+       return <PatientForm onPatientRegistered={handlePatientRegistered} />;
     }
   };
 

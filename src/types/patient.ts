@@ -12,7 +12,6 @@ export interface PatientRegistrationData {
   phoneNumber: string;
 }
 
-// This matches your actual API response structure
 export interface PatientData {
   id: string;
   hospitalNumber: string;

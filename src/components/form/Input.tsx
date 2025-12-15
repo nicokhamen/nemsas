@@ -3,7 +3,7 @@ import React, { type InputHTMLAttributes, useState } from "react";
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
   endAdornment?: React.ReactNode;
-  error?: string; // Add this line
+  error?: string; 
 }
 
 const Input: React.FC<InputProps> = ({

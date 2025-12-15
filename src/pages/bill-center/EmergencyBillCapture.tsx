@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import FormSelect from "../../components/form/FormSelect";
 import Input from "../../components/form/Input";
 import Button from "../../components/ui/Button";
@@ -21,6 +21,10 @@ import {
 import { ProductServiceTable } from "../../components/ui/ProductServiceTable";
 import type { ProductItem } from '../../types/productType';
 import { createEncounter } from "../../services/thunks/encounterThunk";
+import ConfirmModal from "../../components/ui/ConfirmModal";
+import { useCustomToast } from "../../hooks/useCustomToast";
+import { useNavigate } from "react-router-dom";
+
 
 // Define Diagnosis type
 interface Diagnosis {
@@ -37,6 +41,12 @@ interface EmergencyBillCaptureProps {
 
 export default function EmergencyBillCapture({ patientId }: EmergencyBillCaptureProps) {
   const dispatch = useDispatch<AppDispatch>();
+    const { success: toastSuccess} = useCustomToast();
+    const navigate = useNavigate();
+
+    const routeToAllPatients = useCallback(() => {
+      navigate("/nemsas-management")
+    },[navigate])
 
   // Department state
   const {
@@ -68,9 +78,12 @@ export default function EmergencyBillCapture({ patientId }: EmergencyBillCapture
   const [selectedDiagnoses, setSelectedDiagnoses] = useState<string[]>([]);
   const [diagnosisList, setDiagnosisList] = useState<Diagnosis[]>([]);
   const [attendingPhysician, setAttendingPhysician] = useState<string>("");
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [productServiceItems, setProductServiceItems] = useState<ProductItem[]>([]);
-  // const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false); // Modal state
+  const [isFormValid, setIsFormValid] = useState(false); // Form validation state
+  const [validationErrors, setValidationErrors] = useState<string[]>([]); // Validation errors
 
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [noteInput, setNoteInput] = useState("");
@@ -183,36 +196,61 @@ export default function EmergencyBillCapture({ patientId }: EmergencyBillCapture
     setNoteInput("");
   };
 
-  // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  // Validate form before submission
+  const validateForm = (): boolean => {
+    const errors: string[] = [];
 
     if (!patientId) {
-      alert("Please register a patient first");
-      return;
+      errors.push("Please register a patient first");
     }
 
     if (!selectedDepartment) {
-      alert("Please select a department");
-      return;
+      errors.push("Please select a department");
     }
 
     if (!selectedServiceType) {
-      alert("Please select a service type");
+      errors.push("Please select a service type");
+    }
+
+    if (diagnosisList.length === 0) {
+      errors.push("Please add at least one diagnosis");
+    }
+
+    if (!attendingPhysician.trim()) {
+      errors.push("Please enter attending physician name");
+    }
+
+    if (productServiceItems.length === 0) {
+      errors.push("Please add at least one product/service");
+    }
+
+    setValidationErrors(errors);
+    return errors.length === 0;
+  };
+
+  // Handle form submission
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate form
+    if (!validateForm()) {
+      // If there are errors, show them and don't proceed to modal
+      if (validationErrors.length > 0) {
+        alert(validationErrors.join('\n'));
+      }
       return;
     }
 
-    // if (diagnosisList.length === 0) {
-    //   alert("Please add at least one diagnosis");
-    //   return;
-    // }
+    // If form is valid, show confirmation modal
+    setShowConfirmModal(true);
+  };
 
-    if (!attendingPhysician) {
-      alert("Please enter attending physician name");
-      return;
-    }
+  // Handle confirmation from modal
+  const handleConfirmSubmit = () => {
+    // Close modal first
+    setShowConfirmModal(false);
 
-    // Convert selected diagnoses to the required format
+    // Prepare data for submission
     const diagnoses = diagnosisList
       .filter((diagnosis) => selectedDiagnoses.includes(diagnosis.id))
       .map((diagnosis) => ({
@@ -222,23 +260,19 @@ export default function EmergencyBillCapture({ patientId }: EmergencyBillCapture
         note: diagnosis.note,
       }));
 
-    // Convert selected medical history to service categories
-    const serviceCategories = selectedMedicalHistory.map((categoryId) => ({
-      serviceCategoryId: categoryId,
-    }));
+    const serviceCategories = selectedMedicalHistory;
 
-    // Convert product service items to the required format
     const productServices = productServiceItems.map((item) => ({
       productId: item.id,
       quantity: item.quantity || 1,
       price: item.price || 0,
-      flag: "ACTIVE", // You might want to make this dynamic
+      flag: "ACTIVE", 
     }));
 
     // Prepare encounter data
     const encounterData = {
       patientId: patientId,
-      departmentId: selectedDepartment,
+      department: selectedDepartment,
       serviceType: selectedServiceType,
       encounterStartDateTime: new Date(encounterStartDateTime).toISOString(),
       dischargeStatus: dischargeStatus,
@@ -247,18 +281,26 @@ export default function EmergencyBillCapture({ patientId }: EmergencyBillCapture
       serviceCategories: serviceCategories,
       productServices: productServices,
       attendingPhysician: attendingPhysician,
+      supportingDocuments: [] 
     };
 
     console.log("Submitting encounter data:", encounterData);
     
     // Dispatch the createEncounter action
     dispatch(createEncounter(encounterData));
+    toastSuccess("Bill created successfully")
+    routeToAllPatients();
+    
+  };
+
+  // Handle modal close
+  const handleModalClose = () => {
+    setShowConfirmModal(false);
   };
 
   // Handle successful submission
   useEffect(() => {
     if (billSuccess) {
-      alert("Emergency bill created successfully!");
       // Reset form
       setSelectedDepartment("");
       setSelectedServiceType("");
@@ -271,6 +313,7 @@ export default function EmergencyBillCapture({ patientId }: EmergencyBillCapture
       setAttendingPhysician("");
       setUploadedFiles([]);
       setProductServiceItems([]);
+      setValidationErrors([]);
     }
 
     if (billError) {
@@ -281,399 +324,400 @@ export default function EmergencyBillCapture({ patientId }: EmergencyBillCapture
   return (
     <>
       <form onSubmit={handleSubmit}>
-        <div className="w-full min-h-screen bg-gray-50 p-4 md:p-6">
-          <div className="max-w-7xl mx-auto">
-            {/* Main Title */}
-            <div className="mb-6">
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
-                Emergency Bill Capture
-              </h1>
-              {patientId && (
-                <p className="text-sm text-green-600 mt-1">
-                  Patient ID: {patientId}
-                </p>
-              )}
+        <div>
+          {/* Header section with patient ID display */}
+          <div className="mb-6">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+              Emergency Bill Capture
+            </h1>
+            {/* {patientId && (
+              <p className="text-sm text-green-600 mt-1">
+                Patient ID: {patientId}
+              </p>
+            )} */}
+          </div>
+
+          {/* Main form grid with 3 columns */}
+          <div className="grid grid-cols-3 gap-4">
+            {/* Department selection - col-span-2 makes it take 2/3 width */}
+            <div className="col-span-2">
+              <FormSelect
+                label="Enter name"
+                value={selectedDepartment}
+                onChange={(e) => setSelectedDepartment(e.target.value)}
+                required
+                isLoading={departmentsLoading}
+                error={departmentsError}
+              >
+                <option value="">Select Department</option>
+                {departments.map((dept) => (
+                  <option key={dept.id} value={dept.id}>
+                    {dept.name}
+                  </option>
+                ))}
+              </FormSelect>
             </div>
 
-            {/* Display error message */}
-            {billError && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-                {/* Error:{billError} */}
-                Error
-              </div>
-            )}
+            {/* Service type selection */}
+            <div>
+              <FormSelect
+                label="Service Type"
+                value={selectedServiceType}
+                onChange={(e) => setSelectedServiceType(e.target.value)}
+                required
+              >
+                <option value="">Select Service Type</option>
+                {serviceTypeOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </FormSelect>
+            </div>
 
-            {/* Main Card Container */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              {/* Ward/Clinic Section */}
-              <div className="p-6 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-800 mb-4">
-                  Ward/ Clinic
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Department Dropdown */}
-                  <div>
-                    <FormSelect
-                      label="Enter name"
-                      value={selectedDepartment}
-                      onChange={(e) => setSelectedDepartment(e.target.value)}
-                      required
-                      isLoading={departmentsLoading}
-                      error={departmentsError}
-                    >
-                      <option value="">Select Department</option>
-                      {departments.map((dept) => (
-                        <option key={dept.id} value={dept.id}>
-                          {dept.name}
-                        </option>
-                      ))}
-                    </FormSelect>
-                  </div>
+            {/* Encounter start date */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Start Date
+              </label>
+              <input
+                type="date"
+                value={encounterStartDateTime}
+                onChange={(e) => setEncounterStartDateTime(e.target.value)}
+                className="w-full border rounded-xl p-2"
+                required
+              />
+            </div>
 
-                  {/* Service Type Dropdown */}
-                  <div>
-                    <FormSelect
-                      label="Service Type"
-                      value={selectedServiceType}
-                      onChange={(e) => setSelectedServiceType(e.target.value)}
-                      required
-                    >
-                      <option value="">Select Service Type</option>
-                      {serviceTypeOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </FormSelect>
-                  </div>
-                </div>
-              </div>
+            {/* Discharge status selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Discharge status
+              </label>
+              <FormSelect
+                label="Discharge Status"
+                value={dischargeStatus}
+                onChange={(e) => setDischargeStatus(e.target.value)}
+              >
+                <option value="">Select Discharge Status</option>
+                {dischargeTypeOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </FormSelect>
+            </div>
 
-              {/* Encounter Start Date Section */}
-              <div className="p-6 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-800 mb-4">
-                  Encounter Start Date/Time
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Start Date */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Start Date
-                    </label>
+            {/* Discharge date (optional) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Discharge Date
+              </label>
+              <input
+                type="date"
+                value={dischargeDate}
+                onChange={(e) => setDischargeDate(e.target.value)}
+                className="w-full border rounded-xl p-2"
+              />
+            </div>
+
+            {/* Service category checkboxes - takes 2/3 width and spans below */}
+            <div className="col-span-2">
+              <h2 className="text-lg font-semibold text-gray-800 mb-4">
+                Service Category (Please check)
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                {categories.map((category) => (
+                  <div key={category.id} className="flex items-center">
                     <input
-                      type="date"
-                      value={encounterStartDateTime}
-                      onChange={(e) => setEncounterStartDateTime(e.target.value)}
-                      className="w-full border rounded-xl p-2"
-                      required
+                      type="checkbox"
+                      id={`medical-${category.id}`}
+                      checked={selectedMedicalHistory.includes(category.id)}
+                      onChange={() => handleMedicalHistoryChange(category.id)}
+                      className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                     />
-                  </div>
-
-                  {/* Discharge Status */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Discharge status
-                    </label>
-                    <FormSelect
-                    label="Discharge Status"
-                      value={dischargeStatus}
-                      onChange={(e) => setDischargeStatus(e.target.value)}
+                    <label
+                      htmlFor={`medical-${category.id}`}
+                      className="ml-2 text-gray-700 cursor-pointer"
                     >
-                      <option value="">Select Discharge Status</option>
-                      {dischargeTypeOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </FormSelect>
-                  </div>
-
-                  {/* Discharge Date */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Discharge Date
+                      {category.name}
                     </label>
-                    <input
-                      type="date"
-                      value={dischargeDate}
-                      onChange={(e) => setDischargeDate(e.target.value)}
-                      className="w-full border rounded-xl p-2"
-                    />
                   </div>
-                </div>
+                ))}
               </div>
+            </div>
 
-              {/* Medical History Section */}
-              <div className="p-6 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-800 mb-4">
-                  Medical History (Please check)
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                  {categories.map((category) => (
-                    <div key={category.id} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id={`medical-${category.id}`}
-                        checked={selectedMedicalHistory.includes(category.id)}
-                        onChange={() => handleMedicalHistoryChange(category.id)}
-                        className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                      />
-                      <label
-                        htmlFor={`medical-${category.id}`}
-                        className="ml-2 text-gray-700 cursor-pointer"
-                      >
-                        {category.name}
+            {/* Empty column for layout balance */}
+            <div>07</div>
+          </div>
+        </div>
+
+        {/* Diagnosis section with search and table */}
+        <div className="p-6 border-b border-gray-200">
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">
+              Diagnosis Search & Selection
+            </h2>
+            <p className="text-sm text-gray-600 mb-3">
+              Select ICD version and type at least 3 characters to search
+              for diagnoses. Select a diagnosis to add it to the table
+              below.
+            </p>
+            {/* ICD search component */}
+            <ICDSearch onSelect={handleSelect} />
+          </div>
+
+          {/* Diagnosis table */}
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse border border-gray-300">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="border border-gray-300 p-3 text-left text-sm font-medium text-gray-700 w-40">
+                    Type
+                  </th>
+                  <th className="border border-gray-300 p-3 text-left text-sm font-medium text-gray-700 w-32">
+                    Code
+                  </th>
+                  <th className="border border-gray-300 p-3 text-left text-sm font-medium text-gray-700">
+                    Diagnosis
+                  </th>
+                  <th className="border border-gray-300 p-3 text-left text-sm font-medium text-gray-700">
+                    Note
+                  </th>
+                  <th className="border border-gray-300 p-3 text-left text-sm font-medium text-gray-700 w-32">
+                    Action
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {diagnosisList.map((item) => (
+                  <tr
+                    key={item.id}
+                    className={`hover:bg-gray-50 ${
+                      selectedDiagnoses.includes(item.id)
+                        ? "bg-blue-50"
+                        : ""
+                    }`}
+                  >
+                    {/* Type column with checkbox for selection */}
+                    <td className="border border-gray-300 p-3">
+                      <label className="flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedDiagnoses.includes(item.id)}
+                          onChange={() => handleDiagnosisChange(item.id)}
+                          className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 focus:ring-2"
+                        />
+                        <span className="ml-3 font-medium text-gray-800">
+                          {item.type}
+                        </span>
                       </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
+                    </td>
 
-              {/* Type Section (Diagnosis Table) */}
-              <div className="p-6 border-b border-gray-200">
-                <div className="mb-6">
-                  <h2 className="text-lg font-semibold text-gray-800 mb-4">
-                    Diagnosis Search & Selection
-                  </h2>
-                  <p className="text-sm text-gray-600 mb-3">
-                    Select ICD version and type at least 3 characters to search
-                    for diagnoses. Select a diagnosis to add it to the table
-                    below.
-                  </p>
-                  <ICDSearch onSelect={handleSelect} />
-                </div>
+                    {/* Diagnosis code display */}
+                    <td className="border border-gray-300 p-3">
+                      <code className="font-mono font-bold text-gray-900 bg-gray-100 px-2 py-1 rounded text-sm">
+                        {item.code}
+                      </code>
+                    </td>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse border border-gray-300">
-                    <thead>
-                      <tr className="bg-gray-100">
-                        <th className="border border-gray-300 p-3 text-left text-sm font-medium text-gray-700 w-40">
-                          Type
-                        </th>
-                        <th className="border border-gray-300 p-3 text-left text-sm font-medium text-gray-700 w-32">
-                          Code
-                        </th>
-                        <th className="border border-gray-300 p-3 text-left text-sm font-medium text-gray-700">
-                          Diagnosis
-                        </th>
-                        <th className="border border-gray-300 p-3 text-left text-sm font-medium text-gray-700">
-                          Note
-                        </th>
-                        <th className="border border-gray-300 p-3 text-left text-sm font-medium text-gray-700 w-32">
-                          Action
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {diagnosisList.map((item) => (
-                        <tr
-                          key={item.id}
-                          className={`hover:bg-gray-50 ${
-                            selectedDiagnoses.includes(item.id)
-                              ? "bg-blue-50"
-                              : ""
-                          }`}
+                    {/* Diagnosis name */}
+                    <td className="border border-gray-300 p-3">
+                      <span className="text-gray-800">{item.name}</span>
+                    </td>
+
+                    {/* Note column with edit/save functionality */}
+                    <td className="border border-gray-300 p-3">
+                      {editingNoteId === item.id ? (
+                        <div className="flex space-x-2">
+                          <input
+                            type="text"
+                            value={noteInput}
+                            onChange={(e) => setNoteInput(e.target.value)}
+                            className="flex-1 px-2 py-1 border rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Enter note..."
+                            autoFocus
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleSaveNote(item.id)}
+                            className="px-2 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600"
+                          >
+                            Save
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleCancelNote}
+                            className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : item.note ? (
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-600 text-sm">
+                            {item.note}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleEditNote(item.id)}
+                            className="ml-2 text-blue-500 hover:text-blue-700 text-sm"
+                          >
+                            Edit
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleEditNote(item.id)}
+                          className="text-gray-400 hover:text-gray-600 text-sm flex items-center"
                         >
-                          {/* Type column with checkbox */}
-                          <td className="border border-gray-300 p-3">
-                            <label className="flex items-center cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={selectedDiagnoses.includes(item.id)}
-                                onChange={() => handleDiagnosisChange(item.id)}
-                                className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 focus:ring-2"
-                              />
-                              <span className="ml-3 font-medium text-gray-800">
-                                {item.type}
-                              </span>
-                            </label>
-                          </td>
+                          <svg
+                            className="w-4 h-4 mr-1"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M12 4v16m8-8H4"
+                            />
+                          </svg>
+                          Add note
+                        </button>
+                      )}
+                    </td>
 
-                          {/* Code column */}
-                          <td className="border border-gray-300 p-3">
-                            <code className="font-mono font-bold text-gray-900 bg-gray-100 px-2 py-1 rounded text-sm">
-                              {item.code}
-                            </code>
-                          </td>
+                    {/* Remove button for diagnosis */}
+                    <td className="border border-gray-300 p-3">
+                      <button
+                        type="button"
+                        onClick={(e) => handleRemoveDiagnosis(item.id, e)}
+                        className="px-3 py-1.5 bg-red-50 text-red-600 border border-red-200 rounded hover:bg-red-100 hover:border-red-300 text-sm transition-colors flex items-center"
+                      >
+                        <svg
+                          className="w-4 h-4 mr-1"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          />
+                        </svg>
+                        Remove
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-                          {/* Diagnosis column */}
-                          <td className="border border-gray-300 p-3">
-                            <span className="text-gray-800">{item.name}</span>
-                          </td>
+          {/* Empty state for diagnosis table */}
+          {diagnosisList.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              No diagnoses added yet. Use the search above to add
+              diagnoses.
+            </div>
+          )}
+        </div>
 
-                          {/* Note column */}
-                          <td className="border border-gray-300 p-3">
-                            {editingNoteId === item.id ? (
-                              <div className="flex space-x-2">
-                                <input
-                                  type="text"
-                                  value={noteInput}
-                                  onChange={(e) => setNoteInput(e.target.value)}
-                                  className="flex-1 px-2 py-1 border rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                  placeholder="Enter note..."
-                                  autoFocus
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => handleSaveNote(item.id)}
-                                  className="px-2 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600"
-                                >
-                                  Save
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={handleCancelNote}
-                                  className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300"
-                                >
-                                  Cancel
-                                </button>
-                              </div>
-                            ) : item.note ? (
-                              <div className="flex items-center justify-between">
-                                <span className="text-gray-600 text-sm">
-                                  {item.note}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => handleEditNote(item.id)}
-                                  className="ml-2 text-blue-500 hover:text-blue-700 text-sm"
-                                >
-                                  Edit
-                                </button>
-                              </div>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => handleEditNote(item.id)}
-                                className="text-gray-400 hover:text-gray-600 text-sm flex items-center"
-                              >
-                                <svg
-                                  className="w-4 h-4 mr-1"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2"
-                                    d="M12 4v16m8-8H4"
-                                  />
-                                </svg>
-                                Add note
-                              </button>
-                            )}
-                          </td>
+        {/* File upload section for supporting documents */}
+        <div className="p-6 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">
+            Upload Supporting Documents
+          </h2>
+          <FileUpload onFilesSelected={handleFiles} />
+        </div>
 
-                          {/* Action column */}
-                          <td className="border border-gray-300 p-3">
-                            <button
-                              type="button"
-                              onClick={(e) => handleRemoveDiagnosis(item.id, e)}
-                              className="px-3 py-1.5 bg-red-50 text-red-600 border border-red-200 rounded hover:bg-red-100 hover:border-red-300 text-sm transition-colors flex items-center"
-                            >
-                              <svg
-                                className="w-4 h-4 mr-1"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth="2"
-                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                />
-                              </svg>
-                              Remove
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+        {/* Attending physician input */}
+        <div className="p-6 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">
+            Attending Physician
+          </h2>
+          <div className="max-w-md">
+            <Input
+              type="text"
+              value={attendingPhysician}
+              onChange={(e) => setAttendingPhysician(e.target.value)}
+              label="Enter physician name"
+              required
+            />
+          </div>
+        </div>
 
-                {diagnosisList.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                    No diagnoses added yet. Use the search above to add
-                    diagnoses.
-                  </div>
-                )}
-              </div>
+        {/* Product/service section with search and table */}
+        <div className="p-6">
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">
+              Product/Service:
+            </h2>
+            
+            {/* Product/service search component */}
+            <div className="max-w-3xl mb-6">
+              <ProductServiceSearch
+                onSelect={handleProductServiceSelect}
+                selectedItems={productServiceItems}
+              />
+              <p className="text-sm text-gray-500 mt-2">
+                Type at least 2 characters to search for products or
+                services
+              </p>
+            </div>
 
-              {/* Upload Supporting Documents Section */}
-              <div className="p-6 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-800 mb-4">
-                  Upload Supporting Documents
-                </h2>
-                <FileUpload onFilesSelected={handleFiles} />
-              </div>
+            {/* Product/service table */}
+            <ProductServiceTable
+              items={productServiceItems}
+              onUpdateQuantity={handleUpdateQuantity}
+              onRemoveItem={handleRemoveProductService}
+            />
+          </div>
 
-              {/* Attending Physician Section */}
-              <div className="p-6 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-800 mb-4">
-                  Attending Physician
-                </h2>
-                <div className="max-w-md">
-                  <Input
-                    type="text"
-                    value={attendingPhysician}
-                    onChange={(e) => setAttendingPhysician(e.target.value)}
-                    label="Enter physician name"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Product/Service Section */}
-              <div className="p-6">
-                <div className="mb-6">
-                  <h2 className="text-lg font-semibold text-gray-800 mb-4">
-                    Product/Service:
-                  </h2>
-                  <div className="max-w-3xl mb-6">
-                    <ProductServiceSearch
-                      onSelect={handleProductServiceSelect}
-                      selectedItems={productServiceItems}
-                    />
-                    <p className="text-sm text-gray-500 mt-2">
-                      Type at least 2 characters to search for products or
-                      services
-                    </p>
-                  </div>
-
-                  <ProductServiceTable
-                    items={productServiceItems}
-                    onUpdateQuantity={handleUpdateQuantity}
-                    onRemoveItem={handleRemoveProductService}
-                  />
-                </div>
-
-                {/* Total Amount and Save Button */}
-                <div className="mt-8 flex justify-between items-center">
-                  <div className="text-lg font-semibold text-gray-800">
-                    Total Amount: ${productServiceItems.reduce((total, item) => total + (item.price || 0) * (item.quantity || 1), 0).toFixed(2)}
-                  </div>
-                  <div className="flex gap-3">
-                    <Button
-                      type="submit"
-                      disabled={billLoading}
-                      className={`px-6 py-2.5 ${
-                        billLoading
-                          ? "bg-gray-400 cursor-not-allowed"
-                          : "bg-red-500 text-white hover:bg-red-600"
-                      }`}
-                    >
-                      {billLoading ? "Submitting..." : "Submit Emergency Bill"}
-                    </Button>
-                  </div>
-                </div>
-              </div>
+          {/* Footer with total amount and submit button */}
+          <div className="mt-8 flex justify-between items-center">
+            <div className="text-lg font-semibold text-gray-800">
+              Total Amount: ${productServiceItems.reduce((total, item) => total + (item.price || 0) * (item.quantity || 1), 0).toFixed(2)}
+            </div>
+            <div className="flex gap-3">
+              <Button
+                type="submit"
+                disabled={billLoading}
+                className={`px-6 py-2.5 ${
+                  billLoading
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-red-500 text-white hover:bg-red-600"
+                }`}
+              >
+                {billLoading ? "Submitting..." : "Submit Emergency Bill"}
+              </Button>
             </div>
           </div>
         </div>
       </form>
+
+      {/* Confirm Modal */}
+      <ConfirmModal
+        isOpen={showConfirmModal}
+        onClose={handleModalClose}
+        onConfirm={handleConfirmSubmit}
+        title="Confirm Emergency Bill Submission"
+        message={`Are you sure you want to submit this emergency bill? 
+        
+
+        • Total Amount: $${productServiceItems.reduce((total, item) => total + (item.price || 0) * (item.quantity || 1), 0).toFixed(2)}
+        
+        This action cannot be undone.`}
+        confirmText="Submit Bill"
+        cancelText="Cancel"
+        type="warning"
+        isLoading={billLoading}
+      />
     </>
   );
 }

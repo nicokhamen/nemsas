@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { ArrowRight } from "lucide-react";
 import { useProviderContext } from "../../context/useProviderContext";
@@ -10,6 +10,8 @@ import FormSelect from "../../components/form/FormSelect";
 import { insuranceTypeOptions } from "../../utils/insuranceTypeUtils";
 import { genderTypeOptions } from "../../utils/genderType";
 import ConfirmModal from "../../components/ui/ConfirmModal";
+// import PhoneNumberInput from "../../components/form/PhoneInput";
+
 
 interface FormData {
   hospitalNumber: string;
@@ -24,13 +26,13 @@ interface FormData {
 }
 
 interface PatientFormProps {
-  onPatientRegistered: (patientId: string) => void;
+  onPatientRegistered?: (patientId: string) => void;
 }
 
 export default function PatientForm({ onPatientRegistered }: PatientFormProps) {
   const dispatch = useDispatch<AppDispatch>();
   const { selectedProviderId } = useProviderContext();
-  const { loading, success, error, registeredPatientId, patientData } = useSelector(
+  const { loading, success, error, registeredPatientId  } = useSelector(
     (state: RootState) => state.patient
   );
 
@@ -133,61 +135,35 @@ export default function PatientForm({ onPatientRegistered }: PatientFormProps) {
   };
 
   // Clear state when component unmounts
-  useEffect(() => {
+  React.useEffect(() => {
     return () => {
-      dispatch(clearPatientState({ clearId: false }));
+      dispatch(clearPatientState());
     };
   }, [dispatch]);
 
   // Handle successful registration and navigate to next tab
-  useEffect(() => {
-    console.log("Patient registration effect - State:", { 
-      success, 
-      registeredPatientId,
-      patientData 
+ React.useEffect(() => {
+  if (success && registeredPatientId && onPatientRegistered) {
+    // Reset form
+    setFormData({
+      hospitalNumber: "",
+      firstName: "",
+      lastName: "",
+      insuranceStatus: "",
+      dateOfBirth: "",
+      gender: "",
+      address: "",
+      email: "",
+      phoneNumber: "",
     });
-    
-    if (success) {
-      console.log("Registration successful! Full response:", patientData);
-      
-      // Extract patient ID from the response structure
-      let actualPatientId = registeredPatientId;
-      
-      if (!actualPatientId && patientData && patientData.data) {
-        actualPatientId = patientData.data.id;
-        console.log("Extracted patient ID from data:", actualPatientId);
-      }
-      
-      if (actualPatientId) {
-        console.log("Navigating with patient ID:", actualPatientId);
-        
-        // Reset form
-        setFormData({
-          hospitalNumber: "",
-          firstName: "",
-          lastName: "",
-          insuranceStatus: "",
-          dateOfBirth: "",
-          gender: "",
-          address: "",
-          email: "",
-          phoneNumber: "",
-        });
 
-        // Notify parent component with the patientId
-        onPatientRegistered(actualPatientId);
-      } else {
-        console.error("No patient ID found after successful registration!");
-        console.log("Patient data structure:", patientData);
-        alert("Registration successful but no patient ID received. Please check the response.");
-      }
-    }
-  }, [success, registeredPatientId, patientData, onPatientRegistered]);
+    const timer = setTimeout(() => {
+      onPatientRegistered(registeredPatientId); // Pass the actual patient ID
+    }, 1500);
 
-  // Add this useEffect for debugging
-  useEffect(() => {
-    console.log("Current state:", { success, registeredPatientId });
-  }, [success, registeredPatientId]);
+    return () => clearTimeout(timer);
+  }
+}, [success, registeredPatientId, onPatientRegistered]);
 
   return (
     <>
@@ -222,7 +198,7 @@ export default function PatientForm({ onPatientRegistered }: PatientFormProps) {
         {/* Display success message */}
         {success && (
           <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
-            Patient registered successfully! Redirecting to Emergency Bill...
+            Patient registered successfully! Redirecting to Emergency Bill
           </div>
         )}
 
@@ -340,6 +316,14 @@ export default function PatientForm({ onPatientRegistered }: PatientFormProps) {
               required
               label="Phone Number"
             />
+        {/* <PhoneNumberInput
+        label="Phone Number"
+        value={formData.phoneNumber}
+        onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
+        error={err}
+        placeholder="Enter 11-digit phone number"
+        required
+      /> */}
           </div>
 
           <div className="flex flex-col py-6 col-span-2">

@@ -8,7 +8,7 @@ import type { LoginForm } from "../../types/LoginForm";
 import { useAuth } from "../../hooks/useAuth";
 import type { LocationWithState } from "../../types/route";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import nemsasImage from '../../assets/nemsas.jpg';
+import nemsasImage from "../../assets/nemsas.jpg";
 import { LogIn } from "lucide-react";
 
 const Login: React.FC = () => {
@@ -48,7 +48,7 @@ const Login: React.FC = () => {
   };
 
   if (isAuthenticated) {
-    return null; 
+    return null;
   }
 
   return (
@@ -57,7 +57,7 @@ const Login: React.FC = () => {
         <div className="flex flex-col items-center mb-8">
           <div className="flex items-center space-x-2">
             {/* <HimisLogo /> */}
-             <img src={nemsasImage} alt="NEMSAS Logo" className="w-8 h-8" />
+            <img src={nemsasImage} alt="NEMSAS Logo" className="w-8 h-8" />
             <h1 className="text-[#DC2626]-900 font-bold text-lg">NEMSAS</h1>
           </div>
         </div>
@@ -96,23 +96,23 @@ const Login: React.FC = () => {
               </label>
             </div>
 
-       <button
-  type="submit"
-  className="w-full flex items-center justify-center gap-2 text-[#DC2626] bg-transparent border border-[#DC2626] py-2 rounded-md hover:bg-[#DC2626] hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-  disabled={loading}
->
-  {loading ? (
-    <>
-      <LogIn className="w-4 h-4" />
-      Logging in...
-    </>
-  ) : (
-    <>
-      <LogIn className="w-4 h-4" />
-      Login
-    </>
-  )}
-</button>
+            <button
+              type="submit"
+              className="w-full flex items-center justify-center gap-2 text-[#DC2626] bg-transparent border border-[#DC2626] py-2 rounded-md hover:bg-[#DC2626] hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <LogIn className="w-4 h-4" />
+                  Logging in...
+                </>
+              ) : (
+                <>
+                  <LogIn className="w-4 h-4" />
+                  Login
+                </>
+              )}
+            </button>
           </form>
 
           <p className="text-center mt-4 text-sm text-gray-600 cursor-pointer hover:underline">

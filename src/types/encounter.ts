@@ -18,27 +18,28 @@ export interface ProductService {
 
 export interface EncounterFormData {
   patientId: string;
-  departmentId: string;
+  department: string;
   serviceType: string;
   encounterStartDateTime: string;
   dischargeStatus: string;
   dischargeDate: string;
   diagnoses: Diagnosis[];
-  serviceCategories: ServiceCategory[];
+  serviceCategories: string[];
   productServices: ProductService[];
   attendingPhysician: string;
+  //  supportingDocuments: string ;
 }
 
 export interface EncounterResponse {
   id: string;
   patientId: string;
-  departmentId: string;
+  department: string;
   serviceType: string;
   encounterStartDateTime: string;
   dischargeStatus: string;
   dischargeDate: string;
   diagnoses: Diagnosis[];
-  serviceCategories: ServiceCategory[];
+  serviceCategories: string[];
   productServices: ProductService[];
   attendingPhysician: string;
   createdAt: string;
