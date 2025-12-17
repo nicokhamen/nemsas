@@ -380,7 +380,7 @@ export const NemsasManagement = () => {
             {/* Header */}
             <div className="flex flex-wrap gap-4 justify-between items-center p-6">
               <div className="flex items-center gap-8">
-                <FormHeader>Emergency Bill Centre</FormHeader>
+                <FormHeader>Emergency Bill Capture</FormHeader>
                 <input
                   type="text"
                   placeholder="Search claims"

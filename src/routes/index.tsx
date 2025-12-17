@@ -10,8 +10,6 @@ import Settings from "../pages/Settings";
 import EnrolleesManagement from "../pages/EnrolleesManagement";
 import EnrolleeDetails from "../pages/EnrolleeDetails";
 
-
-import { NemsasManagement } from "../pages/nemsas/NemsasManagement";
 import AllProviders from "../pages/provider/AllProviders";
 import { ProviderRegistration } from "../pages/provider/Registration";
 import { VettingClaims } from "../pages/vetting/VettingClaims";
@@ -20,6 +18,9 @@ import { Claims } from "../pages/claims-management/EmergencyClaims";
 import EBillCapture from "../pages/bill-center";
 import { MDReview } from "../pages/md-review/MdReviewIndex";
 import EndorsementReview from "../pages/md-review/EndorsementReview";
+import ClaimsDetails from "../pages/claims-management/ClaimsDetails";
+import CreateClaim from "../pages/claims-management/CreateClaim";
+import { EmergencyBills } from "../pages/bill-center/EmergencyBills";
 
 
 const AppRoutes = () => {
@@ -34,9 +35,11 @@ const AppRoutes = () => {
 
         <Route path="/" element={<ProviderProvider><ProtectedRoute /></ProviderProvider>}> 
         <Route path="dashboard" element={<Layout><Dashboard /></Layout>} />
+        <Route path="claim-details" element={<Layout><ClaimsDetails /></Layout>} />
+        <Route path="create-claim" element={<Layout><CreateClaim /></Layout>} />
          
           <Route path="claims-management" element={<Layout><Claims /></Layout>} />
-          <Route path="nemsas-management" element={<Layout><NemsasManagement /></Layout>} />
+          <Route path="emergency-bills" element={<Layout><EmergencyBills/></Layout>} />
           <Route path="md-review" element={<Layout><MDReview/></Layout>} />
           <Route path="endorsement-review" element={<Layout><EndorsementReview/></Layout>} />
 

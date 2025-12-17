@@ -1,6 +1,6 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { EncounterResponse, ApiError } from '../../types/encounter';
-import { createEncounter } from '../thunks/encounterThunk';
+import { createEncounter } from '../thunks/departmentThunk';
 
 interface EncounterState {
   data: EncounterResponse | null;

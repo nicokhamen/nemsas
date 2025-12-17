@@ -1,5 +1,5 @@
 // department.types.ts
-
+// type to submit an emergency bill
 export interface Department {
   id: string;
   providerId: string;

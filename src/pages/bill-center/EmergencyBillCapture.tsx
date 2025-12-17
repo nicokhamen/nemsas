@@ -11,7 +11,7 @@ import {
 import {
   fetchDepartments,
   fetchServiceCategories, 
-} from "../../services/thunks/emergencyBillThunk";
+} from "../../services/thunks/departmentThunk";
 import { ICDSearch } from "../../components/ui/ICDSearch";
 import type { ICDItem } from "../../types/emergency-bill";
 import { FileUpload } from "../../components/FileUpload";
@@ -20,7 +20,7 @@ import {
 } from "../../components/ui/ProductServiceSearch";
 import { ProductServiceTable } from "../../components/ui/ProductServiceTable";
 import type { ProductItem } from '../../types/productType';
-import { createEncounter } from "../../services/thunks/encounterThunk";
+import { createEncounter } from "../../services/thunks/departmentThunk";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import { useCustomToast } from "../../hooks/useCustomToast";
 import { useNavigate } from "react-router-dom";
@@ -45,7 +45,7 @@ export default function EmergencyBillCapture({ patientId }: EmergencyBillCapture
     const navigate = useNavigate();
 
     const routeToAllPatients = useCallback(() => {
-      navigate("/nemsas-management")
+      navigate("/emergency-bills")
     },[navigate])
 
   // Department state
@@ -82,7 +82,7 @@ export default function EmergencyBillCapture({ patientId }: EmergencyBillCapture
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [productServiceItems, setProductServiceItems] = useState<ProductItem[]>([]);
   const [showConfirmModal, setShowConfirmModal] = useState(false); // Modal state
-  const [isFormValid, setIsFormValid] = useState(false); // Form validation state
+  // const [isFormValid, setIsFormValid] = useState(false); // Form validation state
   const [validationErrors, setValidationErrors] = useState<string[]>([]); // Validation errors
 
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
@@ -300,8 +300,9 @@ export default function EmergencyBillCapture({ patientId }: EmergencyBillCapture
 
   // Handle successful submission
   useEffect(() => {
+    // alert("Bill created successfully")
+
     if (billSuccess) {
-      // Reset form
       setSelectedDepartment("");
       setSelectedServiceType("");
       setEncounterStartDateTime(new Date().toISOString().split('T')[0]);
@@ -681,9 +682,9 @@ export default function EmergencyBillCapture({ patientId }: EmergencyBillCapture
 
           {/* Footer with total amount and submit button */}
           <div className="mt-8 flex justify-between items-center">
-            <div className="text-lg font-semibold text-gray-800">
+            {/* <div className="text-lg font-semibold text-gray-800">
               Total Amount: ${productServiceItems.reduce((total, item) => total + (item.price || 0) * (item.quantity || 1), 0).toFixed(2)}
-            </div>
+            </div> */}
             <div className="flex gap-3">
               <Button
                 type="submit"

@@ -1,43 +1,50 @@
-import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { DepartmentState, DepartmentsResponse } from '../../types/emergency-bill';
-import { fetchDepartments } from '../thunks/emergencyBillThunk';
+// emergency-bills.slice.ts
+import { createSlice } from '@reduxjs/toolkit';
+import type { EmergencyBillState } from '../../types/emergency-bills';
+import { fetchEmergencyBills } from '../thunks/emergencyBillsThunk';
 
-const initialState: DepartmentState = {
-  departments: [], 
+const initialState: EmergencyBillState = {
+  bills: [],
+  currentBill: null,
   loading: false,
   error: null,
   lastFetched: null,
   hasFetched: false,
 };
 
-const departmentSlice = createSlice({
-  name: 'departments',
+const emergencyBillsSlice = createSlice({
+  name: 'emergencyBills',
   initialState,
   reducers: {
-    clearDepartmentsError: (state) => {
-      state.error = null;
+    setCurrentBill(state, action) {
+      state.currentBill = action.payload;
     },
-    resetDepartments: () => initialState,
+    clearCurrentBill(state) {
+      state.currentBill = null;
+    },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchDepartments.pending, (state) => {
+      .addCase(fetchEmergencyBills.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchDepartments.fulfilled, (state, action: PayloadAction<DepartmentsResponse>) => {
+      .addCase(fetchEmergencyBills.fulfilled, (state, action) => {
         state.loading = false;
-        state.departments = action.payload.data; // Store array
+        state.bills = action.payload;
+        state.hasFetched = true;
         state.lastFetched = new Date().toISOString();
-        state.hasFetched = true; 
       })
-      .addCase(fetchDepartments.rejected, (state, action) => {
+      .addCase(fetchEmergencyBills.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload || 'Failed to fetch departments';
-        state.hasFetched = true; 
+        state.error = action.payload ?? 'Failed to fetch emergency bills';
       });
   },
 });
 
-export const { clearDepartmentsError, resetDepartments } = departmentSlice.actions;
-export default departmentSlice.reducer;
+export const {
+  setCurrentBill,
+  clearCurrentBill,
+} = emergencyBillsSlice.actions;
+
+export default emergencyBillsSlice.reducer;

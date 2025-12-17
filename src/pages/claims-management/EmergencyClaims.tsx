@@ -291,7 +291,7 @@ export const Claims = () => {
                 Refresh
               </Button>
               <Button
-          
+               onClick={() => navigate("/create-claim")}
                 className="bg-red-600 hover:bg-red-700 text-white"
               >
                 + New Claim
@@ -378,7 +378,7 @@ export const Claims = () => {
                 title="No emergency claims available"
                 description={error ? "Failed to load claims" : "No claims found for the provided IDs."}
                 action={
-                  <Button >
+                  <Button  onClick={() => navigate("/create-claim")}>
                     + Create New Emergency Claim
                   </Button>
                 }

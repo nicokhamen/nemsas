@@ -1,6 +1,6 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { ServiceCategoryState, ServiceCategoryResponse } from '../../types/emergency-bill';
-import { fetchServiceCategories } from '../thunks/emergencyBillThunk';
+import { fetchServiceCategories } from '../thunks/departmentThunk';
 
 const initialState: ServiceCategoryState = {
   categories: [], 

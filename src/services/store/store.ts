@@ -9,13 +9,14 @@ import providerReducer from "../slices/iProviderSlice";
 import claimDetailsReducer from "../slices/claimDetailSlice";
 import nemsasReducer from "../slices/nemsasSlice";
 import patientReducer from "../slices/patientSlice";
-import departmentReducer from "../slices/emergencyBillSlice";
+import departmentReducer from "../slices/DepartmentSlice";
 import serviceCategoryReducer from "../slices/serviceCategorySlice";
 import icdReducer from "../slices/icdSlice";
 import productReducer from "../slices/productSlice";
 import encounterReducer from "../slices/encounterSlice";
 import emergencyClaimReducer from "../slices/emergencyClaimSlice";
 import emergencyClaimDetailReducer from "../slices/emergencyClaimDetailSlice";
+import emergencyBillsReducer from "../slices/emergencyBillSlice"
 
 export const store = configureStore({
   reducer: {
@@ -32,6 +33,7 @@ export const store = configureStore({
     icd: icdReducer,
     products: productReducer,
     encounter: encounterReducer,
+    emergencyBills: emergencyBillsReducer,
     emergencyClaim: emergencyClaimReducer,
     emergencyClaimDetail: emergencyClaimDetailReducer,
     [providerApiSlice.reducerPath]: providerApiSlice.reducer,
