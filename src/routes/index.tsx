@@ -21,6 +21,8 @@ import EndorsementReview from "../pages/md-review/EndorsementReview";
 import ClaimsDetails from "../pages/claims-management/ClaimsDetails";
 import CreateClaim from "../pages/claims-management/CreateClaim";
 import { EmergencyBills } from "../pages/bill-center/EmergencyBills";
+import EmergencyBillDetails from "../pages/bill-center/EmergencyBillDetails";
+import EditEmergencyBill from "../pages/bill-center/EditEmergencyBill";
 
 
 const AppRoutes = () => {
@@ -39,7 +41,9 @@ const AppRoutes = () => {
         <Route path="create-claim" element={<Layout><CreateClaim /></Layout>} />
          
           <Route path="claims-management" element={<Layout><Claims /></Layout>} />
-          <Route path="emergency-bills" element={<Layout><EmergencyBills/></Layout>} />
+          <Route path="emergency/bills" element={<Layout><EmergencyBills/></Layout>} />
+          <Route path="/emergency/bills/:billId" element={<Layout><EmergencyBillDetails/></Layout>} />
+          <Route path="/emergency-bills/:billId/edit" element={<EditEmergencyBill />} />
           <Route path="md-review" element={<Layout><MDReview/></Layout>} />
           <Route path="endorsement-review" element={<Layout><EndorsementReview/></Layout>} />
 

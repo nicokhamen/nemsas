@@ -45,7 +45,7 @@ export default function EmergencyBillCapture({ patientId }: EmergencyBillCapture
     const navigate = useNavigate();
 
     const routeToAllPatients = useCallback(() => {
-      navigate("/emergency-bills")
+      navigate("/emergency/bills")
     },[navigate])
 
   // Department state
@@ -453,7 +453,7 @@ export default function EmergencyBillCapture({ patientId }: EmergencyBillCapture
           </div>
         </div>
 
-        {/* Diagnosis section with search and table */}
+        {/* ICD 10 ICD 11 section with search and table */}
         <div className="p-6 border-b border-gray-200">
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">

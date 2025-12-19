@@ -67,7 +67,7 @@ export const PROVIDER_SIDEBAR: SidebarItem[] = [
     active: false,
     children: [
       { icon: null, label: "Claims Management", active: false, path: "/claims-management" },
-      { icon: null, label: "Emergency Bill Capture", active: false, path: "/emergency-bills" }
+      { icon: null, label: "Emergency Bill Capture", active: false, path: "/emergency/bills" }
     ]
   },
   { icon: <EnrolleeIcon className="w-5 h-5" />, label: "MD Review & Endorsement", active: false, path: "/md-review" },
