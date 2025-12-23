@@ -137,7 +137,7 @@ export default function PatientForm({ onPatientRegistered }: PatientFormProps) {
   // Clear state when component unmounts
   React.useEffect(() => {
     return () => {
-      dispatch(clearPatientState());
+      dispatch(clearPatientState({}));
     };
   }, [dispatch]);
 
@@ -316,14 +316,14 @@ export default function PatientForm({ onPatientRegistered }: PatientFormProps) {
               required
               label="Phone Number"
             />
-        {/* <PhoneNumberInput
-        label="Phone Number"
-        value={formData.phoneNumber}
-        onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
-        error={err}
-        placeholder="Enter 11-digit phone number"
-        required
-      /> */}
+         {/* <PhoneNumberInput
+    label="Phone Number"
+    value={formData.phoneNumber}
+    onChange={(value) => handleInputChange("phoneNumber", value)}
+    required
+    placeholder="Enter phone number"
+  
+  /> */}
           </div>
 
           <div className="flex flex-col py-6 col-span-2">

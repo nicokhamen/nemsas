@@ -123,3 +123,38 @@ export interface EmergencyBillSummaryResponse {
   message: string;
   isSuccess: boolean;
 }
+
+// Simplified types for UPDATE requests
+export interface UpdateDiagnosisRequest {
+  id?: string; // Optional for existing diagnoses
+  type: string;
+  code: string;
+  diagnosis: string;
+  note?: string;
+}
+
+export interface UpdateProductServiceRequest {
+  id?: string; // Optional for existing items
+  productId: string;
+  quantity: number;
+  price: number;
+  flag?: string;
+  name?: string; // For reference
+  description?: string; // For reference
+}
+
+export interface UpdateEmergencyBillRequest {
+  id: string;
+  patientId: string;
+  department?: string;
+  serviceType?: ServiceType | string;
+  encounterStartDateTime?: string;
+  dischargeStatus?: DischargeStatus | string;
+  dischargeDate?: string;
+  diagnoses?: UpdateDiagnosisRequest[];
+  serviceCategories?: string[];
+  productServices?: UpdateProductServiceRequest[];
+  attendingPhysician?: string;
+  supportingDocuments?: string[];
+  isActive?: boolean;
+}

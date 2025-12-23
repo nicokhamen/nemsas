@@ -36,11 +36,11 @@ const AppRoutes = () => {
         <Route path="/login" element={<Login />} />
 
         <Route path="/" element={<ProviderProvider><ProtectedRoute /></ProviderProvider>}> 
+          <Route path="claims-management" element={<Layout><Claims /></Layout>} />
         <Route path="dashboard" element={<Layout><Dashboard /></Layout>} />
         <Route path="claim-details" element={<Layout><ClaimsDetails /></Layout>} />
         <Route path="create-claim" element={<Layout><CreateClaim /></Layout>} />
          
-          <Route path="claims-management" element={<Layout><Claims /></Layout>} />
           <Route path="emergency/bills" element={<Layout><EmergencyBills/></Layout>} />
           <Route path="/emergency/bills/:billId" element={<Layout><EmergencyBillDetails/></Layout>} />
           <Route path="/emergency-bills/:billId/edit" element={<EditEmergencyBill />} />

@@ -10,21 +10,19 @@ import {
 } from "../../utils/emergencyBillUtils";
 import {
   fetchDepartments,
-  fetchServiceCategories, 
+  fetchServiceCategories,
 } from "../../services/thunks/departmentThunk";
-import { ICDSearch } from "../../components/ui/ICDSearch";
-import type { ICDItem } from "../../types/emergency-bill";
+// import { ICDSearch } from "../../components/ui/ICDSearch";
+// import type { ICDItem } from "../../types/emergency-bill";
 import { FileUpload } from "../../components/FileUpload";
-import {
-  ProductServiceSearch
-} from "../../components/ui/ProductServiceSearch";
+import { ProductServiceSearch } from "../../components/ui/ProductServiceSearch";
 import { ProductServiceTable } from "../../components/ui/ProductServiceTable";
-import type { ProductItem } from '../../types/productType';
+import type { ProductItem } from "../../types/productType";
 import { createEncounter } from "../../services/thunks/departmentThunk";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import { useCustomToast } from "../../hooks/useCustomToast";
 import { useNavigate } from "react-router-dom";
-
+import { DiagnosisSearchTable } from "../../components/ui/DIagnosisSearchTable";
 
 // Define Diagnosis type
 interface Diagnosis {
@@ -39,14 +37,16 @@ interface EmergencyBillCaptureProps {
   patientId: string; // Passed from parent component
 }
 
-export default function EmergencyBillCapture({ patientId }: EmergencyBillCaptureProps) {
+export default function EmergencyBillCapture({
+  patientId,
+}: EmergencyBillCaptureProps) {
   const dispatch = useDispatch<AppDispatch>();
-    const { success: toastSuccess} = useCustomToast();
-    const navigate = useNavigate();
+  const { success: toastSuccess } = useCustomToast();
+  const navigate = useNavigate();
 
-    const routeToAllPatients = useCallback(() => {
-      navigate("/emergency/bills")
-    },[navigate])
+  const routeToAllPatients = useCallback(() => {
+    navigate("/emergency/bills");
+  }, [navigate]);
 
   // Department state
   const {
@@ -70,23 +70,27 @@ export default function EmergencyBillCapture({ patientId }: EmergencyBillCapture
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
   const [selectedServiceType, setSelectedServiceType] = useState<string>("");
   const [encounterStartDateTime, setEncounterStartDateTime] = useState<string>(
-    new Date().toISOString().split('T')[0]
+    new Date().toISOString().split("T")[0]
   );
   const [dischargeStatus, setDischargeStatus] = useState<string>("");
   const [dischargeDate, setDischargeDate] = useState<string>("");
-  const [selectedMedicalHistory, setSelectedMedicalHistory] = useState<string[]>([]);
+  const [selectedMedicalHistory, setSelectedMedicalHistory] = useState<
+    string[]
+  >([]);
   const [selectedDiagnoses, setSelectedDiagnoses] = useState<string[]>([]);
   const [diagnosisList, setDiagnosisList] = useState<Diagnosis[]>([]);
   const [attendingPhysician, setAttendingPhysician] = useState<string>("");
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
-  const [productServiceItems, setProductServiceItems] = useState<ProductItem[]>([]);
+  const [productServiceItems, setProductServiceItems] = useState<ProductItem[]>(
+    []
+  );
   const [showConfirmModal, setShowConfirmModal] = useState(false); // Modal state
   // const [isFormValid, setIsFormValid] = useState(false); // Form validation state
   const [validationErrors, setValidationErrors] = useState<string[]>([]); // Validation errors
 
-  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
-  const [noteInput, setNoteInput] = useState("");
+  // const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  // const [noteInput, setNoteInput] = useState("");
 
   // Refs to track fetched data
   const hasFetchedDepartmentsRef = useRef(false);
@@ -136,11 +140,11 @@ export default function EmergencyBillCapture({ patientId }: EmergencyBillCapture
     );
   };
 
-  const handleDiagnosisChange = (id: string) => {
-    setSelectedDiagnoses((prev) =>
-      prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]
-    );
-  };
+  // const handleDiagnosisChange = (id: string) => {
+  //   setSelectedDiagnoses((prev) =>
+  //     prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]
+  //   );
+  // };
 
   const handleFiles = (files: File[]) => {
     setUploadedFiles(files);
@@ -148,53 +152,57 @@ export default function EmergencyBillCapture({ patientId }: EmergencyBillCapture
   };
 
   // Handle ICD search selection
-  const handleSelect = (selectedItem: ICDItem & { type: string }) => {
-    const newId = Date.now().toString(); // Use timestamp for unique ID
-    const newDiagnosis: Diagnosis = {
-      id: newId,
-      type: selectedItem.type,
-      code: selectedItem.code,
-      name: selectedItem.name,
-      note: `Selected from search: ${selectedItem.name}`,
-    };
+  // const handleSelect = (selectedItem: ICDItem & { type: string }) => {
+  //   const newId = Date.now().toString(); // Use timestamp for unique ID
+  //   const newDiagnosis: Diagnosis = {
+  //     id: newId,
+  //     type: selectedItem.type,
+  //     code: selectedItem.code,
+  //     name: selectedItem.name,
+  //     note: `Selected from search: ${selectedItem.name}`,
+  //   };
 
-    setDiagnosisList((prev) => [...prev, newDiagnosis]);
-    // Auto-select the newly added diagnosis
-    setSelectedDiagnoses((prev) => [...prev, newId]);
-  };
+  //   setDiagnosisList((prev) => [...prev, newDiagnosis]);
+   
+  //   setSelectedDiagnoses((prev) => [...prev, newId]);
+  // };
 
   // Handle remove diagnosis
-  const handleRemoveDiagnosis = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setDiagnosisList((prev) => prev.filter((item) => item.id !== id));
-    setSelectedDiagnoses((prev) => prev.filter((itemId) => itemId !== id));
+  // const handleRemoveDiagnosis = (id: string, e: React.MouseEvent) => {
+  //   e.stopPropagation();
+  //   setDiagnosisList((prev) => prev.filter((item) => item.id !== id));
+  //   setSelectedDiagnoses((prev) => prev.filter((itemId) => itemId !== id));
 
-    // Clear editing state if removing the item being edited
-    if (editingNoteId === id) {
-      setEditingNoteId(null);
-      setNoteInput("");
-    }
-  };
+   
+  //   if (editingNoteId === id) {
+  //     setEditingNoteId(null);
+  //     setNoteInput("");
+  //   }
+  // };
 
   // Handle note editing
-  const handleEditNote = (id: string) => {
-    const item = diagnosisList.find((d) => d.id === id);
-    setEditingNoteId(id);
-    setNoteInput(item?.note || "");
+  const handleNoteChange = (id: string, note: string) => {
+    // You can perform additional logic here if needed
+    console.log(`Note changed for diagnosis ${id}:`, note);
   };
+  // const handleEditNote = (id: string) => {
+  //   const item = diagnosisList.find((d) => d.id === id);
+  //   setEditingNoteId(id);
+  //   setNoteInput(item?.note || "");
+  // };
 
-  const handleSaveNote = (id: string) => {
-    setDiagnosisList((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, note: noteInput } : item))
-    );
-    setEditingNoteId(null);
-    setNoteInput("");
-  };
+  // const handleSaveNote = (id: string) => {
+  //   setDiagnosisList((prev) =>
+  //     prev.map((item) => (item.id === id ? { ...item, note: noteInput } : item))
+  //   );
+  //   setEditingNoteId(null);
+  //   setNoteInput("");
+  // };
 
-  const handleCancelNote = () => {
-    setEditingNoteId(null);
-    setNoteInput("");
-  };
+  // const handleCancelNote = () => {
+  //   setEditingNoteId(null);
+  //   setNoteInput("");
+  // };
 
   // Validate form before submission
   const validateForm = (): boolean => {
@@ -231,12 +239,12 @@ export default function EmergencyBillCapture({ patientId }: EmergencyBillCapture
   // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate form
     if (!validateForm()) {
       // If there are errors, show them and don't proceed to modal
       if (validationErrors.length > 0) {
-        alert(validationErrors.join('\n'));
+        alert(validationErrors.join("\n"));
       }
       return;
     }
@@ -266,7 +274,7 @@ export default function EmergencyBillCapture({ patientId }: EmergencyBillCapture
       productId: item.id,
       quantity: item.quantity || 1,
       price: item.price || 0,
-      flag: "ACTIVE", 
+      flag: "ACTIVE",
     }));
 
     // Prepare encounter data
@@ -281,16 +289,15 @@ export default function EmergencyBillCapture({ patientId }: EmergencyBillCapture
       serviceCategories: serviceCategories,
       productServices: productServices,
       attendingPhysician: attendingPhysician,
-      supportingDocuments: [] 
+      supportingDocuments: [],
     };
 
     console.log("Submitting encounter data:", encounterData);
-    
+
     // Dispatch the createEncounter action
     dispatch(createEncounter(encounterData));
-    toastSuccess("Bill created successfully")
+    toastSuccess("Bill created successfully");
     routeToAllPatients();
-    
   };
 
   // Handle modal close
@@ -305,7 +312,7 @@ export default function EmergencyBillCapture({ patientId }: EmergencyBillCapture
     if (billSuccess) {
       setSelectedDepartment("");
       setSelectedServiceType("");
-      setEncounterStartDateTime(new Date().toISOString().split('T')[0]);
+      setEncounterStartDateTime(new Date().toISOString().split("T")[0]);
       setDischargeStatus("");
       setDischargeDate("");
       setSelectedMedicalHistory([]);
@@ -422,7 +429,7 @@ export default function EmergencyBillCapture({ patientId }: EmergencyBillCapture
               />
             </div>
 
-            {/* Service category checkboxes - takes 2/3 width and spans below */}
+            {/* Service category checkboxes */}
             <div className="col-span-2">
               <h2 className="text-lg font-semibold text-gray-800 mb-4">
                 Service Category (Please check)
@@ -454,180 +461,15 @@ export default function EmergencyBillCapture({ patientId }: EmergencyBillCapture
         </div>
 
         {/* ICD 10 ICD 11 section with search and table */}
-        <div className="p-6 border-b border-gray-200">
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">
-              Diagnosis Search & Selection
-            </h2>
-            <p className="text-sm text-gray-600 mb-3">
-              Select ICD version and type at least 3 characters to search
-              for diagnoses. Select a diagnosis to add it to the table
-              below.
-            </p>
-            {/* ICD search component */}
-            <ICDSearch onSelect={handleSelect} />
-          </div>
-
-          {/* Diagnosis table */}
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse border border-gray-300">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="border border-gray-300 p-3 text-left text-sm font-medium text-gray-700 w-40">
-                    Type
-                  </th>
-                  <th className="border border-gray-300 p-3 text-left text-sm font-medium text-gray-700 w-32">
-                    Code
-                  </th>
-                  <th className="border border-gray-300 p-3 text-left text-sm font-medium text-gray-700">
-                    Diagnosis
-                  </th>
-                  <th className="border border-gray-300 p-3 text-left text-sm font-medium text-gray-700">
-                    Note
-                  </th>
-                  <th className="border border-gray-300 p-3 text-left text-sm font-medium text-gray-700 w-32">
-                    Action
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {diagnosisList.map((item) => (
-                  <tr
-                    key={item.id}
-                    className={`hover:bg-gray-50 ${
-                      selectedDiagnoses.includes(item.id)
-                        ? "bg-blue-50"
-                        : ""
-                    }`}
-                  >
-                    {/* Type column with checkbox for selection */}
-                    <td className="border border-gray-300 p-3">
-                      <label className="flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={selectedDiagnoses.includes(item.id)}
-                          onChange={() => handleDiagnosisChange(item.id)}
-                          className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 focus:ring-2"
-                        />
-                        <span className="ml-3 font-medium text-gray-800">
-                          {item.type}
-                        </span>
-                      </label>
-                    </td>
-
-                    {/* Diagnosis code display */}
-                    <td className="border border-gray-300 p-3">
-                      <code className="font-mono font-bold text-gray-900 bg-gray-100 px-2 py-1 rounded text-sm">
-                        {item.code}
-                      </code>
-                    </td>
-
-                    {/* Diagnosis name */}
-                    <td className="border border-gray-300 p-3">
-                      <span className="text-gray-800">{item.name}</span>
-                    </td>
-
-                    {/* Note column with edit/save functionality */}
-                    <td className="border border-gray-300 p-3">
-                      {editingNoteId === item.id ? (
-                        <div className="flex space-x-2">
-                          <input
-                            type="text"
-                            value={noteInput}
-                            onChange={(e) => setNoteInput(e.target.value)}
-                            className="flex-1 px-2 py-1 border rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Enter note..."
-                            autoFocus
-                          />
-                          <button
-                            type="button"
-                            onClick={() => handleSaveNote(item.id)}
-                            className="px-2 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600"
-                          >
-                            Save
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleCancelNote}
-                            className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      ) : item.note ? (
-                        <div className="flex items-center justify-between">
-                          <span className="text-gray-600 text-sm">
-                            {item.note}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleEditNote(item.id)}
-                            className="ml-2 text-blue-500 hover:text-blue-700 text-sm"
-                          >
-                            Edit
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleEditNote(item.id)}
-                          className="text-gray-400 hover:text-gray-600 text-sm flex items-center"
-                        >
-                          <svg
-                            className="w-4 h-4 mr-1"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M12 4v16m8-8H4"
-                            />
-                          </svg>
-                          Add note
-                        </button>
-                      )}
-                    </td>
-
-                    {/* Remove button for diagnosis */}
-                    <td className="border border-gray-300 p-3">
-                      <button
-                        type="button"
-                        onClick={(e) => handleRemoveDiagnosis(item.id, e)}
-                        className="px-3 py-1.5 bg-red-50 text-red-600 border border-red-200 rounded hover:bg-red-100 hover:border-red-300 text-sm transition-colors flex items-center"
-                      >
-                        <svg
-                          className="w-4 h-4 mr-1"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                          />
-                        </svg>
-                        Remove
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Empty state for diagnosis table */}
-          {diagnosisList.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              No diagnoses added yet. Use the search above to add
-              diagnoses.
-            </div>
-          )}
-        </div>
+        <DiagnosisSearchTable
+          diagnoses={diagnosisList}
+          selectedDiagnoses={selectedDiagnoses}
+          onDiagnosesChange={setDiagnosisList}
+          onSelectionChange={setSelectedDiagnoses}
+          onNoteChange={handleNoteChange} 
+          maxHeight="500px" 
+          className="my-6" 
+        />
 
         {/* File upload section for supporting documents */}
         <div className="p-6 border-b border-gray-200">
@@ -659,7 +501,7 @@ export default function EmergencyBillCapture({ patientId }: EmergencyBillCapture
             <h2 className="text-lg font-semibold text-gray-800 mb-4">
               Product/Service:
             </h2>
-            
+
             {/* Product/service search component */}
             <div className="max-w-3xl mb-6">
               <ProductServiceSearch
@@ -667,8 +509,7 @@ export default function EmergencyBillCapture({ patientId }: EmergencyBillCapture
                 selectedItems={productServiceItems}
               />
               <p className="text-sm text-gray-500 mt-2">
-                Type at least 2 characters to search for products or
-                services
+                Type at least 2 characters to search for products or services
               </p>
             </div>
 
@@ -711,7 +552,12 @@ export default function EmergencyBillCapture({ patientId }: EmergencyBillCapture
         message={`Are you sure you want to submit this emergency bill? 
         
 
-        • Total Amount: $${productServiceItems.reduce((total, item) => total + (item.price || 0) * (item.quantity || 1), 0).toFixed(2)}
+        • Total Amount: $${productServiceItems
+          .reduce(
+            (total, item) => total + (item.price || 0) * (item.quantity || 1),
+            0
+          )
+          .toFixed(2)}
         
         This action cannot be undone.`}
         confirmText="Submit Bill"

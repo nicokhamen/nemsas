@@ -18,7 +18,7 @@ export const useCustomToast = () => {
 
       style: {
          
-        background: "#DC2626",
+        background: "#0c560bff",
         color: "#ffffff",
         border: "none",
         borderRadius: "0.375rem",

@@ -3,7 +3,7 @@ import type {
   EmergencyBill,
   EmergencyBillResponse,
   EmergencyBillsResponse,
-  UpdateEmergencyBill as UpdateEmergencyBillType,
+  UpdateEmergencyBillRequest,
 } from "../../types/emergency-bills";
 import axiosInstance from "../../config/axiosInstance";
 
@@ -78,7 +78,7 @@ export const updateEmergencyBill = createAsyncThunk<
   EmergencyBill, // Return type
   {
     emergencyBillId: string;
-    updateData: UpdateEmergencyBillType;
+    updateData: UpdateEmergencyBillRequest;
   }, // Argument type
   { rejectValue: string } // Reject value type
 >(
