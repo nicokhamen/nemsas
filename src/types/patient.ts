@@ -4,8 +4,8 @@ export interface PatientRegistrationData {
   hospitalNumber: string;
   firstName: string;
   lastName: string;
-  insuranceStatus: 'NHIA' | string; 
-  dateOfBirth: string;
+  insuranceStatus: 'NHIA' | string;
+  dateOfBirth: string; // ISO string
   gender: string;
   address: string;
   email: string;
@@ -26,12 +26,19 @@ export interface PatientData {
   providerId: string;
   isActive: boolean;
   createdDate: string;
-  age?: number; // Optional since it might not always be present
+  age: number;
 }
 
-// Update the response interface to match your API
+// Response interface for single patient registration
 export interface PatientRegistrationResponse {
   data: PatientData;
+  message: string;
+  isSuccess: boolean;
+}
+
+// Response interface for getting all patients
+export interface GetAllPatientsResponse {
+  data: PatientData[];
   message: string;
   isSuccess: boolean;
 }
@@ -42,4 +49,15 @@ export interface PatientRegistrationState {
   error: string | null;
   patientData: PatientRegistrationResponse | null;
   registeredPatientId: string | null;
+  // New state for getAllPatients
+  patientsList: PatientData[];
+  patientsLoading: boolean;
+  patientsError: string | null;
+}
+
+// Error response interface
+export interface ApiErrorResponse {
+  message: string;
+  isSuccess: boolean;
+  errors?: Record<string, string[]>;
 }

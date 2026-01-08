@@ -16,6 +16,8 @@ export interface ProductService {
   flag: string;
 }
 
+
+
 export interface EncounterFormData {
   patientId: string;
   department: string;
@@ -27,7 +29,7 @@ export interface EncounterFormData {
   serviceCategories: string[];
   productServices: ProductService[];
   attendingPhysician: string;
-  //  supportingDocuments: string ;
+   supportingDocuments: string[]; 
 }
 
 export interface EncounterResponse {

@@ -1,3 +1,5 @@
+// file for supporting docs
+
 import { useDispatch, useSelector } from "react-redux";
 import { useCallback, useEffect, useRef, useState } from "react";
 import FormSelect from "../../components/form/FormSelect";
@@ -12,8 +14,6 @@ import {
   fetchDepartments,
   fetchServiceCategories,
 } from "../../services/thunks/departmentThunk";
-// import { ICDSearch } from "../../components/ui/ICDSearch";
-// import type { ICDItem } from "../../types/emergency-bill";
 import { FileUpload } from "../../components/FileUpload";
 import { ProductServiceSearch } from "../../components/ui/ProductServiceSearch";
 import { ProductServiceTable } from "../../components/ui/ProductServiceTable";
@@ -23,8 +23,11 @@ import ConfirmModal from "../../components/ui/ConfirmModal";
 import { useCustomToast } from "../../hooks/useCustomToast";
 import { useNavigate } from "react-router-dom";
 import { DiagnosisSearchTable } from "../../components/ui/DIagnosisSearchTable";
+import { fileToBase64 } from "../../utils/fileUtils";
+import type { EncounterFormData, ProductService, Diagnosis as DiagnosisType,  } from "../../types/encounter";
 
-// Define Diagnosis type
+
+// Define local Diagnosis type (different from the exported one)
 interface Diagnosis {
   id: string;
   type: string; // Display type (ICD-10 or ICD-11)
@@ -66,7 +69,7 @@ export default function EmergencyBillCapture({
     success: billSuccess,
   } = useSelector((state: RootState) => state.encounter);
 
-  // Local state
+  // Local state - FIXED: Removed duplicate uploadedFiles
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
   const [selectedServiceType, setSelectedServiceType] = useState<string>("");
   const [encounterStartDateTime, setEncounterStartDateTime] = useState<string>(
@@ -80,24 +83,21 @@ export default function EmergencyBillCapture({
   const [selectedDiagnoses, setSelectedDiagnoses] = useState<string[]>([]);
   const [diagnosisList, setDiagnosisList] = useState<Diagnosis[]>([]);
   const [attendingPhysician, setAttendingPhysician] = useState<string>("");
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]); // SINGLE DECLARATION
   const [productServiceItems, setProductServiceItems] = useState<ProductItem[]>(
     []
   );
-  const [showConfirmModal, setShowConfirmModal] = useState(false); // Modal state
-  // const [isFormValid, setIsFormValid] = useState(false); // Form validation state
-  const [validationErrors, setValidationErrors] = useState<string[]>([]); // Validation errors
-
-  // const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
-  // const [noteInput, setNoteInput] = useState("");
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  
+  // FIXED: Added isConvertingFiles state for better UX
+  const [isConvertingFiles, setIsConvertingFiles] = useState(false);
 
   // Refs to track fetched data
   const hasFetchedDepartmentsRef = useRef(false);
   const hasFetchedCategoriesRef = useRef(false);
 
   const handleProductServiceSelect = (item: ProductItem) => {
-    // Check if item already exists
     const exists = productServiceItems.some(
       (existingItem) => existingItem.id === item.id
     );
@@ -140,69 +140,23 @@ export default function EmergencyBillCapture({
     );
   };
 
-  // const handleDiagnosisChange = (id: string) => {
-  //   setSelectedDiagnoses((prev) =>
-  //     prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]
-  //   );
-  // };
-
-  const handleFiles = (files: File[]) => {
+  // FIXED: Added file size validation
+  const handleFiles = async (files: File[]) => {
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    const oversizedFiles = files.filter(file => file.size > MAX_FILE_SIZE);
+    
+    if (oversizedFiles.length > 0) {
+      alert(`Some files exceed the maximum size of ${MAX_FILE_SIZE / (1024 * 1024)}MB`);
+      return;
+    }
+    
     setUploadedFiles(files);
     console.log("Selected files:", files);
   };
 
-  // Handle ICD search selection
-  // const handleSelect = (selectedItem: ICDItem & { type: string }) => {
-  //   const newId = Date.now().toString(); // Use timestamp for unique ID
-  //   const newDiagnosis: Diagnosis = {
-  //     id: newId,
-  //     type: selectedItem.type,
-  //     code: selectedItem.code,
-  //     name: selectedItem.name,
-  //     note: `Selected from search: ${selectedItem.name}`,
-  //   };
-
-  //   setDiagnosisList((prev) => [...prev, newDiagnosis]);
-   
-  //   setSelectedDiagnoses((prev) => [...prev, newId]);
-  // };
-
-  // Handle remove diagnosis
-  // const handleRemoveDiagnosis = (id: string, e: React.MouseEvent) => {
-  //   e.stopPropagation();
-  //   setDiagnosisList((prev) => prev.filter((item) => item.id !== id));
-  //   setSelectedDiagnoses((prev) => prev.filter((itemId) => itemId !== id));
-
-   
-  //   if (editingNoteId === id) {
-  //     setEditingNoteId(null);
-  //     setNoteInput("");
-  //   }
-  // };
-
-  // Handle note editing
   const handleNoteChange = (id: string, note: string) => {
-    // You can perform additional logic here if needed
     console.log(`Note changed for diagnosis ${id}:`, note);
   };
-  // const handleEditNote = (id: string) => {
-  //   const item = diagnosisList.find((d) => d.id === id);
-  //   setEditingNoteId(id);
-  //   setNoteInput(item?.note || "");
-  // };
-
-  // const handleSaveNote = (id: string) => {
-  //   setDiagnosisList((prev) =>
-  //     prev.map((item) => (item.id === id ? { ...item, note: noteInput } : item))
-  //   );
-  //   setEditingNoteId(null);
-  //   setNoteInput("");
-  // };
-
-  // const handleCancelNote = () => {
-  //   setEditingNoteId(null);
-  //   setNoteInput("");
-  // };
 
   // Validate form before submission
   const validateForm = (): boolean => {
@@ -240,64 +194,84 @@ export default function EmergencyBillCapture({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate form
     if (!validateForm()) {
-      // If there are errors, show them and don't proceed to modal
       if (validationErrors.length > 0) {
         alert(validationErrors.join("\n"));
       }
       return;
     }
 
-    // If form is valid, show confirmation modal
     setShowConfirmModal(true);
   };
 
   // Handle confirmation from modal
-  const handleConfirmSubmit = () => {
-    // Close modal first
+  const handleConfirmSubmit = async () => {
     setShowConfirmModal(false);
 
-    // Prepare data for submission
-    const diagnoses = diagnosisList
-      .filter((diagnosis) => selectedDiagnoses.includes(diagnosis.id))
-      .map((diagnosis) => ({
-        type: diagnosis.type,
-        code: diagnosis.code,
-        diagnosis: diagnosis.name,
-        note: diagnosis.note,
+    try {
+      setIsConvertingFiles(true);
+      
+      // Convert uploaded files to base64 if any
+      // const supportingDocuments: SupportingDocument[] = [];
+      const supportingDocuments: string[] = [];
+      
+      if (uploadedFiles.length > 0) {
+        for (const file of uploadedFiles) {
+          try {
+            const base64Content = await fileToBase64(file);
+             supportingDocuments.push(base64Content);
+          } catch (error) {
+            console.error(`Error converting file ${file.name}:`, error);
+          }
+        }
+      }
+
+      // Prepare data for submission - FIXED: Type alignment
+      const diagnoses: DiagnosisType[] = diagnosisList
+        .filter((diagnosis) => selectedDiagnoses.includes(diagnosis.id))
+        .map((diagnosis) => ({
+          type: diagnosis.type,
+          code: diagnosis.code,
+          diagnosis: diagnosis.name, // Note: 'name' in local vs 'diagnosis' in type
+          note: diagnosis.note,
+        }));
+
+      const serviceCategories = selectedMedicalHistory;
+
+      const productServices: ProductService[] = productServiceItems.map((item) => ({
+        productId: item.id,
+        quantity: item.quantity || 1,
+        price: item.price || 0,
+        flag: "ACTIVE",
       }));
 
-    const serviceCategories = selectedMedicalHistory;
+      // Prepare encounter data - FIXED: Added missing type annotations
+      const encounterData: EncounterFormData = {
+        patientId: patientId,
+        department: selectedDepartment,
+        serviceType: selectedServiceType,
+        encounterStartDateTime: new Date(encounterStartDateTime).toISOString(),
+        dischargeStatus: dischargeStatus,
+        dischargeDate: dischargeDate ? new Date(dischargeDate).toISOString() : "",
+        diagnoses: diagnoses,
+        serviceCategories: serviceCategories,
+        productServices: productServices,
+        attendingPhysician: attendingPhysician,
+        supportingDocuments: supportingDocuments,
+      };
 
-    const productServices = productServiceItems.map((item) => ({
-      productId: item.id,
-      quantity: item.quantity || 1,
-      price: item.price || 0,
-      flag: "ACTIVE",
-    }));
+      console.log("Submitting encounter data with supporting documents:", encounterData);
 
-    // Prepare encounter data
-    const encounterData = {
-      patientId: patientId,
-      department: selectedDepartment,
-      serviceType: selectedServiceType,
-      encounterStartDateTime: new Date(encounterStartDateTime).toISOString(),
-      dischargeStatus: dischargeStatus,
-      dischargeDate: dischargeDate ? new Date(dischargeDate).toISOString() : "",
-      diagnoses: diagnoses,
-      serviceCategories: serviceCategories,
-      productServices: productServices,
-      attendingPhysician: attendingPhysician,
-      supportingDocuments: [],
-    };
-
-    console.log("Submitting encounter data:", encounterData);
-
-    // Dispatch the createEncounter action
-    dispatch(createEncounter(encounterData));
-    toastSuccess("Bill created successfully");
-    routeToAllPatients();
+      // Dispatch the createEncounter action
+      dispatch(createEncounter(encounterData));
+      toastSuccess("Bill created successfully");
+      
+    } catch (error) {
+      console.error("Error preparing data:", error);
+      alert("Error processing files. Please try again.");
+    } finally {
+      setIsConvertingFiles(false);
+    }
   };
 
   // Handle modal close
@@ -305,11 +279,10 @@ export default function EmergencyBillCapture({
     setShowConfirmModal(false);
   };
 
-  // Handle successful submission
+  // Handle successful submission - FIXED: Added missing dependencies
   useEffect(() => {
-    // alert("Bill created successfully")
-
     if (billSuccess) {
+      // Reset form
       setSelectedDepartment("");
       setSelectedServiceType("");
       setEncounterStartDateTime(new Date().toISOString().split("T")[0]);
@@ -322,32 +295,27 @@ export default function EmergencyBillCapture({
       setUploadedFiles([]);
       setProductServiceItems([]);
       setValidationErrors([]);
+      
+      // Navigate after successful submission
+      routeToAllPatients();
     }
 
     if (billError) {
       alert(`Error creating emergency bill: ${billError}`);
     }
-  }, [billSuccess, billError]);
+  }, [billSuccess, billError, routeToAllPatients]);
 
   return (
     <>
       <form onSubmit={handleSubmit}>
         <div>
-          {/* Header section with patient ID display */}
           <div className="mb-6">
             <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
               Emergency Bill Capture
             </h1>
-            {/* {patientId && (
-              <p className="text-sm text-green-600 mt-1">
-                Patient ID: {patientId}
-              </p>
-            )} */}
           </div>
 
-          {/* Main form grid with 3 columns */}
           <div className="grid grid-cols-3 gap-4">
-            {/* Department selection - col-span-2 makes it take 2/3 width */}
             <div className="col-span-2">
               <FormSelect
                 label="Enter name"
@@ -366,7 +334,6 @@ export default function EmergencyBillCapture({
               </FormSelect>
             </div>
 
-            {/* Service type selection */}
             <div>
               <FormSelect
                 label="Service Type"
@@ -383,7 +350,6 @@ export default function EmergencyBillCapture({
               </FormSelect>
             </div>
 
-            {/* Encounter start date */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Start Date
@@ -397,7 +363,6 @@ export default function EmergencyBillCapture({
               />
             </div>
 
-            {/* Discharge status selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Discharge status
@@ -416,7 +381,6 @@ export default function EmergencyBillCapture({
               </FormSelect>
             </div>
 
-            {/* Discharge date (optional) */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Discharge Date
@@ -429,7 +393,6 @@ export default function EmergencyBillCapture({
               />
             </div>
 
-            {/* Service category checkboxes */}
             <div className="col-span-2">
               <h2 className="text-lg font-semibold text-gray-800 mb-4">
                 Service Category (Please check)
@@ -455,12 +418,10 @@ export default function EmergencyBillCapture({
               </div>
             </div>
 
-            {/* Empty column for layout balance */}
             <div>07</div>
           </div>
         </div>
 
-        {/* ICD 10 ICD 11 section with search and table */}
         <DiagnosisSearchTable
           diagnoses={diagnosisList}
           selectedDiagnoses={selectedDiagnoses}
@@ -471,15 +432,18 @@ export default function EmergencyBillCapture({
           className="my-6" 
         />
 
-        {/* File upload section for supporting documents */}
         <div className="p-6 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">
             Upload Supporting Documents
           </h2>
           <FileUpload onFilesSelected={handleFiles} />
+          {uploadedFiles.length > 0 && (
+            <div className="mt-2 text-sm text-gray-600">
+              {uploadedFiles.length} file(s) selected
+            </div>
+          )}
         </div>
 
-        {/* Attending physician input */}
         <div className="p-6 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">
             Attending Physician
@@ -495,14 +459,12 @@ export default function EmergencyBillCapture({
           </div>
         </div>
 
-        {/* Product/service section with search and table */}
         <div className="p-6">
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">
               Product/Service:
             </h2>
 
-            {/* Product/service search component */}
             <div className="max-w-3xl mb-6">
               <ProductServiceSearch
                 onSelect={handleProductServiceSelect}
@@ -513,7 +475,6 @@ export default function EmergencyBillCapture({
               </p>
             </div>
 
-            {/* Product/service table */}
             <ProductServiceTable
               items={productServiceItems}
               onUpdateQuantity={handleUpdateQuantity}
@@ -521,29 +482,25 @@ export default function EmergencyBillCapture({
             />
           </div>
 
-          {/* Footer with total amount and submit button */}
           <div className="mt-8 flex justify-between items-center">
-            {/* <div className="text-lg font-semibold text-gray-800">
-              Total Amount: ${productServiceItems.reduce((total, item) => total + (item.price || 0) * (item.quantity || 1), 0).toFixed(2)}
-            </div> */}
             <div className="flex gap-3">
               <Button
                 type="submit"
-                disabled={billLoading}
+                disabled={billLoading || isConvertingFiles}
                 className={`px-6 py-2.5 ${
-                  billLoading
+                  billLoading || isConvertingFiles
                     ? "bg-gray-400 cursor-not-allowed"
                     : "bg-red-500 text-white hover:bg-red-600"
                 }`}
               >
-                {billLoading ? "Submitting..." : "Submit Emergency Bill"}
+                {isConvertingFiles ? "Processing files..." : 
+                 billLoading ? "Submitting..." : "Submit Emergency Bill"}
               </Button>
             </div>
           </div>
         </div>
       </form>
 
-      {/* Confirm Modal */}
       <ConfirmModal
         isOpen={showConfirmModal}
         onClose={handleModalClose}
@@ -559,12 +516,15 @@ export default function EmergencyBillCapture({
           )
           .toFixed(2)}
         
+        • Supporting Documents: ${uploadedFiles.length} file(s)
+        
         This action cannot be undone.`}
         confirmText="Submit Bill"
         cancelText="Cancel"
         type="warning"
-        isLoading={billLoading}
+        isLoading={billLoading || isConvertingFiles}
       />
     </>
   );
+
 }

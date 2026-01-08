@@ -201,7 +201,7 @@ const EmergencyBillDetails = () => {
             value={currentBill.attendingPhysician || "N/A"}
           />
           <Item
-            label="Total Amount"
+            label="Total Amount" className="text-green-600"
             value={formatCurrency(totalAmount)}
           />
         </div>
@@ -263,7 +263,7 @@ const EmergencyBillDetails = () => {
                   <div className="text-gray-500">{service.code || "—"}</div>
                   <div className="text-right">{service.quantity || 0}</div>
                   <div className="text-right">{formatCurrency(service.price)}</div>
-                  <div className="text-right font-medium">
+                  <div className="text-right font-medium text-green-600">
                     {formatCurrency(itemTotal)}
                   </div>
                 </div>
@@ -274,7 +274,7 @@ const EmergencyBillDetails = () => {
             <div className="grid grid-cols-6 px-4 py-3 border-t bg-gray-50 font-medium text-sm">
               <div className="col-span-4"></div>
               <div className="text-right">Total:</div>
-              <div className="text-right text-red-600">
+              <div className="text-right text-green-600">
                 {formatCurrency(totalAmount)}
               </div>
             </div>

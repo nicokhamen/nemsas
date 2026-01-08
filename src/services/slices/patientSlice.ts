@@ -1,61 +1,73 @@
 // patientSlice.ts
-import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import { registerPatient } from '../thunks/patientThunk';
-import type { PatientRegistrationState, PatientRegistrationResponse } from '../../types/patient';
+import { createSlice } from '@reduxjs/toolkit';
+import { registerPatient, getAllPatients } from '../thunks/patientThunk';
+import type { 
+  PatientData,
 
-const initialState: PatientRegistrationState = {
+} from '../../types/patient';
+
+interface PatientState {
+  // Registration state
+  loading: boolean;
+  success: boolean;
+  error: string | null;
+  patientData: PatientData | null;
+  registeredPatientId: string | null;
+  
+  // List state
+  patientsList: PatientData[];
+  patientsLoading: boolean;
+  patientsError: string | null;
+}
+
+const initialState: PatientState = {
+  // Registration
   loading: false,
   success: false,
   error: null,
   patientData: null,
   registeredPatientId: null,
+  
+  // List
+  patientsList: [],
+  patientsLoading: false,
+  patientsError: null,
 };
 
 const patientSlice = createSlice({
   name: 'patient',
   initialState,
   reducers: {
-    clearPatientState: (state, action: PayloadAction<{ clearId?: boolean }>) => {
-      state.patientData = null;
+    clearPatientState: (state) => {
       state.loading = false;
       state.success = false;
       state.error = null;
-      if (action.payload?.clearId) {
-        state.registeredPatientId = null;
-      }
+      state.patientData = null;
+      state.registeredPatientId = null;
     },
-    setRegisteredPatientId: (state, action: PayloadAction<string>) => {
-      state.registeredPatientId = action.payload;
-    },
-    resetSuccess: (state) => {
-      state.success = false;
+    clearPatientsList: (state) => {
+      state.patientsList = [];
+      state.patientsError = null;
     },
   },
   extraReducers: (builder) => {
+    // Register Patient
     builder
       .addCase(registerPatient.pending, (state) => {
         state.loading = true;
         state.error = null;
         state.success = false;
       })
-      .addCase(
-        registerPatient.fulfilled,
-        (state, action: PayloadAction<PatientRegistrationResponse>) => {
-          state.loading = false;
-          state.success = true;
-          state.patientData = action.payload;
-          state.error = null;
-          
-          // Extract patient ID from the nested data structure
-          if (action.payload.data && action.payload.data.id) {
-            state.registeredPatientId = action.payload.data.id;
-            console.log("Redux slice - Set registeredPatientId:", action.payload.data.id);
-          } else {
-            console.warn("No patient ID found in response data:", action.payload);
-            state.registeredPatientId = null;
-          }
-        }
-      )
+      .addCase(registerPatient.fulfilled, (state, action) => {
+        state.loading = false;
+        state.success = true;
+        state.patientData = action.payload.data;
+        state.registeredPatientId = action.payload.data.id;
+        state.error = null;
+        
+        // Add new patient to list
+        state.patientsList.unshift(action.payload.data);
+      })
       .addCase(registerPatient.rejected, (state, action) => {
         state.loading = false;
         state.success = false;
@@ -63,8 +75,25 @@ const patientSlice = createSlice({
         state.patientData = null;
         state.registeredPatientId = null;
       });
+    
+    // Get All Patients
+    builder
+      .addCase(getAllPatients.pending, (state) => {
+        state.patientsLoading = true;
+        state.patientsError = null;
+      })
+      .addCase(getAllPatients.fulfilled, (state, action) => {
+        state.patientsLoading = false;
+        state.patientsList = action.payload.data;
+        state.patientsError = null;
+      })
+      .addCase(getAllPatients.rejected, (state, action) => {
+        state.patientsLoading = false;
+        state.patientsError = action.payload || 'Failed to fetch patients';
+        state.patientsList = [];
+      });
   },
 });
 
-export const { clearPatientState, resetSuccess, setRegisteredPatientId } = patientSlice.actions;
+export const { clearPatientState, clearPatientsList } = patientSlice.actions;
 export default patientSlice.reducer;
