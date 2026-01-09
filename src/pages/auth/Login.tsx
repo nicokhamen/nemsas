@@ -25,7 +25,7 @@ const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const from = (location.state as any)?.from?.pathname || "/dashboard";
+  const from = (location.state as any)?.from?.pathname || "/emergency/bills";
 
   useEffect(() => {
     // Clear any previous errors when component mounts

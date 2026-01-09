@@ -17,6 +17,7 @@ import encounterReducer from "../slices/encounterSlice";
 import emergencyClaimReducer from "../slices/emergencyClaimSlice";
 import emergencyClaimDetailReducer from "../slices/emergencyClaimDetailSlice";
 import emergencyBillsReducer from "../slices/emergencyBillSlice"
+import claimsEmergencyBillsReducer from "../slices/claimEmergencyBillsSlice"
 
 export const store = configureStore({
   reducer: {
@@ -36,6 +37,7 @@ export const store = configureStore({
     emergencyBills: emergencyBillsReducer,
     emergencyClaim: emergencyClaimReducer,
     emergencyClaimDetail: emergencyClaimDetailReducer,
+    claimsEmergencyBills: claimsEmergencyBillsReducer,
     [providerApiSlice.reducerPath]: providerApiSlice.reducer,
   },
   middleware: (getDefaultMiddleware) =>

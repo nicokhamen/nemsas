@@ -80,7 +80,7 @@ export const Claims = () => {
     claims: emergencyClaims, 
     loading, 
     error,
-    successMessage 
+    // successMessage 
   } = useSelector((state: RootState) => state.emergencyClaim);
   
   const dispatch = useAppDispatch();
@@ -190,13 +190,29 @@ export const Claims = () => {
       header: "Created Date",
       enableSorting: true,
     },
-    {
-      accessorKey: "emergencyBillCount",
-      header: "Bills",
+    // {
+    //   accessorKey: "emergencyBillCount",
+    //   header: "Bills",
+    //   cell: ({ row }) => (
+    //     <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+    //       {row.original.emergencyBillCount}
+    //     </span>
+    //   ),
+    // },
+        {
+      id: "action",
+      enableHiding: false,
       cell: ({ row }) => (
-        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-          {row.original.emergencyBillCount}
-        </span>
+        <button
+          className="h-auto py-1 px-3 text-xs border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+          onClick={(e) => {
+            e.stopPropagation();
+           
+            navigate(`/emergency/claims/${row.original.id}`);
+          }}
+        >
+          View
+        </button>
       ),
     },
   ];
@@ -341,11 +357,11 @@ export const Claims = () => {
           )}
 
           {/* Success/Error Messages */}
-          {successMessage && (
+          {/* {successMessage && (
             <div className="px-6 py-3 bg-green-50 border-l-4 border-green-500">
               <p className="text-green-700">{successMessage}</p>
             </div>
-          )}
+          )} */}
 
           {error && (
             <div className="px-6 py-3 bg-red-50 border-l-4 border-red-500">

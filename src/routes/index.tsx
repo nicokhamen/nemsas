@@ -23,6 +23,7 @@ import CreateClaim from "../pages/claims-management/CreateClaim";
 import { EmergencyBills } from "../pages/bill-center/EmergencyBills";
 import EmergencyBillDetails from "../pages/bill-center/EmergencyBillDetails";
 import EditEmergencyBill from "../pages/bill-center/EditEmergencyBill";
+import EmergencyClaimsDetails from "../pages/claims-management/EmergencyClaimsDetails";
 
 
 const AppRoutes = () => {
@@ -37,6 +38,7 @@ const AppRoutes = () => {
 
         <Route path="/" element={<ProviderProvider><ProtectedRoute /></ProviderProvider>}> 
           <Route path="claims-management" element={<Layout><Claims /></Layout>} />
+          <Route path="emergency/claims/:id" element={<Layout><EmergencyClaimsDetails /></Layout>} />
         <Route path="dashboard" element={<Layout><Dashboard /></Layout>} />
         <Route path="claim-details" element={<Layout><ClaimsDetails /></Layout>} />
         <Route path="create-claim" element={<Layout><CreateClaim /></Layout>} />
