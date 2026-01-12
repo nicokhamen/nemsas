@@ -12,8 +12,6 @@ import {
   fetchDepartments,
   fetchServiceCategories,
 } from "../../services/thunks/departmentThunk";
-// import { ICDSearch } from "../../components/ui/ICDSearch";
-// import type { ICDItem } from "../../types/emergency-bill";
 import { FileUpload } from "../../components/FileUpload";
 import { ProductServiceSearch } from "../../components/ui/ProductServiceSearch";
 import { ProductServiceTable } from "../../components/ui/ProductServiceTable";
@@ -151,58 +149,14 @@ export default function EmergencyBillCapture({
     console.log("Selected files:", files);
   };
 
-  // Handle ICD search selection
-  // const handleSelect = (selectedItem: ICDItem & { type: string }) => {
-  //   const newId = Date.now().toString(); // Use timestamp for unique ID
-  //   const newDiagnosis: Diagnosis = {
-  //     id: newId,
-  //     type: selectedItem.type,
-  //     code: selectedItem.code,
-  //     name: selectedItem.name,
-  //     note: `Selected from search: ${selectedItem.name}`,
-  //   };
 
-  //   setDiagnosisList((prev) => [...prev, newDiagnosis]);
-   
-  //   setSelectedDiagnoses((prev) => [...prev, newId]);
-  // };
-
-  // Handle remove diagnosis
-  // const handleRemoveDiagnosis = (id: string, e: React.MouseEvent) => {
-  //   e.stopPropagation();
-  //   setDiagnosisList((prev) => prev.filter((item) => item.id !== id));
-  //   setSelectedDiagnoses((prev) => prev.filter((itemId) => itemId !== id));
-
-   
-  //   if (editingNoteId === id) {
-  //     setEditingNoteId(null);
-  //     setNoteInput("");
-  //   }
-  // };
 
   // Handle note editing
   const handleNoteChange = (id: string, note: string) => {
     // You can perform additional logic here if needed
     console.log(`Note changed for diagnosis ${id}:`, note);
   };
-  // const handleEditNote = (id: string) => {
-  //   const item = diagnosisList.find((d) => d.id === id);
-  //   setEditingNoteId(id);
-  //   setNoteInput(item?.note || "");
-  // };
 
-  // const handleSaveNote = (id: string) => {
-  //   setDiagnosisList((prev) =>
-  //     prev.map((item) => (item.id === id ? { ...item, note: noteInput } : item))
-  //   );
-  //   setEditingNoteId(null);
-  //   setNoteInput("");
-  // };
-
-  // const handleCancelNote = () => {
-  //   setEditingNoteId(null);
-  //   setNoteInput("");
-  // };
 
   // Validate form before submission
   const validateForm = (): boolean => {
@@ -359,7 +313,7 @@ export default function EmergencyBillCapture({
               >
                 <option value="">Select Department</option>
                 {departments.map((dept) => (
-                  <option key={dept.id} value={dept.id}>
+                  <option key={dept.name} value={dept.name}>
                     {dept.name}
                   </option>
                 ))}

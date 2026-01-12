@@ -306,12 +306,12 @@ export const Claims = () => {
               >
                 Refresh
               </Button>
-              <Button
+              {/* <Button
                onClick={() => navigate("/create-claim")}
                 className="bg-red-600 hover:bg-red-700 text-white"
               >
                 + New Claim
-              </Button>
+              </Button> */}
             </div>
           </div>
 

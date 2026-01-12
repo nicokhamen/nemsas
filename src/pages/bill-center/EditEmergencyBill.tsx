@@ -10,7 +10,7 @@ import {
 } from "../../services/thunks/emergencyBillsThunk";
 import { clearCurrentBill, clearError } from "../../services/slices/emergencyBillSlice";
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
-import { X, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Save, Trash2 } from "lucide-react";
 import FormSelect from "../../components/form/FormSelect";
 import { dischargeTypeOptions, serviceTypeOptions } from "../../utils/emergencyBillUtils";
 import type { RootState } from "../../services/store/store";
@@ -444,9 +444,10 @@ const handleSubmit = async (e: React.FormEvent) => {
           <button
             type="button"
             onClick={handleBack}
-            className="p-2 rounded-full hover:bg-gray-100"
+            className="p-2 rounded-full hover:bg-gray-100" title="Back"
           >
-            <X className="w-5 h-5 text-gray-500" />
+            {/* <X className="w-5 h-5 text-gray-500" /> */}
+            <ArrowLeft className="w-5 h-5 text-gray-500" />
           </button>
         </div>
 
