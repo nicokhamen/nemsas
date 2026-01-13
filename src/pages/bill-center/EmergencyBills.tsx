@@ -35,7 +35,7 @@ import { useNavigate } from "react-router-dom";
 import type { EmergencyBill } from "../../types/emergency-bills";
 import { patientNameFilter } from "../../components/ui/patientNameFilter";
 import Input from "../../components/form/Input";
-import DatePicker from "../../components/form/DatePicker";
+// import DatePicker from "../../components/form/DatePicker";
 
 // Status color map for emergency bills
 const statusColor: Record<string, string> = {
@@ -355,13 +355,13 @@ export const EmergencyBills = () => {
 
               </div>
               <div className="flex gap-4 items-center">
-                <button
+                <Button
                   onClick={routeToEmergencyBillPage}
-                  title="Create Emergency Bill"
-                  className="text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded-md transition-colors"
+                  variant="outline"
+                  title="Create an Emergency Bill"
                 >
-                  + Create Bill
-                </button>
+                  + 
+                </Button>
               </div>
             </div>
 
@@ -379,12 +379,12 @@ export const EmergencyBills = () => {
                     }}
                   />
                 </div>
-                <div>
+                {/* <div>
                   <DatePicker label="Start date"></DatePicker>
                 </div>
                 <div>
                   <DatePicker label="End date"></DatePicker>
-                </div>
+                </div> */}
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
@@ -398,7 +398,7 @@ export const EmergencyBills = () => {
                   >
                     Reset
                   </Button>
-                  <Button>Apply Filters</Button>
+                  {/* <Button>Apply Filters</Button> */}
                 </div>
               </div>
             </div>

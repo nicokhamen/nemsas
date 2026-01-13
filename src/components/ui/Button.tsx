@@ -12,6 +12,7 @@ interface ButtonProps {
   size?: "sm" | "md" | "lg";
   variant?: "solid" | "outline" | "text";
   color?: "red" | "green" | "blue" | "gray"; 
+   title?: string;
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -25,6 +26,7 @@ const Button: React.FC<ButtonProps> = ({
   size = "md",
   variant = "solid",
   color = "red" , 
+  title
 }) => {
   // Color styles
   const colorStyles = {
@@ -77,6 +79,7 @@ const Button: React.FC<ButtonProps> = ({
       type={type}
       onClick={onClick}
       disabled={disabled}
+      title={title}
       className={`
         ${baseStyles}
         ${stateStyles}
