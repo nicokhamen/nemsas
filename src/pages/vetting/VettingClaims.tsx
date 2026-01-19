@@ -16,7 +16,6 @@ import {
   fetchNemsasClaimsByPatient,
 } from "../../services/thunks/nemsasThunk";
 import { clearError } from "../../services/slices/nemsasSlice";
-import { useProviderContext } from "../../context/useProviderContext";
 
 // Table imports
 import {
@@ -101,7 +100,7 @@ export const VettingClaims = () => {
 
   // Get user data from Redux auth state
   const currentUser = useSelector((state: RootState) => state.auth.user);
-  const { selectedProviderId } = useProviderContext();
+
 
   // Export modal state
   const [showExportModal, setShowExportModal] = useState(false);
@@ -275,8 +274,8 @@ export const VettingClaims = () => {
       enableHiding: false,
       cell: ({ row }) => (
         <button
-          variant="outline"
-          size="sm"
+          // variant="outline"
+          // size="sm"
           className="h-auto py-1 px-2 text-xs"
           onClick={(e) => {
             e.stopPropagation();

@@ -34,6 +34,9 @@ import { Pagination } from "../../components/pagination";
 // Thunk and actions
 import { fetchClaimsEmergencyBills } from "../../services/thunks/claimEmergencyThunk";
 import { clearCurrentEmergencyBills } from "../../services/slices/claimEmergencyBillsSlice";
+import VettingModal from "../../components/ui/VettingModal";
+import { mdVetEmergencyClaim } from "../../services/thunks/mdRequestThunk";
+import type { ClaimEmergencyBill } from "../../types/ClaimEmergencyBills";
 
 // Status color map for discharge status
 const dischargeStatusColor: Record<string, string> = {
@@ -48,13 +51,12 @@ const dischargeStatusColor: Record<string, string> = {
 const insuranceStatusColor: Record<string, string> = {
   NHIA: "#2196f3",
   Private: "#4caf50",
-  'Self-Pay': "#9c27b0",
+  SSHIAS: "#9c27b0",
   Default: "#4caf50",
 };
 
 // Format currency
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _formatCurrency = (amount: number): string => {
+const formatCurrency = (amount: number): string => {
   return `₦${amount.toLocaleString("en-NG", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -63,30 +65,50 @@ const _formatCurrency = (amount: number): string => {
 
 // Format date
 const formatDate = (dateString: string): string => {
+  if (!dateString) return 'N/A';
   return new Date(dateString).toLocaleDateString("en-NG", {
     year: "numeric",
     month: "short",
     day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
   });
 };
 
-export const EmergencyClaimsDetails = () => {
+
+
+export const MdReviewBills = () => {
   const { id: claimId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   
-  // Get providerId from auth context (similar to Claims component)
+  // Get providerId from auth context
   const currentUser = useSelector((state: RootState) => state.auth.user);
   const providerId = currentUser?.providerId || "";
+
+  // Approve Reject bill state
+    const [showVettingModal, setShowVettingModal] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_vettingAction, setVettingAction] = useState<'approve' | 'reject' | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  // Payload for vetting
+  const buildVettingPayload = (
+  status: 'Approved' | 'Rejected',
+  remark?: string
+) => ({
+  emergencyClaimId: claimId!,
+  emergencyBillIds: selectedBills,
+  status,
+  remark,
+  isBillOnly: true,
+  vettedAmount: selectedTotalAmount,
+});
+
   
   // Get emergency bills data from Redux store
   const { 
     data: emergencyBills,
     loading, 
     error,
-    // currentEmergencyClaimId
   } = useSelector((state: RootState) => state.claimsEmergencyBills);
   
   // Local state
@@ -97,6 +119,7 @@ export const EmergencyClaimsDetails = () => {
   const [rowSelection, setRowSelection] = useState({});
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
+  const [selectedBills, setSelectedBills] = useState<string[]>([]);
 
   // Load emergency bills when claimId and providerId are available
   const loadEmergencyBills = useCallback(() => {
@@ -120,35 +143,71 @@ export const EmergencyClaimsDetails = () => {
     };
   }, [dispatch, claimId, providerId, loadEmergencyBills]);
 
+  const calculateTotalAmount = (bill: ClaimEmergencyBill): number => {
+  if (!bill.productServices || bill.productServices.length === 0) return 0;
+  return bill.productServices.reduce((total, service) => total + service.netAmount, 0);
+};
+
   // Map emergency bills to table format
-  const tableBills = useMemo(() => {
-    if (!emergencyBills?.data) return [];
-    
-    return emergencyBills.data.map((bill, index) => ({
-      id: bill.id,
-      sn: index + 1,
-      patientName: `${bill.patient?.firstName || ''} ${bill.patient?.lastName || ''}`.trim(),
-      patientHospitalNumber: bill.patient?.hospitalNumber || 'N/A',
-      patientAge: bill.patient?.age || 'N/A',
-      patientGender: bill.patient?.gender || 'N/A',
-      patientInsuranceStatus: bill.patient?.insuranceStatus || 'N/A',
-      hospitalName: bill.hospitalName,
-      department: bill.department,
-      serviceType: bill.serviceType,
-      encounterStart: formatDate(bill.encounterStartDateTime),
-      dischargeStatus: bill.dischargeStatus,
-      dischargeDate: bill.dischargeDate ? formatDate(bill.dischargeDate) : 'N/A',
-      attendingPhysician: bill.attendingPhysician || 'N/A',
-      diagnosesCount: bill.diagnoses?.length || 0,
-      servicesCount: bill.productServices?.length || 0,
-      serviceCategories: bill.serviceCategories?.join(', ') || 'N/A',
-      createdDate: formatDate(bill.createdDate),
-      rawData: bill, // Keep raw data for potential expansion
-    }));
-  }, [emergencyBills]);
+const tableBills = useMemo(() => {
+  if (!emergencyBills?.data) return [];
+  
+  return emergencyBills.data.map((bill, index) => ({
+    id: bill.id,
+    sn: index + 1,
+    patientName: `${bill.patient?.firstName || ''} ${bill.patient?.lastName || ''}`.trim(),
+    patientHospitalNumber: bill.patient?.hospitalNumber || 'N/A',
+    patientAge: bill.patient?.age || 'N/A',
+    patientGender: bill.patient?.gender || 'N/A',
+    patientInsuranceStatus: bill.patient?.insuranceStatus || 'N/A',
+    hospitalName: bill.hospitalName,
+    department: bill.department,
+    serviceType: bill.serviceType,
+    encounterStart: formatDate(bill.encounterStartDateTime),
+    dischargeStatus: bill.dischargeStatus,
+    dischargeDate: bill.dischargeDate ? formatDate(bill.dischargeDate) : 'N/A',
+    attendingPhysician: bill.attendingPhysician || 'N/A',
+    diagnosesCount: bill.diagnoses?.length || 0,
+    servicesCount: bill.productServices?.length || 0,
+    totalAmount: calculateTotalAmount(bill), // Use calculated amount
+    formattedTotalAmount: formatCurrency(calculateTotalAmount(bill)),
+    serviceCategories: bill.serviceCategories?.join(', ') || 'N/A',
+    createdDate: formatDate(bill.createdDate),
+    rawData: bill,
+  }));
+}, [emergencyBills]);
+
+  // Update selected bills when row selection changes
+  useEffect(() => {
+    const selectedIds = Object.keys(rowSelection)
+      .map((rowIndex) => tableBills[parseInt(rowIndex)]?.id)
+      .filter(Boolean);
+    setSelectedBills(selectedIds);
+  }, [rowSelection, tableBills]);
 
   // Define columns for the emergency bills table
   const columns: ColumnDef<(typeof tableBills)[0]>[] = [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <input
+          type="checkbox"
+          checked={table.getIsAllPageRowsSelected()}
+          onChange={table.getToggleAllPageRowsSelectedHandler()}
+          className="h-4 w-4"
+        />
+      ),
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          checked={row.getIsSelected()}
+          onChange={row.getToggleSelectedHandler()}
+          className="h-4 w-4"
+          onClick={(e) => e.stopPropagation()}
+        />
+      ),
+      size: 40,
+    },
     {
       accessorKey: "sn",
       header: "S/N",
@@ -159,11 +218,11 @@ export const EmergencyClaimsDetails = () => {
       header: "Patient Name",
       enableSorting: true,
     },
-    // {
-    //   accessorKey: "patientHospitalNumber",
-    //   header: "Hospital No.",
-    //   enableSorting: true,
-    // },
+    {
+      accessorKey: "patientHospitalNumber",
+      header: "Hospital No.",
+      enableSorting: true,
+    },
     {
       accessorKey: "patientInsuranceStatus",
       header: "Insurance",
@@ -187,20 +246,15 @@ export const EmergencyClaimsDetails = () => {
       accessorKey: "hospitalName",
       header: "Hospital",
       enableSorting: true,
+      cell: ({ row }) => (
+        <div className="max-w-[150px] truncate" title={row.original.hospitalName}>
+          {row.original.hospitalName}
+        </div>
+      ),
     },
     {
-      accessorKey: "department",
-      header: "Department",
-      enableSorting: true,
-    },
-    {
-      accessorKey: "serviceType",
-      header: "Service Type",
-      enableSorting: true,
-    },
-    {
-      accessorKey: "encounterStart",
-      header: "Encounter Start",
+      accessorKey: "formattedTotalAmount",
+      header: "Total Amount",
       enableSorting: true,
     },
     {
@@ -221,29 +275,6 @@ export const EmergencyClaimsDetails = () => {
         );
       },
       enableSorting: true,
-    },
-    {
-      accessorKey: "attendingPhysician",
-      header: "Physician",
-      enableSorting: true,
-    },
-    {
-      accessorKey: "diagnosesCount",
-      header: "Diagnoses",
-      cell: ({ row }) => (
-        <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">
-          {row.original.diagnosesCount}
-        </span>
-      ),
-    },
-    {
-      accessorKey: "servicesCount",
-      header: "Services",
-      cell: ({ row }) => (
-        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-          {row.original.servicesCount}
-        </span>
-      ),
     },
   ];
 
@@ -280,9 +311,18 @@ export const EmergencyClaimsDetails = () => {
 
   const totalPages = table.getPageCount();
 
+  // Calculate total amount of selected bills
+  const selectedTotalAmount = useMemo(() => {
+    return Object.keys(rowSelection)
+      .reduce((sum, rowIndex) => {
+        const bill = tableBills[parseInt(rowIndex)];
+        return sum + (bill?.totalAmount || 0);
+      }, 0);
+  }, [rowSelection, tableBills]);
+
   // Handle back navigation
   const handleBack = () => {
-    navigate("/claims-management");
+    navigate("/md-review");
   };
 
   // Handle refresh
@@ -291,10 +331,74 @@ export const EmergencyClaimsDetails = () => {
   };
 
   // Handle row click to view bill details
-  const handleRowClick = (id: string) => {
-    
-    navigate(`/emergency/claims/bills/${id}`);
+  const handleRowClick = (billId: string) => {
+    navigate(`/emergency/bills/${billId}`);
   };
+
+  // Handle bulk action
+  const handleBulkAction = () => {
+    if (selectedBills.length > 0) {
+      // console.log("Selected bill IDs:", selectedBills);
+      // console.log("Total selected amount:", formatCurrency(selectedTotalAmount));
+      
+      // alert(`Processing ${selectedBills.length} bill(s) with total amount: ${formatCurrency(selectedTotalAmount)}`);
+         setShowVettingModal(true);
+    setVettingAction(null);
+    }
+  };
+  // Handle approve action
+const handleApproveBills = async () => {
+  if (!claimId || selectedBills.length === 0) return;
+
+  setIsProcessing(true);
+
+  try {
+    const payload = buildVettingPayload('Approved');
+
+    await dispatch(mdVetEmergencyClaim(payload)).unwrap();
+
+    table.resetRowSelection();
+    setShowVettingModal(false);
+
+    loadEmergencyBills();
+  } catch (err: any) {
+    alert(err ?? 'Failed to approve bills');
+  } finally {
+    setIsProcessing(false);
+  }
+};
+
+// Handle reject action
+const handleRejectBills = async (reason: string) => {
+  if (!claimId || selectedBills.length === 0) return;
+
+  setIsProcessing(true);
+
+  try {
+    const payload = buildVettingPayload('Rejected', reason);
+
+    await dispatch(mdVetEmergencyClaim(payload)).unwrap();
+
+    table.resetRowSelection();
+    setShowVettingModal(false);
+    setVettingAction(null);
+
+    loadEmergencyBills();
+  } catch (err: any) {
+    alert(err ?? 'Failed to reject bills');
+  } finally {
+    setIsProcessing(false);
+  }
+};
+
+
+// Handle modal close
+const handleModalClose = () => {
+  if (!isProcessing) {
+    setShowVettingModal(false);
+    setVettingAction(null);
+  }
+};
 
   // Show loading while waiting for user data
   if (!currentUser) {
@@ -306,6 +410,7 @@ export const EmergencyClaimsDetails = () => {
   }
 
   return (
+    <>
     <div className="p-6">
       <div className="bg-gray-100 overflow-scroll h-full">
         <div className="bg-white rounded-md flex flex-col mb-36">
@@ -320,8 +425,9 @@ export const EmergencyClaimsDetails = () => {
                 >
                   ← Back
                 </Button>
-                {/* Claim #{claimId?.slice(0, 8)}... */}
-                <FormHeader>Emergency Bills </FormHeader>
+                <FormHeader>
+                  Emergency Bills for Claim #{claimId?.slice(0, 8)}...
+                </FormHeader>
               </div>
               <input
                 type="text"
@@ -343,15 +449,7 @@ export const EmergencyClaimsDetails = () => {
                 className="border rounded-lg hidden lg:block px-4 py-2 lg:w-96 lg:max-w-2xl focus:outline-none"
               />
             </div>
-            <div className="flex gap-4 items-center">
-              <Button
-                variant="outline"
-                onClick={handleRefresh}
-                disabled={loading}
-              >
-                {loading ? <LoadingSpinner size="small" /> : "Refresh"}
-              </Button>
-            </div>
+        
           </div>
 
           {/* Error Messages */}
@@ -400,31 +498,42 @@ export const EmergencyClaimsDetails = () => {
               />
             ) : (
               <>
-                {/* Summary Stats */}
-                <div className="px-6 py-4 bg-gray-50 border-y border-gray-200">
-                  <div className="flex flex-wrap gap-6">
-                    <div className="flex flex-col">
-                      <span className="text-sm text-gray-500">Total Bills</span>
-                      <span className="text-2xl font-semibold">{tableBills.length}</span>
+        
+
+                {/* Selected rows info */}
+                {selectedBills.length > 0 && (
+                  <div className="px-6 py-3 bg-blue-50 border-b border-blue-100">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-6">
+                        <span className="text-sm text-blue-700">
+                          {selectedBills.length} bill(s) selected
+                        </span>
+                        <span className="text-sm text-blue-700">
+                          Total amount: {formatCurrency(selectedTotalAmount)}
+                        </span>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => table.resetRowSelection()}
+                        >
+                          Clear Selection
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={handleBulkAction}
+                        >
+                          Process Selected ({selectedBills.length})
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex flex-col">
-                      <span className="text-sm text-gray-500">Patients</span>
-                      <span className="text-2xl font-semibold">
-                        {new Set(tableBills.map(bill => bill.patientHospitalNumber)).size}
-                      </span>
-                    </div>
-                    {/* <div className="flex flex-col">
-                      <span className="text-sm text-gray-500">Hospitals</span>
-                      <span className="text-2xl font-semibold">
-                        {new Set(tableBills.map(bill => bill.hospitalName)).size}
-                      </span>
-                    </div> */}
                   </div>
-                </div>
+                )}
 
                 {/* Table */}
                 <div className="flex-1 lg:px-0 lg:mt-4">
-                  <Table className="min-w-[1200px]">
+                  <Table className="min-w-[1000px]">
                     <TableHeader className="border-y border-gray-200">
                       {table.getHeaderGroups().map((headerGroup) => (
                         <TableRow key={headerGroup.id}>
@@ -502,8 +611,21 @@ export const EmergencyClaimsDetails = () => {
           </div>
         </div>
       </div>
+   
+     <VettingModal
+      isOpen={showVettingModal}
+      onClose={handleModalClose}
+      onApprove={handleApproveBills}
+      onReject={handleRejectBills}
+      title={`Vet ${selectedBills.length} Selected Bill(s)`}
+      message={`You are about to process ${selectedBills.length} bill(s) with a total amount of ${formatCurrency(selectedTotalAmount)}. Do you want to approve or reject these bills?`}
+      approveText={`Approve (${selectedBills.length})`}
+      rejectText={`Reject (${selectedBills.length})`}
+      isLoading={isProcessing}
+    />
     </div>
+    </>
   );
 };
 
-export default EmergencyClaimsDetails;
+export default MdReviewBills;

@@ -13,7 +13,7 @@ export const ProductServiceTable: React.FC<ProductServiceTableProps> = ({
   items,
   onUpdateQuantity,
   onRemoveItem,
-  onUpdateItem
+
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [tempQuantity, setTempQuantity] = useState<number>(1);

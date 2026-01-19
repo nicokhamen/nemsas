@@ -6,13 +6,14 @@ interface ModalProps {
   children: React.ReactNode;
   title?: string;
   width?: string;
-  maxHeight?: string; // Optional prop to customize max height
+  maxHeight?: string; 
+  style?: React.CSSProperties;
 }
 
-const Modal: React.FC<ModalProps> = ({ open, onClose, children, title, width, maxHeight = '80vh' }) => {
+const Modal: React.FC<ModalProps> = ({ open, onClose, children, title, width, maxHeight = '80vh', style}) => {
   if (!open) return null;
   return (
-    <div className="modal-overlay">
+    <div className="modal-overlay" style={style}>
       <div className="modal-content" style={{ width: width || '400px', maxHeight: maxHeight }}>
         <div className="modal-header border-b border-gray-200">
           {title && <h2 className='font-avenir font-extrabold text-[24px] leading-8 tracking-tightpx m-0'>{title}</h2>}

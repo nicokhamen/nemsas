@@ -94,11 +94,11 @@ export default function PatientSearch({
       )}
       
       {/* Show info about available patients */}
-      {selectedProviderId && availablePatients.length > 0 && (
+      {/* {selectedProviderId && availablePatients.length > 0 && (
         <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md text-blue-700 text-sm">
           Searching through {availablePatients.length} existing patient{availablePatients.length !== 1 ? 's' : ''}
         </div>
-      )}
+      )} */}
       
       {selectedProviderId && availablePatients.length === 0 && (
         <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-md text-gray-600 text-sm">

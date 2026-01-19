@@ -1,6 +1,7 @@
 export const InsuranceType = {
   NHIA: "NHIA",
   SSHIAS: "SSHIAS",
+  UNINSURED: "UNINSURED"
 } as const;
 
 export type InsuranceType = (typeof InsuranceType)[keyof typeof InsuranceType];
@@ -13,5 +14,6 @@ export type InsuranceType = (typeof InsuranceType)[keyof typeof InsuranceType];
 
 export const insuranceTypeOptions = [
   { value: InsuranceType.NHIA, label: "NHIA" },
+  { value: InsuranceType.UNINSURED, label: "UNINSURED" },
   { value: InsuranceType.SSHIAS, label: "SSHIA" }, // Display as SSHIA
 ];

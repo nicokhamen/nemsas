@@ -2,21 +2,12 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../services/store/store";
 import EmptyState from "../../components/ui/EmptyState";
-import NemsasClaimDetailsModal from "../../components/ui/NemsasClaimDetailsModal";
-import NemsasModal from "../../components/ui/NemsasModal";
-import Modal from "../../components/ui/Modal";
 import Button from "../../components/ui/Button";
-import BatchUploadModal from "../../components/ui/BatchUploadModal";
 import FormHeader from "../../components/form/FormHeader";
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
-import { exportNemsasClaimsReport as exportNemsasClaimsReportApi } from "../../services/api/nemsasApi";
-import { useAppSelector, useAppDispatch } from "../../hooks/redux";
-import {
-  fetchNemsasClaims,
-  fetchNemsasClaimsByPatient,
-} from "../../services/thunks/nemsasThunk";
-import { clearError } from "../../services/slices/nemsasSlice";
-// import { useProviderContext } from "../../context/useProviderContext";
+import { useAppDispatch } from "../../hooks/redux";
+import { clearError } from "../../services/slices/emergencyClaimSlice";
+import { fetchEmergencyClaims } from "../../services/thunks/emergencyClaimThunk";
 
 // Table imports
 import {
@@ -43,49 +34,37 @@ import { Pagination } from "../../components/pagination";
 import { useNavigate } from "react-router-dom";
 import DashboardCard from "../../components/ui/DashboardCardItems/DashboardCard";
 
-// Helper: backend now returns textual claimStatus; keep numeric fallback for legacy responses
-const legacyStatusCodeMap: Record<number, string> = {
-  0: "Pending",
-  1: "Approved",
-  2: "Rejected",
-  3: "Paid",
-  4: "Disputed",
-};
-
-const getClaimStatusText = (status: number | string | undefined): string => {
-  if (status === undefined || status === null) return "Pending";
-  if (typeof status === "number")
-    return legacyStatusCodeMap[status] || "Pending";
-  return status.trim() || "Pending";
-};
-
 // Status color map
 const statusColor: Record<string, string> = {
   Pending: "#ff9800",
-  Processed: "#1976d2",
+  Processing: "#1976d2",
   Rejected: "#d32f2f",
-  Resolved: "#2e7d32",
-  Approved: "#217346",
+  Approved: "#2e7d32",
   Paid: "#6b6f80",
 };
-// format currency
-const formatCurrency = (amount: number | undefined): string => {
-  if (amount === undefined || amount === null) return "0.00";
-  return amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, "$&,");
+
+// Format currency
+const formatCurrency = (amount: number): string => {
+  return `₦${amount.toLocaleString("en-NG", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+};
+
+// Format date
+const formatDate = (dateString: string): string => {
+  return new Date(dateString).toLocaleDateString("en-NG", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
 };
 
 export const MDReview = () => {
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showNemsasClaimModal, setShowNemsasClaimModal] = useState(false);
-  const [showBatchUploadModal, setShowBatchUploadModal] = useState(false);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [selectedClaimId, setSelectedClaimId] = useState<string | null>(null);
+  const [providerId, setProviderId] = useState<string>("");
+  const [sshiaId, setSshiaId] = useState<string>("");
 
   // Filter states
-  const [startDate, setStartDate] = useState<string>("");
-  const [endDate, setEndDate] = useState<string>("");
-  const [claimStatus, setClaimStatus] = useState<string>("");
-  const [patientNumberFilter, setPatientNumberFilter] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
 
   // Table states
@@ -96,148 +75,41 @@ export const MDReview = () => {
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
 
-  const [isPatientSearchMode, setIsPatientSearchMode] = useState(false);
-
-  const NEMSAS_ID = "2e4c6fa4-6ac3-43bb-b78f-326dccac110c";
-
-  const {
-    claims: reduxClaims,
-    loading,
+  // Get emergency claims from Redux store
+  const { 
+    claims: emergencyClaims, 
+    loading, 
     error,
-  } = useAppSelector((state) => state.nemsas);
+  } = useSelector((state: RootState) => state.emergencyClaim);
+  
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  const routeToEmergencyBillPage = () => {
-    navigate("/emergency/bill-capture");
-  };
-
   // Get user data from Redux auth state
   const currentUser = useSelector((state: RootState) => state.auth.user);
-//   const { selectedProviderId } = useProviderContext();
 
-  // Export modal state
-  const [showExportModal, setShowExportModal] = useState(false);
-  const [exportLoading, setExportLoading] = useState(false);
-  const [exportError, setExportError] = useState("");
-
-  // Adapt mapping to new NEMSAS response schema
-  interface NemsasClaimItem {
-    id: string;
-    amount: number;
-    status?: number | string;
-    claimStatus?: number | string;
-  }
-
-  interface NemsasClaimRaw {
-    id: string;
-    claimName?: string;
-    patientName?: string;
-    patientNumber?: string;
-    patientEnrolleeNumber?: string;
-    serviceDate?: string;
-    amount?: number;
-    claimStatus?: number | string;
-    claimItems?: NemsasClaimItem[];
-    serviceType?: string;
-  }
-
-  // Map Redux claims to table format
-  const tableClaims = useMemo(() => {
-    return (reduxClaims || []).map((claim: NemsasClaimRaw, index) => {
-      // Derive total amount from claimItems if top-level amount missing
-      const totalAmount = Array.isArray(claim.claimItems)
-        ? claim.claimItems.reduce(
-            (sum: number, item: NemsasClaimItem) => sum + (item?.amount || 0),
-            0
-          )
-        : claim.amount || 0;
-
-      // Derive status
-      const rawStatus: string | number | undefined =
-        Array.isArray(claim.claimItems) && claim.claimItems.length > 0
-          ? claim.claimItems[0].claimStatus ?? claim.claimItems[0].status
-          : claim.claimStatus;
-
-      return {
-        id: claim.id || "N/A",
-        sn: index + 1,
-        name: claim.claimName || claim.patientName || "N/A",
-        patientNumber:
-          claim.patientNumber || claim.patientEnrolleeNumber || "N/A",
-        serviceType: claim.serviceType || "N/A",
-        date: claim.serviceDate
-          ? new Date(claim.serviceDate).toLocaleDateString()
-          : "N/A",
-        rawDate: claim.serviceDate || "",
-        amount: totalAmount,
-        formattedAmount: `₦${formatCurrency(totalAmount)}`,
-        status: getClaimStatusText(rawStatus),
-        rawStatus: getClaimStatusText(rawStatus),
-      };
-    });
-  }, [reduxClaims]);
-
-  // General claims fetch (ignores patientNumberFilter)
-  const loadClaims = useCallback(() => {
-    // If we're in patient search mode, don't override with general fetch
-    if (isPatientSearchMode) return;
-
-    const providerIdToUse = currentUser?.providerId;
-    if (!providerIdToUse) {
-      console.error("No providerId on current user");
-      return;
-    }
-
-    dispatch(
-      fetchNemsasClaims({
-        ProviderId: providerIdToUse,
-        NEMSASId: NEMSAS_ID,
-        StartDate: startDate ? new Date(startDate).toISOString() : undefined,
-        EndDate: endDate ? new Date(endDate).toISOString() : undefined,
-        ClaimStatus: claimStatus || undefined,
-        PageNumber: 1,
-        PageSize: 500,
-        SortBy: "createdDate",
-      })
-    );
-  }, [
-    dispatch,
-    currentUser?.providerId,
-    startDate,
-    endDate,
-    claimStatus,
-    isPatientSearchMode,
-  ]);
-
-  // Patient-specific search triggered only by button
-  const searchByPatient = useCallback(() => {
-    const providerIdToUse = currentUser?.providerId;
-    if (!providerIdToUse || !patientNumberFilter.trim()) return;
-
-    setIsPatientSearchMode(true); // Switch to patient-only mode
-
-    dispatch(
-      fetchNemsasClaimsByPatient({
-        patientNumber: patientNumberFilter.trim(),
-        ProviderId: providerIdToUse,
-      })
-    );
-  }, [dispatch, currentUser?.providerId, patientNumberFilter]);
-
-  // New: Clear patient search and go back to normal list
-  const clearPatientSearch = useCallback(() => {
-    setPatientNumberFilter("");
-    setIsPatientSearchMode(false);
-    loadClaims(); // Reload full list with current filters
-  }, [loadClaims]);
-
-  // Load claims when component mounts AND when currentUser is available
+  // Initialize providerId and sshiaId from current user if available
   useEffect(() => {
-    if (currentUser) {
-      loadClaims();
+    if (currentUser?.providerId) {
+      setProviderId(currentUser.providerId);
+      // If SSHIA ID is available from user, set it too
+      if (currentUser.hmoId) {
+        setSshiaId(currentUser.hmoId);
+      }
     }
-  }, [loadClaims, currentUser]);
+  }, [currentUser]);
+
+  // Load claims when providerId and sshiaId are available
+  const loadClaims = useCallback(() => {
+    if (providerId && sshiaId) {
+      dispatch(fetchEmergencyClaims({ providerId, SSHIAId: sshiaId }));
+    }
+  }, [dispatch, providerId, sshiaId]);
+
+  // Load claims when component mounts or IDs change
+  useEffect(() => {
+    loadClaims();
+  }, [loadClaims]);
 
   // Clear errors on unmount
   useEffect(() => {
@@ -246,7 +118,35 @@ export const MDReview = () => {
     };
   }, [dispatch]);
 
-  // Define columns
+  // Map emergency claims to table format
+  const tableClaims = useMemo(() => {
+    return (emergencyClaims || []).map((claim, index) => ({
+      id: claim.id,
+      sn: index + 1,
+      description: claim.description,
+      claimType: claim.claimType,
+      date: formatDate(claim.date),
+      rawDate: claim.date,
+      submittedAmount: claim.submittedAmount,
+      formattedAmount: formatCurrency(claim.submittedAmount),
+      vettedAmount: claim.vettedAmount,
+      formattedVettedAmount: formatCurrency(claim.vettedAmount),
+      status: claim.status,
+      createdDate: formatDate(claim.createdDate),
+      emergencyBillCount: claim.emergencyBillIds?.length || 0,
+    }));
+  }, [emergencyClaims]);
+
+  const routeToEmergencyBillPage = () => {
+    navigate("/emergency/bill-capture");
+  };
+
+  // Handle navigation to MdReviewBills page when a claim is clicked
+  const handleClaimClick = (claimId: string) => {
+    navigate(`/md-review/${claimId}`);
+  };
+
+  // Define columns based on emergency claim schema
   const columns: ColumnDef<(typeof tableClaims)[0]>[] = [
     {
       accessorKey: "sn",
@@ -254,28 +154,28 @@ export const MDReview = () => {
       size: 60,
     },
     {
-      accessorKey: "name",
-      header: "Patient Name",
+      accessorKey: "description",
+      header: "Description",
       enableSorting: true,
     },
     {
-      accessorKey: "patientNumber",
-      header: "Patient Number",
-      enableSorting: true,
-    },
-    {
-      accessorKey: "serviceType",
-      header: "Service Type",
+      accessorKey: "claimType",
+      header: "Claim Type",
       enableSorting: true,
     },
     {
       accessorKey: "date",
-      header: "Service Date",
+      header: "Claim Date",
       enableSorting: true,
     },
     {
       accessorKey: "formattedAmount",
-      header: "Total Amount",
+      header: "Submitted Amount",
+      enableSorting: true,
+    },
+    {
+      accessorKey: "formattedVettedAmount",
+      header: "Vetted Amount",
       enableSorting: true,
     },
     {
@@ -284,9 +184,7 @@ export const MDReview = () => {
       cell: ({ row }) => (
         <span
           style={{
-            color:
-              statusColor[row.original.status as keyof typeof statusColor] ||
-              "#000",
+            color: statusColor[row.original.status] || "#000",
             fontWeight: 600,
           }}
         >
@@ -296,17 +194,20 @@ export const MDReview = () => {
       enableSorting: true,
     },
     {
+      accessorKey: "createdDate",
+      header: "Created Date",
+      enableSorting: true,
+    },
+         {
       id: "action",
       enableHiding: false,
       cell: ({ row }) => (
         <button
-          // variant="outline"
-          // size="sm"
-          className="h-auto py-1 px-2 text-xs"
+          className="h-auto py-1 px-3 text-xs border border-gray-300 rounded hover:bg-gray-50 transition-colors"
           onClick={(e) => {
             e.stopPropagation();
-            setSelectedClaimId(row.original.id);
-            setShowDetailsModal(true);
+           
+            navigate(`/md-review/${row.original.id}`);
           }}
         >
           View
@@ -348,10 +249,12 @@ export const MDReview = () => {
 
   const totalPages = table.getPageCount();
 
-  // Export function
-  const exportClaimsReport = async (options: { IsExcel: boolean }) => {
-    const response = await exportNemsasClaimsReportApi(options);
-    return response;
+  // Handle form submission for provider/SSHIA IDs
+  const handleSubmitIds = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (providerId && sshiaId) {
+      loadClaims();
+    }
   };
 
   // Show loading while waiting for user data
@@ -363,26 +266,17 @@ export const MDReview = () => {
     );
   }
 
-  if (!currentUser?.providerId) {
-    return (
-      <div className="p-6 text-center">
-        No providerId found on logged in user. Please re-login or contact
-        support.
-      </div>
-    );
-  }
-
   return (
     <>
       <div className="p-6">
         <div className="bg-gray-100 overflow-scroll h-full">
           <div className="bg-white rounded-md flex flex-col mb-36">
-            <div className="flex flex-wrap gap-4 md:gap-6">
+            {/* Cards section */}
+            <div className="flex flex-wrap gap-4 md:gap-6 p-6">
               <div className="w-full sm:w-auto flex-1 min-w-[250px]">
                 <DashboardCard
                   indicatorColor="bg-blue-100 text-blue-600"
                   value={"1.4M"}
-                //   percentage="2.5% Last Month"
                   changeColor="text-red-500"
                   title="Total Amount"
                 />
@@ -392,7 +286,6 @@ export const MDReview = () => {
                 <DashboardCard
                   indicatorColor="bg-green-100 text-green-600"
                   value={89}
-                //   percentage="1.8% Last Month"
                   changeColor="text-green-500"
                   title="Total Patient"
                 />
@@ -402,7 +295,6 @@ export const MDReview = () => {
                 <DashboardCard
                   indicatorColor="bg-yellow-100 text-yellow-600"
                   value={"42%"}
-                //   percentage="0.9% Last Month"
                   changeColor="text-blue-500"
                   title="Bill Accuracy"
                 />
@@ -412,16 +304,16 @@ export const MDReview = () => {
             {/* Header */}
             <div className="flex flex-wrap gap-4 justify-between items-center p-6">
               <div className="flex items-center gap-8">
-                <FormHeader>MD Review & Endorsement</FormHeader>
+                <FormHeader>All Claims</FormHeader>
                 <input
                   type="text"
-                  placeholder="Search claims"
+                  placeholder="Search claims by description"
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
                     table.setColumnFilters([
                       {
-                        id: "name",
+                        id: "description",
                         value: e.target.value,
                       },
                     ]);
@@ -432,9 +324,12 @@ export const MDReview = () => {
               <div className="flex gap-4 items-center">
                 <Button
                   variant="outline"
-                  onClick={() => setShowExportModal(true)}
+                  onClick={() => {
+                    // Refresh claims
+                    loadClaims();
+                  }}
                 >
-                  Export
+                  Refresh
                 </Button>
                 <button
                   onClick={routeToEmergencyBillPage}
@@ -446,82 +341,59 @@ export const MDReview = () => {
               </div>
             </div>
 
-            {/* Filters */}
-            <div className="px-6 pb-4 border-b">
-              <div className="flex flex-wrap gap-4 items-end">
-                <div className="flex flex-col gap-1">
-                  <label className="text-sm text-[#555]">Start Date</label>
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="p-2 border border-[#ccc] rounded-sm"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-sm text-[#555]">End Date</label>
-                  <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="p-2 border border-[#ccc] rounded-sm"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-sm text-[#555]">Patient Number</label>
-                  <div className="flex gap-2 items-center">
-                    <input
-                      type="text"
-                      value={patientNumberFilter}
-                      onChange={(e) => setPatientNumberFilter(e.target.value)}
-                      onKeyDown={(e) =>
-                        e.key === "Enter" &&
-                        patientNumberFilter.trim() &&
-                        searchByPatient()
-                      }
-                      placeholder="Enter patient number"
-                      className="p-2 border border-[#ccc] rounded-sm min-w-48"
-                      disabled={loading}
-                    />
-                    {isPatientSearchMode ? (
-                      <Button
-                        variant="outline"
-                        onClick={clearPatientSearch}
-                        className="whitespace-nowrap"
-                      >
-                        Clear Search
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        onClick={searchByPatient}
-                        disabled={!patientNumberFilter.trim() || loading}
-                      >
-                        Search Patient
-                      </Button>
-                    )}
-                  </div>
-                </div>
-                <div className="flex gap-1">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setStartDate("");
-                      setEndDate("");
-                      setClaimStatus("");
-                      setPatientNumberFilter("");
-                      setSearchTerm("");
-                      table.setColumnFilters([]);
-                    }}
-                  >
-                    Apply Filters
-                  </Button>
-                  <Button variant="outline" onClick={loadClaims}>
-                    Reset
-                  </Button>
+            {/* Provider/SSHIA ID Input Section */}
+            {(!providerId || !sshiaId) && (
+              <div className="px-6 pb-6 border-b">
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h3 className="font-medium text-gray-800 mb-3">
+                    Enter Provider and SSHIA IDs
+                  </h3>
+                  <form onSubmit={handleSubmitIds} className="flex flex-wrap gap-4 items-end">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-sm text-gray-600">Provider ID</label>
+                      <input
+                        type="text"
+                        value={providerId}
+                        onChange={(e) => setProviderId(e.target.value)}
+                        className="p-2 border border-gray-300 rounded-md min-w-64"
+                        placeholder="Enter Provider ID"
+                        required
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-sm text-gray-600">SSHIA ID</label>
+                      <input
+                        type="text"
+                        value={sshiaId}
+                        onChange={(e) => setSshiaId(e.target.value)}
+                        className="p-2 border border-gray-300 rounded-md min-w-64"
+                        placeholder="Enter SSHIA ID"
+                        required
+                      />
+                    </div>
+                    <Button type="submit" disabled={!providerId || !sshiaId}>
+                      Load Claims
+                    </Button>
+                  </form>
+                  <p className="text-sm text-gray-500 mt-2">
+                    These IDs are required to fetch emergency claims from the API.
+                  </p>
                 </div>
               </div>
-            </div>
+            )}
+
+            {error && (
+              <div className="px-6 py-3 bg-red-50 border-l-4 border-red-500">
+                <p className="text-red-700">{error}</p>
+                <Button 
+                  onClick={loadClaims} 
+                  className="mt-2 text-red-600 hover:text-red-700"
+                  variant="outline"
+                >
+                  Retry
+                </Button>
+              </div>
+            )}
 
             {/* Content */}
             <div>
@@ -529,21 +401,20 @@ export const MDReview = () => {
                 <div className="flex items-center justify-center h-64">
                   <LoadingSpinner />
                 </div>
-              ) : error ? (
-                <div className="text-red-500 text-center py-10">
-                  <div>{error}</div>
-                  <Button onClick={loadClaims} className="mt-4">
-                    Retry Loading Claims
-                  </Button>
+              ) : !providerId || !sshiaId ? (
+                <div className="text-center py-10">
+                  <div className="text-gray-500 mb-4">
+                    Please enter Provider ID and SSHIA ID to view claims
+                  </div>
                 </div>
               ) : tableClaims.length === 0 ? (
                 <EmptyState
                   icon={<span className="text-2xl">📄</span>}
-                  title="No claims available yet"
-                  description="No claims found for your provider."
+                  title="No emergency claims available"
+                  description={error ? "Failed to load claims" : "No claims found for the provided IDs."}
                   action={
                     <Button onClick={routeToEmergencyBillPage}>
-                      + Create a new patient and Emergency Bill
+                      + Create New Emergency Claim
                     </Button>
                   }
                 />
@@ -551,8 +422,8 @@ export const MDReview = () => {
                 <>
                   {/* Table */}
                   <div className="flex-1 lg:px-0 lg:mt-4">
-                    <Table className="min-w-[800px]">
-                      <TableHeader className="border-y border-[#CDE5F9]">
+                    <Table className="min-w-[1000px]">
+                      <TableHeader className="border-y border-gray-200">
                         {table.getHeaderGroups().map((headerGroup) => (
                           <TableRow key={headerGroup.id}>
                             {headerGroup.headers.map((header) => (
@@ -574,10 +445,7 @@ export const MDReview = () => {
                             <TableRow
                               key={row.id}
                               className="cursor-pointer hover:bg-gray-50 transition-colors"
-                              onClick={() => {
-                                setSelectedClaimId(row.original.id);
-                                setShowDetailsModal(true);
-                              }}
+                              onClick={() => handleClaimClick(row.original.id)}
                             >
                               {row.getVisibleCells().map((cell) => (
                                 <TableCell key={cell.id}>
@@ -599,12 +467,10 @@ export const MDReview = () => {
                                 <span className="font-medium">
                                   No claims found
                                 </span>
-                                <span className="font-medium">
+                                <span className="text-gray-500">
                                   Try adjusting your search criteria
                                 </span>
-                                <Button
-                                  onClick={() => setShowCreateModal(true)}
-                                >
+                                <Button onClick={routeToEmergencyBillPage}>
                                   + Create new claim
                                 </Button>
                               </div>
@@ -634,120 +500,6 @@ export const MDReview = () => {
             </div>
           </div>
         </div>
-
-        {/* Modals */}
-        <Modal
-          open={showCreateModal}
-          onClose={() => setShowCreateModal(false)}
-          title="How would you like to submit your claims?"
-          width="400px"
-        >
-          <div className="flex flex-col gap-4">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowNemsasClaimModal(true);
-                setShowCreateModal(false);
-              }}
-            >
-              Single claim
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowBatchUploadModal(true);
-                setShowCreateModal(false);
-              }}
-            >
-              Batch upload
-            </Button>
-            {/* <Button variant="outline">Generate from HMIS</Button> */}
-          </div>
-        </Modal>
-
-        <NemsasModal
-          open={showNemsasClaimModal}
-          onClose={() => setShowNemsasClaimModal(false)}
-          onSubmitted={() => {
-            loadClaims();
-          }}
-        />
-
-        <BatchUploadModal
-          open={showBatchUploadModal}
-          onClose={() => setShowBatchUploadModal(false)}
-        />
-
-        <NemsasClaimDetailsModal
-          open={showDetailsModal}
-          onClose={() => {
-            setShowDetailsModal(false);
-            setSelectedClaimId(null);
-          }}
-          claimId={selectedClaimId}
-        />
-
-        <Modal
-          open={showExportModal}
-          onClose={() => setShowExportModal(false)}
-          title="Export Claims"
-          width="350px"
-        >
-          <div className="flex flex-col gap-4">
-            <Button
-              onClick={async () => {
-                setExportLoading(true);
-                setExportError("");
-                try {
-                  const blob = await exportClaimsReport({ IsExcel: false });
-                  const url = window.URL.createObjectURL(new Blob([blob]));
-                  const link = document.createElement("a");
-                  link.href = url;
-                  link.setAttribute("download", "claims.csv");
-                  document.body.appendChild(link);
-                  link.click();
-                  link.parentNode?.removeChild(link);
-                  setShowExportModal(false);
-                } catch {
-                  setExportError("Failed to export CSV");
-                }
-                setExportLoading(false);
-              }}
-              disabled={exportLoading}
-            >
-              Export as CSV
-            </Button>
-            <Button
-              onClick={async () => {
-                setExportLoading(true);
-                setExportError("");
-                try {
-                  const blob = await exportClaimsReport({ IsExcel: true });
-                  const url = window.URL.createObjectURL(new Blob([blob]));
-                  const link = document.createElement("a");
-                  link.href = url;
-                  link.setAttribute("download", "claims.xlsx");
-                  document.body.appendChild(link);
-                  link.click();
-                  link.parentNode?.removeChild(link);
-                  setShowExportModal(false);
-                } catch {
-                  setExportError("Failed to export Excel");
-                }
-                setExportLoading(false);
-              }}
-              disabled={exportLoading}
-            >
-              Export as Excel
-            </Button>
-            {exportLoading && (
-              <div className="text-center p-2">Exporting...</div>
-            )}
-            {exportError && (
-              <div className="text-center p-2 text-red-500">{exportError}</div>
-            )}
-          </div>
-        </Modal>
       </div>
     </>
   );

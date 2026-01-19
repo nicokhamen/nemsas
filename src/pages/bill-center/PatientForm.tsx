@@ -47,8 +47,10 @@ export default function PatientForm({
   );
   const [selectedPatient, setSelectedPatient] = useState<any>(existingPatient || null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [isFormValid, setIsFormValid] = useState(false);
-  const [confirmationType, setConfirmationType] = useState<'register' | 'attach'>('register');
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_isFormValid, setIsFormValid] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_confirmationType, setConfirmationType] = useState<'register' | 'attach'>('register');
 
   const [formData, setFormData] = useState<FormData>(
     existingPatient ? {
@@ -76,7 +78,7 @@ export default function PatientForm({
   );
 
   // Handle patient selection from search
-  const handlePatientSelect = (patientId: string, patientData: any) => {
+  const handlePatientSelect = (_patientId: string, patientData: any) => {
     setSelectedPatient(patientData);
     setMode('existing');
     setFormData({
@@ -140,7 +142,7 @@ export default function PatientForm({
       "dateOfBirth",
       "gender",
       "address",
-      "email",
+      // "email",
       "phoneNumber",
     ];
 
@@ -493,7 +495,7 @@ const submitPatientData = () => {
                   type="email"
                   value={formData.email}
                   onChange={(e) => handleInputChange("email", e.target.value)}
-                  required={mode === 'new'}
+                  // required={mode === 'new'}
                   disabled={mode === 'existing'}
                   label="Email"
                 />

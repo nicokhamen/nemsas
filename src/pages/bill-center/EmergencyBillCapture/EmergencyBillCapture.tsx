@@ -38,7 +38,7 @@ export default function EmergencyBillCapture({ patientId }: EmergencyBillCapture
   const {
     formState,
     diagnosisState,
-    fileState,
+   
     productServiceState,
     modalState,
     updateFormState,
@@ -62,8 +62,8 @@ export default function EmergencyBillCapture({ patientId }: EmergencyBillCapture
 
   const {
     loading: billLoading,
-    error: billError,
-    success: billSuccess,
+    // error: billError,
+    // success: billSuccess,
   } = useSelector((state: RootState) => state.encounter);
 
   const handleSubmit = (e: React.FormEvent) => {

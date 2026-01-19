@@ -1,7 +1,7 @@
 import React, { type SelectHTMLAttributes, useState } from "react";
 
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
-  label: string;
+  label?: string;
   endAdornment?: React.ReactNode;
  isLoading?: boolean;
   error?: string | null;

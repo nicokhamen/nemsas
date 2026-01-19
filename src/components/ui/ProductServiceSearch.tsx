@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, Plus, X, Package, Activity, Heart, Eye, Droplets, Stethoscope } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Search, Plus, Package, Activity, Heart, Eye, Droplets, Stethoscope } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProducts } from '../../services/thunks/productThunk';
 import { setSearchParams } from '../../services/slices/productSlice';
@@ -21,13 +21,14 @@ export const ProductServiceSearch: React.FC<ProductServiceSearchProps> = ({
     data: products,
     loading,
     error,
-    searchParams,
+   
   } = useSelector((state: RootState) => state.products);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const searchTimeoutRef = useRef<number | null>(null);
 
   // Get icon based on productCategory
   const getCategoryIcon = (category: string) => {
@@ -173,7 +174,8 @@ export const ProductServiceSearch: React.FC<ProductServiceSearchProps> = ({
             
             <div className="py-1">
               {filteredProducts.map((item) => {
-                const nhisAmount = calculateNhisAmount(item.price, item.nhisPercentage);
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                const _nhisAmount = calculateNhisAmount(item.price, item.nhisPercentage);
                 const netAmount = calculateNetAmount(item.price, item.nhisPercentage);
                 
                 return (

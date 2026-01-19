@@ -1,3 +1,4 @@
+
 import { useDispatch, useSelector } from "react-redux";
 import { useCallback, useEffect, useRef, useState } from "react";
 import FormSelect from "../../components/form/FormSelect";
@@ -39,7 +40,7 @@ export default function EmergencyBillCapture({
   patientId,
 }: EmergencyBillCaptureProps) {
   const dispatch = useDispatch<AppDispatch>();
-  const { success: toastSuccess, error: toastError } = useCustomToast();
+  const { success: toastSuccess } = useCustomToast();
   const navigate = useNavigate();
 
   const routeToAllPatients = useCallback(() => {
@@ -60,7 +61,7 @@ export default function EmergencyBillCapture({
 
   const {
     loading: billLoading,
-    // error: billError,
+    error: billError,
     success: billSuccess,
   } = useSelector((state: RootState) => state.encounter);
 
@@ -70,7 +71,6 @@ export default function EmergencyBillCapture({
   const [encounterStartDateTime, setEncounterStartDateTime] = useState<string>(
     new Date().toISOString().split("T")[0]
   );
-  const [encounterEndDateTime, setEncounterEndDateTime] = useState<string>("");
   const [dischargeStatus, setDischargeStatus] = useState<string>("");
   const [dischargeDate, setDischargeDate] = useState<string>("");
   const [selectedMedicalHistory, setSelectedMedicalHistory] = useState<
@@ -85,73 +85,15 @@ export default function EmergencyBillCapture({
     []
   );
   const [showConfirmModal, setShowConfirmModal] = useState(false); // Modal state
+  // const [isFormValid, setIsFormValid] = useState(false); // Form validation state
   const [validationErrors, setValidationErrors] = useState<string[]>([]); // Validation errors
-  const [dateError, setDateError] = useState<string>(""); // Date-specific error
+
+  // const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  // const [noteInput, setNoteInput] = useState("");
 
   // Refs to track fetched data
   const hasFetchedDepartmentsRef = useRef(false);
   const hasFetchedCategoriesRef = useRef(false);
-
-  // Date validation function
-  const validateDates = (): boolean => {
-    setDateError("");
-    
-    // Parse dates
-    const startDate = new Date(encounterStartDateTime);
-    const endDate = encounterEndDateTime ? new Date(encounterEndDateTime) : null;
-    
-    // Check if start date is valid
-    if (isNaN(startDate.getTime())) {
-      setDateError("Invalid start date");
-      return false;
-    }
-    
-    // If end date is provided, validate it
-    if (endDate) {
-      // Check if end date is valid
-      if (isNaN(endDate.getTime())) {
-        setDateError("Invalid end date");
-        return false;
-      }
-      
-      // Check if end date is after start date
-      if (endDate <= startDate) {
-        setDateError("End date must be after start date");
-        return false;
-      }
-      
-      // Check if end date is in the future (optional, remove if not needed)
-      // const now = new Date();
-      // if (endDate > now) {
-      //   setDateError("End date cannot be in the future");
-      //   return false;
-      // }
-    }
-    
-    // If discharge date is provided, validate it against encounter dates
-    if (dischargeDate) {
-      const discharge = new Date(dischargeDate);
-      
-      if (isNaN(discharge.getTime())) {
-        setDateError("Invalid discharge date");
-        return false;
-      }
-      
-      // Discharge date should be after start date
-      if (discharge < startDate) {
-        setDateError("Discharge date cannot be before encounter start date");
-        return false;
-      }
-      
-      // If end date exists, discharge date should be after it
-      if (endDate && discharge < endDate) {
-        setDateError("Discharge date cannot be before encounter end date");
-        return false;
-      }
-    }
-    
-    return true;
-  };
 
   const handleProductServiceSelect = (item: ProductItem) => {
     // Check if item already exists
@@ -197,11 +139,25 @@ export default function EmergencyBillCapture({
     );
   };
 
+  // const handleDiagnosisChange = (id: string) => {
+  //   setSelectedDiagnoses((prev) =>
+  //     prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]
+  //   );
+  // };
+
+  // const handleFiles = (files: File[]) => {
+  //   setUploadedFiles(files);
+  //   console.log("Selected files:", files);
+  // };
+
+
+
   // Handle note editing
   const handleNoteChange = (id: string, note: string) => {
     // You can perform additional logic here if needed
     console.log(`Note changed for diagnosis ${id}:`, note);
   };
+
 
   // Validate form before submission
   const validateForm = (): boolean => {
@@ -217,15 +173,6 @@ export default function EmergencyBillCapture({
 
     if (!selectedServiceType) {
       errors.push("Please select a service type");
-    }
-
-    if (!encounterStartDateTime) {
-      errors.push("Please select encounter start date");
-    }
-
-    // Validate dates
-    if (!validateDates() && dateError) {
-      errors.push(dateError);
     }
 
     if (diagnosisList.length === 0) {
@@ -248,15 +195,11 @@ export default function EmergencyBillCapture({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Clear previous errors
-    setValidationErrors([]);
-    setDateError("");
-
     // Validate form
     if (!validateForm()) {
       // If there are errors, show them and don't proceed to modal
       if (validationErrors.length > 0) {
-        toastError(validationErrors.join("\n"));
+        alert(validationErrors.join("\n"));
       }
       return;
     }
@@ -269,12 +212,6 @@ export default function EmergencyBillCapture({
   const handleConfirmSubmit = () => {
     // Close modal first
     setShowConfirmModal(false);
-
-    // Double-check validation before submitting
-    if (!validateForm()) {
-      toastError("Please fix the validation errors before submitting");
-      return;
-    }
 
     // Prepare data for submission
     const diagnoses = diagnosisList
@@ -301,9 +238,6 @@ export default function EmergencyBillCapture({
       department: selectedDepartment,
       serviceType: selectedServiceType,
       encounterStartDateTime: new Date(encounterStartDateTime).toISOString(),
-      encounterEndDateTime: encounterEndDateTime 
-        ? new Date(encounterEndDateTime).toISOString() 
-        : undefined,
       dischargeStatus: dischargeStatus,
       dischargeDate: dischargeDate ? new Date(dischargeDate).toISOString() : "",
       diagnoses: diagnoses,
@@ -316,15 +250,9 @@ export default function EmergencyBillCapture({
     console.log("Submitting encounter data:", encounterData);
 
     // Dispatch the createEncounter action
-    dispatch(createEncounter(encounterData))
-      .unwrap()
-      .then(() => {
-        toastSuccess("Bill created successfully");
-        routeToAllPatients();
-      })
-      .catch((error) => {
-        toastError(`Error creating emergency bill: ${error.message || "Unknown error"}`);
-      });
+    dispatch(createEncounter(encounterData));
+    toastSuccess("Bill created successfully");
+    routeToAllPatients();
   };
 
   // Handle modal close
@@ -332,13 +260,14 @@ export default function EmergencyBillCapture({
     setShowConfirmModal(false);
   };
 
-  // Reset form on successful submission
+  // Handle successful submission
   useEffect(() => {
+    // alert("Bill created successfully")
+
     if (billSuccess) {
       setSelectedDepartment("");
       setSelectedServiceType("");
       setEncounterStartDateTime(new Date().toISOString().split("T")[0]);
-      setEncounterEndDateTime("");
       setDischargeStatus("");
       setDischargeDate("");
       setSelectedMedicalHistory([]);
@@ -348,9 +277,12 @@ export default function EmergencyBillCapture({
       setUploadedFiles([]);
       setProductServiceItems([]);
       setValidationErrors([]);
-      setDateError("");
     }
-  }, [billSuccess]);
+
+    if (billError) {
+      alert(`Error creating emergency bill: ${billError}`);
+    }
+  }, [billSuccess, billError]);
 
   return (
     <>
@@ -361,6 +293,11 @@ export default function EmergencyBillCapture({
             <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
               Emergency Bill Capture
             </h1>
+            {/* {patientId && (
+              <p className="text-sm text-green-600 mt-1">
+                Patient ID: {patientId}
+              </p>
+            )} */}
           </div>
 
           {/* Main form grid with 3 columns */}
@@ -404,47 +341,18 @@ export default function EmergencyBillCapture({
             {/* Encounter start date */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Encounter Start Date *
+                Start Date
               </label>
               <input
                 type="date"
                 value={encounterStartDateTime}
-                onChange={(e) => {
-                  setEncounterStartDateTime(e.target.value);
-                  setDateError(""); // Clear error on change
-                }}
-                className={`w-full border rounded-xl p-2 ${
-                  dateError ? "border-red-500" : "border-gray-300"
-                }`}
+                onChange={(e) => setEncounterStartDateTime(e.target.value)}
+                className="w-full border rounded-xl p-2"
                 required
-                max={new Date().toISOString().split("T")[0]} // Cannot select future dates
-              />
-              {dateError && (
-                <p className="text-red-500 text-sm mt-1">{dateError}</p>
-              )}
-            </div>
-
-            {/* Encounter end date (optional) */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Encounter End Date
-              </label>
-              <input
-                type="date"
-                value={encounterEndDateTime}
-                onChange={(e) => {
-                  setEncounterEndDateTime(e.target.value);
-                  setDateError(""); // Clear error on change
-                }}
-                className={`w-full border rounded-xl p-2 ${
-                  dateError ? "border-red-500" : "border-gray-300"
-                }`}
-                min={encounterStartDateTime} // Cannot be before start date
-                // max={new Date().toISOString().split("T")[0]} // Cannot select future dates
               />
             </div>
 
-            {/* Discharge date (optional) */}
+                        {/* Discharge date (optional) */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Discharge Date
@@ -452,15 +360,8 @@ export default function EmergencyBillCapture({
               <input
                 type="date"
                 value={dischargeDate}
-                onChange={(e) => {
-                  setDischargeDate(e.target.value);
-                  setDateError(""); // Clear error on change
-                }}
-                className={`w-full border rounded-xl p-2 ${
-                  dateError ? "border-red-500" : "border-gray-300"
-                }`}
-                min={encounterStartDateTime} // Cannot be before start date
-                // max={new Date().toISOString().split("T")[0]} 
+                onChange={(e) => setDischargeDate(e.target.value)}
+                className="w-full border rounded-xl p-2"
               />
             </div>
 
@@ -483,8 +384,10 @@ export default function EmergencyBillCapture({
               </FormSelect>
             </div>
 
+
+
             {/* Service category checkboxes */}
-            <div className="col-span-3">
+            <div className="col-span-2">
               <h2 className="text-lg font-semibold text-gray-800 mb-4">
                 Service Category (Please check)
               </h2>
@@ -508,6 +411,9 @@ export default function EmergencyBillCapture({
                 ))}
               </div>
             </div>
+
+            {/* Empty column for layout balance */}
+            {/* <div>07</div> */}
           </div>
         </div>
 
@@ -522,6 +428,14 @@ export default function EmergencyBillCapture({
           className="my-6" 
         />
 
+        {/* File upload section for supporting documents */}
+        {/* <div className="p-6 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">
+            Upload Supporting Documents
+          </h2>
+          <FileUpload onFilesSelected={handleFiles} />
+        </div> */}
+
         {/* Attending physician input */}
         <div className="p-6 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">
@@ -532,7 +446,7 @@ export default function EmergencyBillCapture({
               type="text"
               value={attendingPhysician}
               onChange={(e) => setAttendingPhysician(e.target.value)}
-              label="Enter physician name *"
+              label="Enter physician name"
               required
             />
           </div>
@@ -566,15 +480,9 @@ export default function EmergencyBillCapture({
 
           {/* Footer with total amount and submit button */}
           <div className="mt-8 flex justify-between items-center">
-            {/* Display validation errors */}
-            {validationErrors.length > 0 && (
-              <div className="text-red-500 text-sm">
-                {validationErrors.map((error, index) => (
-                  <p key={index}>{error}</p>
-                ))}
-              </div>
-            )}
-            
+            {/* <div className="text-lg font-semibold text-gray-800">
+              Total Amount: ${productServiceItems.reduce((total, item) => total + (item.price || 0) * (item.quantity || 1), 0).toFixed(2)}
+            </div> */}
             <div className="flex gap-3">
               <Button
                 type="submit"

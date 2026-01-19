@@ -73,8 +73,10 @@ const formatDate = (dateString: string | undefined): string => {
 
 export const EmergencyBills = () => {
   // Filter states
-  const [startDate, setStartDate] = useState<string>("");
-  const [endDate, setEndDate] = useState<string>("");
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_startDate, setStartDate] = useState<string>("");
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_endDate, setEndDate] = useState<string>("");
   // const [billStatus, setBillStatus] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
 

@@ -4,11 +4,11 @@ import { useAppSelector, useAppDispatch } from "../../hooks/redux";
 import { useProviderContext } from "../../context/useProviderContext";
 import { fetchEmergencyBillDetails } from "../../services/thunks/emergencyBillsThunk";
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { clearCurrentBill, clearError } from "../../services/slices/emergencyBillSlice";
 
-const EmergencyBillDetails = () => {
-  const { billId } = useParams<{ billId: string }>();
+const EmergencyClaimsView = () => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { selectedProviderId } = useProviderContext();
@@ -20,13 +20,13 @@ const EmergencyBillDetails = () => {
 
   // Fetch emergency bill details when component mounts
   useEffect(() => {
-    if (billId && selectedProviderId) {
+    if (id && selectedProviderId) {
       dispatch(fetchEmergencyBillDetails({ 
-        emergencyBillId: billId, 
+        emergencyBillId: id, 
         providerId: selectedProviderId 
       }));
     }
-  }, [billId, selectedProviderId, dispatch]);
+  }, [id, selectedProviderId, dispatch]);
 
   // Clean up when component unmounts
   useEffect(() => {
@@ -151,12 +151,12 @@ const EmergencyBillDetails = () => {
             {currentBill.dischargeStatus || "Unknown"}
           </span>
         </div>
-        <button 
+        {/* <button 
       onClick={() => navigate(`/emergency-bills/${billId}/edit`)}
         className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white text-sm px-4 py-2 rounded-lg">
           <Pencil className="w-4 h-4" />
           Edit & Resubmit
-        </button>
+        </button> */}
       </div>
 
       {/* Patient Header */}
@@ -338,4 +338,4 @@ const Item = ({
   </div>
 );
 
-export default EmergencyBillDetails;
+export default EmergencyClaimsView;

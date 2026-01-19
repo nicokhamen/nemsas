@@ -99,11 +99,11 @@ const Section = ({
     </div>
 );
 
-const Grid = ({ children }: { children: React.ReactNode }) => (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-4 text-sm">
-        {children}
-    </div>
-);
+// const Grid = ({ children }: { children: React.ReactNode }) => (
+//     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-4 text-sm">
+//         {children}
+//     </div>
+// );
 
 const Item = ({ label, value }: { label: string; value: string }) => (
     <div className="flex justify-between">

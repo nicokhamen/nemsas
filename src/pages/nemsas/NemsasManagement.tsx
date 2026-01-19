@@ -16,7 +16,6 @@ import {
   fetchNemsasClaimsByPatient,
 } from "../../services/thunks/nemsasThunk";
 import { clearError } from "../../services/slices/nemsasSlice";
-import { useProviderContext } from "../../context/useProviderContext";
 
 // Table imports
 import {
@@ -113,7 +112,6 @@ export const NemsasManagement = () => {
 
   // Get user data from Redux auth state
   const currentUser = useSelector((state: RootState) => state.auth.user);
-  const { selectedProviderId } = useProviderContext();
 
   // Export modal state
   const [showExportModal, setShowExportModal] = useState(false);

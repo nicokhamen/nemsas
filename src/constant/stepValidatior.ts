@@ -1,39 +1,41 @@
-import type { Step } from "../pages/enrollee/registration/Individual";
+// to be deleted
 
-import type { UseFormTrigger } from "react-hook-form";
-import type { EnrolleeFormData } from "../types/Enrollee1";
+// import type { Step } from "../pages/enrollee/registration/Individual";
 
-export const useStepValidator = () => {
-  const validateEnrolleeStep = async (
-    trigger: UseFormTrigger<EnrolleeFormData>,
-    setStep: React.Dispatch<React.SetStateAction<Step>>
-  ) => {
-    const isValid = await trigger([
-      "firstName",
-      "lastName",
-      "gender",
-      "occupation",
-      "maritalStatus",
-      "emailAddress",
-      "dateOfBirth",
-      "phoneNumber",
-      "fullAddress",
-      "nationality",
-      "stateOfResidence",
-      "enrolleeTypeId",
-      "planTypeId",
-      "nextOfKin.fullName",
-      "nextOfKin.relationship",
-      "nextOfKin.phoneNumber",
-      "nextOfKin.homeAddress",
-    ] as const);
+// import type { UseFormTrigger } from "react-hook-form";
+// import type { EnrolleeFormData } from "../types/Enrollee1";
 
-    if (isValid) {
-      setStep("plan");
-    } else {
-      console.log("Validation failed: Please fill all required fields");
-    }
-  };
+// export const useStepValidator = () => {
+//   const validateEnrolleeStep = async (
+//     trigger: UseFormTrigger<EnrolleeFormData>,
+//     setStep: React.Dispatch<React.SetStateAction<Step>>
+//   ) => {
+//     const isValid = await trigger([
+//       "firstName",
+//       "lastName",
+//       "gender",
+//       "occupation",
+//       "maritalStatus",
+//       "emailAddress",
+//       "dateOfBirth",
+//       "phoneNumber",
+//       "fullAddress",
+//       "nationality",
+//       "stateOfResidence",
+//       "enrolleeTypeId",
+//       "planTypeId",
+//       "nextOfKin.fullName",
+//       "nextOfKin.relationship",
+//       "nextOfKin.phoneNumber",
+//       "nextOfKin.homeAddress",
+//     ] as const);
 
-  return { validateEnrolleeStep };
-};
+//     if (isValid) {
+//       setStep("plan");
+//     } else {
+//       console.log("Validation failed: Please fill all required fields");
+//     }
+//   };
+
+//   return { validateEnrolleeStep };
+// };

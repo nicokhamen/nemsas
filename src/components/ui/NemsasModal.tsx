@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { CLAIM_STATUSES } from '../../constant/claimStatuses';
 import Modal from "./Modal";
 import Button from "./Button";
 import { useProviderContext } from "../../context/useProviderContext"; // retained for other potential uses, not for providerId source
@@ -42,8 +41,7 @@ const NemsasClaimModal: React.FC<SingleClaimModalProps> = ({
   const [phoneNumber, setPhoneNumber] = useState("");
   // Constrained service types (dropdown)
   const SERVICE_TYPE_OPTIONS = ["Observation", "Admission"] as const;
-  const [serviceType, setServiceType] = useState(""); // must choose one
-  const STATUS_OPTIONS = CLAIM_STATUSES;
+  const [serviceType, setServiceType] = useState(""); 
   const DEFAULT_STATUS = "Pending";
   const [items, setItems] = useState<ServiceItem[]>([
     { name: "", amount: "", claimStatus: DEFAULT_STATUS, quantity: "1" },
