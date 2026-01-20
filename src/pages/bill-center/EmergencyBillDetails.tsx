@@ -137,18 +137,18 @@ const EmergencyBillDetails = () => {
           {/* <span className="font-medium">{currentBill.id}</span> */}
           <span
             className={`text-xs font-semibold px-3 py-1 rounded-full ${
-              currentBill.dischargeStatus === "Rejected"
+              currentBill.status === "Rejected"
                 ? "bg-red-100 text-red-600"
-                : currentBill.dischargeStatus === "Approved"
+                : currentBill.status === "Approved"
                 ? "bg-green-100 text-green-600"
-                : currentBill.dischargeStatus === "Pending"
+                : currentBill.status === "Pending"
                 ? "bg-yellow-100 text-yellow-600"
                 : "bg-blue-100 text-blue-600"
             }`}
           >
             
             {/* No Status */}
-            {currentBill.dischargeStatus || "Unknown"}
+            {currentBill.status || "Unknown"}
           </span>
         </div>
         <button 

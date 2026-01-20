@@ -9,6 +9,14 @@ export type DischargeStatus =
 export type ProductCategory = 'Clinical' | 'Non-Clinical' | string;
 export type InsuranceStatus = 'NHIA' | 'Private' | 'Self-Pay' | string;
 
+export type ClaimStatus =
+  | 'Pending'
+  | 'Approved'
+  | 'Rejected'
+  | 'Paid'
+  | string;
+
+
 export interface ClaimDiagnosis {
   id: string;
   emergencyBillId: string;
@@ -70,6 +78,7 @@ export interface ClaimEmergencyBill {
   encounterStartDateTime: string;
   dischargeStatus: DischargeStatus;
   dischargeDate: string;
+  status: ClaimStatus;
   diagnoses: ClaimDiagnosis[];
   serviceCategories: string[];
   productServices: ClaimProductService[];

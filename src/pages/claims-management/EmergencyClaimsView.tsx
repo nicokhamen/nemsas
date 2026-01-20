@@ -148,7 +148,7 @@ const EmergencyClaimsView = () => {
           >
             
             {/* No Status */}
-            {currentBill.dischargeStatus || "Unknown"}
+            {currentBill.status || "Unknown"}
           </span>
         </div>
         {/* <button 

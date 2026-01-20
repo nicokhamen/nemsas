@@ -39,11 +39,10 @@ import { mdVetEmergencyClaim } from "../../services/thunks/mdRequestThunk";
 import type { ClaimEmergencyBill } from "../../types/ClaimEmergencyBills";
 
 // Status color map for discharge status
-const dischargeStatusColor: Record<string, string> = {
-  Discharged: "#2e7d32",
-  Admitted: "#1976d2",
-  Transferred: "#ff9800",
-  Deceased: "#d32f2f",
+const statusColor: Record<string, string> = {
+  Approved: "#2e7d32",
+  Pending: "#1976d2",
+  Rejected: "#d32f2f",
   Default: "#6b6f80",
 };
 
@@ -165,6 +164,7 @@ const tableBills = useMemo(() => {
     serviceType: bill.serviceType,
     encounterStart: formatDate(bill.encounterStartDateTime),
     dischargeStatus: bill.dischargeStatus,
+    status: bill.status,
     dischargeDate: bill.dischargeDate ? formatDate(bill.dischargeDate) : 'N/A',
     attendingPhysician: bill.attendingPhysician || 'N/A',
     diagnosesCount: bill.diagnoses?.length || 0,
@@ -261,13 +261,13 @@ const tableBills = useMemo(() => {
       accessorKey: "dischargeStatus",
       header: "Status",
       cell: ({ row }) => {
-        const status = row.original.dischargeStatus;
+        const status = row.original.status;
         return (
           <span
             className="px-2 py-1 rounded-full text-xs font-medium"
             style={{
-              backgroundColor: `${dischargeStatusColor[status] || dischargeStatusColor.Default}20`,
-              color: dischargeStatusColor[status] || dischargeStatusColor.Default,
+              backgroundColor: `${statusColor[status] || statusColor.Default}20`,
+              color: statusColor[status] || statusColor.Default,
             }}
           >
             {status}
@@ -353,7 +353,8 @@ const handleApproveBills = async () => {
   setIsProcessing(true);
 
   try {
-    const payload = buildVettingPayload('Approved');
+    const payload = buildVettingPayload( 'Approved',
+      'Approved by Medical Director');
 
     await dispatch(mdVetEmergencyClaim(payload)).unwrap();
 
@@ -425,8 +426,9 @@ const handleModalClose = () => {
                 >
                   ← Back
                 </Button>
+                {/* #{claimId?.slice(0, 8)}... */}
                 <FormHeader>
-                  Emergency Bills for Claim #{claimId?.slice(0, 8)}...
+                  Emergency Bills for Claim 
                 </FormHeader>
               </div>
               <input

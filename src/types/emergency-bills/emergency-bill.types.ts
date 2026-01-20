@@ -14,6 +14,12 @@ export type DischargeStatus =
   | 'Transferred'
   | 'Deceased';
 
+  export type ClaimStatus =
+  | 'Pending'
+  | 'Approved'
+  | 'Rejected'
+  | string;
+
 
 // Main Emergency Bill interface
 export interface EmergencyBill {
@@ -26,6 +32,7 @@ export interface EmergencyBill {
   encounterStartDateTime: string;
   dischargeStatus: DischargeStatus | string;
   dischargeDate: string;
+  status: ClaimStatus;
   diagnoses: Diagnosis[];
   serviceCategories: string[];
   productServices: ProductService[];
