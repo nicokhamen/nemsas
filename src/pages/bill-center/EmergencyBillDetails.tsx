@@ -116,6 +116,7 @@ const EmergencyBillDetails = () => {
   const totalAmount = calculateTotal();
 
   return (
+    <>
     <div className="max-w-5xl mx-auto bg-white rounded-xl border shadow-sm">
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b">
@@ -124,7 +125,6 @@ const EmergencyBillDetails = () => {
           onClick={handleBack}
           className="p-2 rounded-full hover:bg-gray-100" title="Back"
         >
-          {/* <X className="w-5 h-5 text-gray-500" /> */}
           <ArrowLeft className="w-5 h-5 text-gray-500"  />
         </button>
       </div>
@@ -307,6 +307,7 @@ const EmergencyBillDetails = () => {
           </Section>
         )}
     </div>
+    </>
   );
 };
 
@@ -332,7 +333,7 @@ const Item = ({
   value: string;
   className?: string;
 }) => (
-  <div className={`flex justify-between ${className}`}>
+  <div className={`flex flex-col gap-0.5 ${className}`}>
     <span className="text-gray-500">{label}</span>
     <span className="font-medium text-gray-800">{value}</span>
   </div>
