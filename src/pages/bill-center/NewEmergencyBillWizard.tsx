@@ -128,8 +128,9 @@ export default function NewEmergencyBillWizard() {
   const [showFinalConfirm, setShowFinalConfirm] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [createdBillId, setCreatedBillId] = useState<string>("");
-
-  // Patient search state
+  const [showDiagnosisSearch, setShowDiagnosisSearch] = useState(false);
+  const [showProductSearch, setShowProductSearch] = useState(false);
+    // Patient search state
   const [searchTerm, setSearchTerm] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(false);
 
@@ -760,7 +761,7 @@ export default function NewEmergencyBillWizard() {
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold text-gray-800">Diagnosis</h2>
               <button
-                onClick={() => {/* Show add diagnosis modal */}}
+                onClick={() => setShowDiagnosisSearch(true)}
                 className="flex items-center gap-2 px-4 py-2 border border-[#DC2626]  text-[#DC2626]  rounded-sm hover:bg-red-700 transition-colors"
               >
                 <Plus className="h-5 w-5" />
@@ -768,23 +769,21 @@ export default function NewEmergencyBillWizard() {
               </button>
             </div>
 
-            {/* Diagnosis Search */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="flex gap-4 mb-4">
-                <div className="flex-1">
-                  <ICDSearch
-                    onSelect={(diagnosis) => {
-                      handleAddDiagnosis({
-                        type: diagnosis.type || "ICD10",
-                        code: diagnosis.code,
-                        diagnosis: diagnosis.name,
-                      });
-                    }}
-                  />
-                </div>
-                
+            {/* show diagnosis search when the add diagnosis button is clicked */}
+            {showDiagnosisSearch && (
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <ICDSearch
+                  onSelect={(diagnosis) => {
+                    handleAddDiagnosis({
+                      type: diagnosis.type || "ICD10",
+                      code: diagnosis.code,
+                      diagnosis: diagnosis.name,
+                    });
+                    setShowDiagnosisSearch(false);
+                  }}
+                />
               </div>
-            </div>
+            )}
 
             {/* Diagnosis Table */}
             <div className="border border-gray-200 rounded-lg overflow-hidden">
@@ -863,20 +862,22 @@ export default function NewEmergencyBillWizard() {
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold text-gray-800">Services</h2>
               <button
-                onClick={() => {/* Show add service modal */}}
-                className="flex items-center gap-2 px-4 py-2 bg-[#DC2626] text-white rounded-lg hover:bg-red-700 transition-colors"
+                onClick={() => setShowProductSearch(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-[#DC2626] text-white rounded-sm hover:bg-red-700 transition-colors"
               >
                 <Plus className="h-5 w-5" />
                 Add Service
               </button>
             </div>
 
-            {/* Service Search */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <ProductServiceSearch
-                onSelect={handleAddService}
-              />
-            </div>
+            {/* show product search when the add service button is clicked */}
+            {showProductSearch && (
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <ProductServiceSearch
+                  onSelect={handleAddService}
+                />
+              </div>
+            )}
 
             {/* Services Table */}
             <div className="border border-gray-200 rounded-lg overflow-hidden">
