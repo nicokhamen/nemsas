@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { ChevronLeft, Plus, Search, X, Edit2, Trash2, Upload } from "lucide-react";
+import { ChevronLeft, ChevronDown, Plus, Search, X, Edit2, Trash2, Upload } from "lucide-react";
 import type { AppDispatch, RootState } from "../../services/store/store";
 import { useProviderContext } from "../../context/useProviderContext";
 import { createEncounter, fetchDepartments, fetchServiceCategories } from "../../services/thunks/departmentThunk";
@@ -524,149 +524,217 @@ export default function NewEmergencyBillWizard() {
         );
 
       case 2:
+        const emergencyCategories = [
+          { id: "road_traffic", name: "Road traffic accidents" },
+          { id: "obstetric", name: "Obstetric & gynecologic emergencies" },
+          { id: "drug_poisoning", name: "Drug & poising emergencies" },
+          { id: "trauma", name: "Trauma and Injuries" },
+          { id: "pediatric", name: "Pediatric emergency" },
+          { id: "gunshot", name: "Gunshot injuries" },
+          { id: "medical", name: "Medical emergencies" },
+          { id: "assault", name: "Assault Cases" },
+          { id: "snake_bites", name: "Snake bites" },
+          { id: "other", name: "Other" },
+        ];
+
         return (
-          <div className="space-y-6">
-            <h2 className="text-xl font-bold text-gray-800">Emergency Encounter Details</h2>
+          <div className="space-y-8">
+            <h2 className="text-xl font-semibold text-gray-900">Emergency Encounter Details</h2>
             
-            <div className="grid grid-cols-3 gap-4">
-              <FormSelect
-                label="Emergency Type"
-                value={encounterData.emergencyType}
-                onChange={(e) =>
-                  setEncounterData({ ...encounterData, emergencyType: e.target.value })
-                }
-                required
-              >
-                <option value="">Select emergency type</option>
-                <option value="trauma">Trauma</option>
-                <option value="medical">Medical Emergency</option>
-                <option value="cardiac">Cardiac Emergency</option>
-                <option value="respiratory">Respiratory Emergency</option>
-              </FormSelect>
+            {/* Row 1: Emergency Type, Arrival Type, Attending Clinician */}
+            <div className="grid grid-cols-3 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Emergency Type
+                </label>
+                <div className="relative">
+                  <select
+                    value={encounterData.emergencyType}
+                    onChange={(e) =>
+                      setEncounterData({ ...encounterData, emergencyType: e.target.value })
+                    }
+                    className="w-full px-4 py-3 border border-gray-300 rounded-md bg-white appearance-none focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none text-gray-500"
+                  >
+                    <option value="">Select emergency type</option>
+                    <option value="trauma">Trauma</option>
+                    <option value="medical">Medical Emergency</option>
+                    <option value="cardiac">Cardiac Emergency</option>
+                    <option value="respiratory">Respiratory Emergency</option>
+                  </select>
+                  <ChevronDown className="absolute right-3 top-2/3 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
 
-              <FormSelect
-                label="Arrival Type"
-                value={encounterData.arrivalType}
-                onChange={(e) =>
-                  setEncounterData({ ...encounterData, arrivalType: e.target.value })
-                }
-                required
-              >
-                <option value="">Select arrival type</option>
-                <option value="ambulance">Ambulance</option>
-                <option value="walk-in">Walk-in</option>
-                <option value="referral">Referral</option>
-              </FormSelect>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Arrival Type
+                </label>
+                <div className="relative">
+                  <select
+                    value={encounterData.arrivalType}
+                    onChange={(e) =>
+                      setEncounterData({ ...encounterData, arrivalType: e.target.value })
+                    }
+                    className="w-full px-4 py-3 border border-gray-300 rounded-md bg-white appearance-none focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none text-gray-500"
+                  >
+                    <option value="">Select arrival type</option>
+                    <option value="ambulance">Ambulance</option>
+                    <option value="walk-in">Walk-in</option>
+                    <option value="referral">Referral</option>
+                  </select>
+                  <ChevronDown className="absolute right-3 top-2/3 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
 
-              <Input
-                label="Attending Clinician"
-                value={encounterData.attendingClinician}
-                onChange={(e) =>
-                  setEncounterData({ ...encounterData, attendingClinician: e.target.value })
-                }
-                required
-              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Attending Clinician
+                </label>
+                <input
+                  type="text"
+                  value={encounterData.attendingClinician}
+                  onChange={(e) =>
+                    setEncounterData({ ...encounterData, attendingClinician: e.target.value })
+                  }
+                  placeholder="Enter text"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none placeholder-gray-400"
+                />
+              </div>
+            </div>
 
+            {/* Row 2: Encounter Start Date, Encounter End Date, Discharge Status */}
+            <div className="grid grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Encounter Start Date
                 </label>
-                <input
-                  type="date"
-                  value={encounterData.encounterStartDate}
-                  onChange={(e) =>
-                    setEncounterData({ ...encounterData, encounterStartDate: e.target.value })
-                  }
-                  className="w-full border border-gray-300 rounded-lg p-2"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type="date"
+                    value={encounterData.encounterStartDate}
+                    onChange={(e) =>
+                      setEncounterData({ ...encounterData, encounterStartDate: e.target.value })
+                    }
+                    placeholder="mm/dd/yy"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none"
+                  />
+                </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Encounter End Date
                 </label>
-                <input
-                  type="date"
-                  value={encounterData.encounterEndDate}
-                  onChange={(e) =>
-                    setEncounterData({ ...encounterData, encounterEndDate: e.target.value })
-                  }
-                  className="w-full border border-gray-300 rounded-lg p-2"
-                />
+                <div className="relative">
+                  <input
+                    type="date"
+                    value={encounterData.encounterEndDate}
+                    onChange={(e) =>
+                      setEncounterData({ ...encounterData, encounterEndDate: e.target.value })
+                    }
+                    placeholder="mm/dd/yy"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none"
+                  />
+                </div>
               </div>
 
-              <FormSelect
-                label="Discharge Status"
-                value={encounterData.dischargeStatus}
-                onChange={(e) =>
-                  setEncounterData({ ...encounterData, dischargeStatus: e.target.value })
-                }
-                required
-              >
-                <option value="">Select status</option>
-                {dischargeTypeOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </FormSelect>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Discharge Status
+                </label>
+                <div className="relative">
+                  <select
+                    value={encounterData.dischargeStatus}
+                    onChange={(e) =>
+                      setEncounterData({ ...encounterData, dischargeStatus: e.target.value })
+                    }
+                    className="w-full px-4 py-3 border border-gray-300 rounded-md bg-white appearance-none focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none text-gray-500"
+                  >
+                    <option value="">Select status</option>
+                    {dischargeTypeOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-2/3 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+            </div>
 
-              <FormSelect
-                label="Ward/Clinic"
-                value={encounterData.wardClinic}
-                onChange={(e) =>
-                  setEncounterData({ ...encounterData, wardClinic: e.target.value })
-                }
-                required
-                isLoading={departmentsLoading}
-                error={departmentsError}
-              >
-                <option value="">Search ward...</option>
-                {departments.map((dept) => (
-                  <option key={dept.id} value={dept.id}>
-                    {dept.name}
-                  </option>
-                ))}
-              </FormSelect>
+            {/* Row 3: Ward/Clinic, Discharge Date, Service Type */}
+            <div className="grid grid-cols-3 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Ward/Clinic
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={encounterData.wardClinic}
+                    onChange={(e) =>
+                      setEncounterData({ ...encounterData, wardClinic: e.target.value })
+                    }
+                    placeholder="Search ward..."
+                    className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none placeholder-gray-400"
+                    list="ward-options"
+                  />
+                  <Search className="absolute right-3 top-2/3 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
+                  <datalist id="ward-options">
+                    {departments.map((dept) => (
+                      <option key={dept.id} value={dept.name} />
+                    ))}
+                  </datalist>
+                </div>
+              </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Discharge Date
                 </label>
-                <input
-                  type="date"
-                  value={encounterData.dischargeDate}
-                  onChange={(e) =>
-                    setEncounterData({ ...encounterData, dischargeDate: e.target.value })
-                  }
-                  className="w-full border border-gray-300 rounded-lg p-2"
-                />
+                <div className="relative">
+                  <input
+                    type="date"
+                    value={encounterData.dischargeDate}
+                    onChange={(e) =>
+                      setEncounterData({ ...encounterData, dischargeDate: e.target.value })
+                    }
+                    placeholder="mm/dd/yy"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none"
+                  />
+                </div>
               </div>
 
-              <FormSelect
-                label="Service Type"
-                value={encounterData.serviceType}
-                onChange={(e) =>
-                  setEncounterData({ ...encounterData, serviceType: e.target.value })
-                }
-                required
-              >
-                <option value="">Select service type</option>
-                {serviceTypeOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </FormSelect>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Service Type
+                </label>
+                <div className="relative">
+                  <select
+                    value={encounterData.serviceType}
+                    onChange={(e) =>
+                      setEncounterData({ ...encounterData, serviceType: e.target.value })
+                    }
+                    className="w-full px-4 py-3 border border-gray-300 rounded-md bg-white appearance-none focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none text-gray-500"
+                  >
+                    <option value="">Select service type</option>
+                    {serviceTypeOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-2/3 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
             </div>
 
-            {/* Medical History Checkboxes */}
-            <div className="mt-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Medical History</h3>
-              <div className="grid grid-cols-3 gap-4">
-                {categories.map((category) => (
-                  <label key={category.id} className="flex items-center space-x-2 cursor-pointer">
+            {/* Emergency Category Checkboxes */}
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold text-gray-900 mb-6">Emergency Category</h3>
+              <div className="grid grid-cols-3 gap-x-8 gap-y-4">
+                {emergencyCategories.map((category) => (
+                  <label key={category.id} className="flex items-center space-x-3 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={encounterData.selectedMedicalHistory.includes(category.id)}
@@ -676,7 +744,7 @@ export default function NewEmergencyBillWizard() {
                           : encounterData.selectedMedicalHistory.filter((id) => id !== category.id);
                         setEncounterData({ ...encounterData, selectedMedicalHistory: newHistory });
                       }}
-                      className="w-4 h-4 text-[#DC2626] border-gray-300 rounded focus:ring-[#DC2626]"
+                      className="w-5 h-5 text-[#3B7A6F] border-2 border-[#3B7A6F] rounded focus:ring-[#3B7A6F] bg-white"
                     />
                     <span className="text-sm text-gray-700">{category.name}</span>
                   </label>
@@ -693,7 +761,7 @@ export default function NewEmergencyBillWizard() {
               <h2 className="text-xl font-bold text-gray-800">Diagnosis</h2>
               <button
                 onClick={() => {/* Show add diagnosis modal */}}
-                className="flex items-center gap-2 px-4 py-2 bg-[#DC2626] text-white rounded-lg hover:bg-red-700 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 border border-[#DC2626]  text-[#DC2626]  rounded-sm hover:bg-red-700 transition-colors"
               >
                 <Plus className="h-5 w-5" />
                 Add Diagnosis
@@ -714,13 +782,7 @@ export default function NewEmergencyBillWizard() {
                     }}
                   />
                 </div>
-                <FormSelect
-                  label="Type"
-                  value="ICD10"
-                  onChange={() => {}}
-                >
-                  <option value="ICD10">ICD10</option>
-                </FormSelect>
+                
               </div>
             </div>
 
@@ -1097,7 +1159,7 @@ export default function NewEmergencyBillWizard() {
           <StepIndicator currentStep={currentStep} totalSteps={5} />
 
           {/* Step Content */}
-          <div className="mt-10 max-w-4xl">{renderStepContent()}</div>
+          <div className="mt-10 max-w">{renderStepContent()}</div>
 
           {/* Navigation Buttons */}
           <div className="mt-10 flex  items-center max-w-4xl">

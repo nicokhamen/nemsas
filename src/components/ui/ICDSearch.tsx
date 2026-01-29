@@ -135,7 +135,7 @@ export const ICDSearch: React.FC<{
           <option value="ICD-10">ICD-10</option>
           <option value="ICD-11">ICD-11</option>
         </select>
-        <ChevronDown size={20} className="absolute right-2 top-2/3 transform -translate-y-1/2 text-gray-500" />
+        <ChevronDown size={20} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500" />
       </div>
       {system && (
         <div className="w-full space-y-3 animate-fadeIn relative" ref={dropdownRef}>
