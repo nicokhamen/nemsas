@@ -18,48 +18,64 @@ import { ICDSearch } from "../../components/ui/ICDSearch";
 import type { ProductItem } from "../../types/productType";
 
 // Step indicator component
-const StepIndicator = ({ currentStep, totalSteps }: { currentStep: number; totalSteps: number }) => {
+const StepIndicator = ({
+  currentStep,
+  totalSteps,
+}: {
+  currentStep: number;
+  totalSteps: number;
+}) => {
   const steps = Array.from({ length: totalSteps }, (_, i) => i + 1);
 
   return (
-    <div className="flex items-center justify-center">
-      {steps.map((step, index) => (
-        <div key={step} className="flex items-center">
-          <div className="flex flex-col items-center">
-            <div
-              className={`flex items-center justify-center w-12 h-12 rounded-full ${
-                step < currentStep
-                  ? "bg-[#DC2626] text-white"
-                  : step === currentStep
-                  ? "bg-[#DC2626] text-white"
-                  : "bg-gray-400 text-white"
-              }`}
-            >
-              {step < currentStep ? (
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+    <div className="flex items-center justify-center gap-4">
+      {steps.map((step, index) => {
+        const isCompleted = step <= currentStep;
+
+        return (
+          <div key={step} className="flex items-center">
+            {/* Step icon + label */}
+            <div className="flex items-center gap-2">
+              <div
+                className={`flex items-center justify-center w-6 h-6 rounded-full ${
+                  isCompleted
+                    ? "bg-[#DC2626] text-white"
+                    : "bg-gray-400 text-white"
+                }`}
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
                   <path
                     fillRule="evenodd"
                     d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
                     clipRule="evenodd"
                   />
                 </svg>
-              ) : (
-                <span className="text-base font-semibold">{step}</span>
-              )}
+              </div>
+
+              <span
+                className={`text-lg font-medium ${
+                  isCompleted ? "text-gray-900" : "text-gray-400"
+                }`}
+              >
+                Step {step}
+              </span>
             </div>
-            <span className="mt-2 text-xs font-medium text-gray-600 whitespace-nowrap">
-              Step {step}
-            </span>
+
+            {/* Connector */}
+            {index < steps.length - 1 && (
+              <div
+                className={`mx-4 h-px w-16 ${
+                  step < currentStep ? "bg-[#DC2626]" : "bg-gray-300"
+                }`}
+              />
+            )}
           </div>
-          {index < steps.length - 1 && (
-            <div
-              className={`w-32 h-0.5 mx-2 ${
-                step < currentStep ? "bg-[#DC2626]" : "bg-gray-300"
-              }`}
-            />
-          )}
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };
@@ -440,9 +456,7 @@ export default function NewEmergencyBillWizard() {
                 Patient Number
               </label>
               <div className="relative">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <Search className="h-5 w-5 text-gray-400" />
-                </div>
+                
                 <input
                   type="text"
                   value={searchTerm}
@@ -452,8 +466,11 @@ export default function NewEmergencyBillWizard() {
                   }}
                   onFocus={() => setShowSearchResults(true)}
                   placeholder="Search patient number..."
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none text-gray-900 placeholder-gray-400"
+                  className="w-full pl-5 pr-10 py-2.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none text-gray-900 placeholder-gray-400"
                 />
+                <div className="absolute right-3 top-2/3 -translate-y-1/2 pointer-events-none">
+                  <Search className="h-5 w-5 text-gray-400" />
+                </div>
               </div>
 
               {/* Search Results Dropdown */}
@@ -1070,13 +1087,12 @@ export default function NewEmergencyBillWizard() {
   return (
     <div className="min-h-screen bg-gray-50 py-6">
       <div className="max-w-6xl mx-auto px-6">
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm px-8 py-6 mb-6">
-          <h1 className="text-2xl font-semibold text-gray-700">Create New Bill</h1>
-        </div>
+     
 
         {/* Main Content */}
         <div className="bg-white rounded-lg shadow-sm px-8 py-10">
+        <h1 className="text-2xl font-semibold text-gray-700 border-b-2  border-gray-200 pb-4 mb-8 ">Create New Bill</h1>
+
           {/* Step Indicator */}
           <StepIndicator currentStep={currentStep} totalSteps={5} />
 
@@ -1084,29 +1100,14 @@ export default function NewEmergencyBillWizard() {
           <div className="mt-10 max-w-4xl">{renderStepContent()}</div>
 
           {/* Navigation Buttons */}
-          <div className="mt-10 flex justify-between items-center max-w-4xl">
-            {currentStep > 1 ? (
-              <button
-                onClick={goToPreviousStep}
-                className="flex items-center gap-2 px-6 py-2.5 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors font-normal"
-              >
-                <ChevronLeft className="h-5 w-5" />
-                Previous
-              </button>
-            ) : (
-              <button
-                onClick={() => navigate("/emergency/bills")}
-                className="px-8 py-2.5 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors font-normal"
-              >
-                Cancel
-              </button>
-            )}
+          <div className="mt-10 flex  items-center max-w-4xl">
+           
 
             {currentStep < 5 ? (
               <button
                 onClick={goToNextStep}
                 disabled={isNextDisabled()}
-                className={`px-8 py-2.5 rounded-md font-normal transition-colors ${
+                className={`px-8 py-2.5 rounded-sm font-normal transition-colors w-50 ${
                   isNextDisabled()
                     ? "bg-red-200 text-red-400 cursor-not-allowed"
                     : "bg-[#DC2626] text-white hover:bg-red-700"
@@ -1118,13 +1119,30 @@ export default function NewEmergencyBillWizard() {
               <button
                 onClick={() => setShowFinalConfirm(true)}
                 disabled={encounterLoading}
-                className={`px-8 py-2.5 rounded-md font-normal transition-colors ${
+                className={`px-8 py-2.5 rounded-sm font-normal transition-colors w-50  ${
                   encounterLoading
                     ? "bg-red-200 text-red-400 cursor-not-allowed"
                     : "bg-[#DC2626] text-white hover:bg-red-700"
                 }`}
               >
                 {encounterLoading ? "Submitting..." : "Submit"}
+              </button>
+            )}
+
+{currentStep > 1 ? (
+              <button
+                onClick={goToPreviousStep}
+                className="flex items-center gap-2 px-6 py-2.5  text-gray-700 hover:bg-gray-50 transition-colors font-semibold"
+              >
+                <ChevronLeft className="h-5 w-5" />
+                Previous
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate("/emergency/bills")}
+                className="px-8 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors font-semibold"
+              >
+                Cancel
               </button>
             )}
           </div>
