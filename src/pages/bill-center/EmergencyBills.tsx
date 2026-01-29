@@ -357,7 +357,7 @@ export const EmergencyBills = () => {
             {/* Filters */}
             {/* <div className="px-6 py-4 border-b bg-gray-50"> */}
             <div className="flex flex-wrap gap-4 justify-between items-center p-6">
-              <h3 className="text-sm font-semibold text-gray-700 mb-4">Filter By</h3>
+              <h3 className="text-lg font-semibold text-gray-700 mb-4">Filter By</h3>
               <div className="grid grid-cols-12 gap-4 items-end">
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -473,9 +473,9 @@ export const EmergencyBills = () => {
                   {/* Table */}
                   <div className="flex-1 lg:px-0 lg:mt-4">
                     <Table className="min-w-[800px]">
-                      <TableHeader className="border-y border-[#E4F7F1] bg-[#E4F7F1]">
+                      <TableHeader className=" bg-[#E4F7F1] hover:bg-[#E4F7F1] transition-colors">
                         {table.getHeaderGroups().map((headerGroup) => (
-                          <TableRow key={headerGroup.id}>
+                          <TableRow key={headerGroup.id} className="hover:bg-[#E4F7F1] transition-colors border-b border-[#E4F7F1]">
                             {headerGroup.headers.map((header) => (
                               <TableHead key={header.id}>
                                 {header.isPlaceholder
@@ -494,7 +494,7 @@ export const EmergencyBills = () => {
                           table.getRowModel().rows.map((row) => (
                             <TableRow
                               key={row.id}
-                              className="cursor-pointer hover:bg-gray-50 transition-colors"
+                              className="cursor-pointer hover:bg-[#FFFFFF] transition-colors"
                               onClick={() => {
                                 // Navigate to bill details
                                 navigate(`/emergency/bills/${row.original.id}`);
@@ -514,7 +514,7 @@ export const EmergencyBills = () => {
                           <TableRow>
                             <TableCell
                               colSpan={columns.length}
-                              className="h-24 text-center"
+                              className="h-24 text-center hover:bg-[#FFFFFF] transition-colors"
                             >
                               <div className="flex flex-col items-center gap-4">
                                 <span className="font-medium">

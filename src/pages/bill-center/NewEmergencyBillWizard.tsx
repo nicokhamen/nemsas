@@ -762,7 +762,7 @@ export default function NewEmergencyBillWizard() {
               <h2 className="text-xl font-bold text-gray-800">Diagnosis</h2>
               <button
                 onClick={() => setShowDiagnosisSearch(true)}
-                className="flex items-center gap-2 px-4 py-2 border border-[#DC2626]  text-[#DC2626]  rounded-sm hover:bg-red-700 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 border border-[#DC2626]  text-[#DC2626]  rounded-sm hover:bg-red-200 transition-colors"
               >
                 <Plus className="h-5 w-5" />
                 Add Diagnosis

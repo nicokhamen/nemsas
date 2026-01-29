@@ -3,11 +3,11 @@ import { useSelector } from "react-redux";
 import type { RootState } from "../../services/store/store";
 import EmptyState from "../../components/ui/EmptyState";
 import Button from "../../components/ui/Button";
-import FormHeader from "../../components/form/FormHeader";
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 import { useAppDispatch } from "../../hooks/redux";
 import { clearError } from "../../services/slices/emergencyClaimSlice";
 import { fetchEmergencyClaims } from "../../services/thunks/emergencyClaimThunk";
+import { Search, Filter, Upload, Eye, FileText, Users, PieChart } from "lucide-react";
 
 // Table imports
 import {
@@ -32,15 +32,73 @@ import {
 } from "../../components/table";
 import { Pagination } from "../../components/pagination";
 import { useNavigate } from "react-router-dom";
-import DashboardCard from "../../components/ui/DashboardCardItems/DashboardCard";
 
 // Status color map
 const statusColor: Record<string, string> = {
-  Pending: "#ff9800",
+  "Awaiting Review": "#D97706",
+  "Pending PIU Review": "#D97706",
+  Pending: "#D97706",
   Processing: "#1976d2",
   Rejected: "#d32f2f",
   Approved: "#2e7d32",
+  Vetted: "#059669",
   Paid: "#6b6f80",
+};
+
+// Circular Progress Component
+const CircularProgress = ({ 
+  percentage, 
+  pathColor = "#DC2626", 
+  textColor = "#374151", 
+  bgColor = "#FEE2E2" 
+}: { 
+  percentage: number; 
+  pathColor?: string; 
+  textColor?: string; 
+  bgColor?: string; 
+}) => {
+  const radius = 20;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+  const size = 56;
+  const center = size / 2;
+  
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg 
+        width={size} 
+        height={size} 
+        viewBox={`0 0 ${size} ${size}`}
+        className="transform -rotate-90"
+      >
+        <circle
+          cx={center}
+          cy={center}
+          r={radius}
+          stroke={bgColor}
+          strokeWidth="5"
+          fill="none"
+        />
+        <circle
+          cx={center}
+          cy={center}
+          r={radius}
+          stroke={pathColor}
+          strokeWidth="5"
+          fill="none"
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+        />
+      </svg>
+      <span 
+        className="absolute inset-0 flex items-center justify-center text-sm font-semibold"
+        style={{ color: textColor }}
+      >
+        {percentage}%
+      </span>
+    </div>
+  );
 };
 
 // Format currency
@@ -118,21 +176,40 @@ export const MDReview = () => {
     };
   }, [dispatch]);
 
+  // Calculate processing delay
+  const calculateProcessingDelay = (createdDate: string): string => {
+    const created = new Date(createdDate);
+    const now = new Date();
+    const diffMs = now.getTime() - created.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (diffDays > 0) {
+      return `${diffDays}days ${diffHours}hr ${diffMins}min`;
+    } else if (diffHours > 0) {
+      return `${diffHours}hr ${diffMins}min`;
+    }
+    return `${diffMins}min`;
+  };
+
   // Map emergency claims to table format
   const tableClaims = useMemo(() => {
     return (emergencyClaims || []).map((claim, index) => ({
       id: claim.id,
       sn: index + 1,
+      claimId: `FCT/ETC/${String(index + 2).padStart(3, '0')}`,
       description: claim.description,
-      claimType: claim.claimType,
+      claimType: claim.claimType || "ETC",
       date: formatDate(claim.date),
       rawDate: claim.date,
       submittedAmount: claim.submittedAmount,
       formattedAmount: formatCurrency(claim.submittedAmount),
       vettedAmount: claim.vettedAmount,
       formattedVettedAmount: formatCurrency(claim.vettedAmount),
+      vettedDate: formatDate(claim.createdDate),
       status: claim.status,
-      createdDate: formatDate(claim.createdDate),
+      processingDelay: calculateProcessingDelay(claim.createdDate),
       emergencyBillCount: claim.emergencyBillIds?.length || 0,
     }));
   }, [emergencyClaims]);
@@ -146,7 +223,7 @@ export const MDReview = () => {
     navigate(`/md-review/${claimId}`);
   };
 
-  // Define columns based on emergency claim schema
+  // Define columns based on design
   const columns: ColumnDef<(typeof tableClaims)[0]>[] = [
     {
       accessorKey: "sn",
@@ -154,18 +231,24 @@ export const MDReview = () => {
       size: 60,
     },
     {
+      accessorKey: "claimId",
+      header: "Claim ID",
+      enableSorting: true,
+    },
+    {
       accessorKey: "description",
-      header: "Description",
+      header: "Claim Description",
       enableSorting: true,
     },
     {
       accessorKey: "claimType",
       header: "Claim Type",
       enableSorting: true,
+      size: 80,
     },
     {
       accessorKey: "date",
-      header: "Claim Date",
+      header: "Date",
       enableSorting: true,
     },
     {
@@ -179,13 +262,18 @@ export const MDReview = () => {
       enableSorting: true,
     },
     {
+      accessorKey: "vettedDate",
+      header: "Vetted Date",
+      enableSorting: true,
+    },
+    {
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => (
         <span
           style={{
-            color: statusColor[row.original.status] || "#000",
-            fontWeight: 600,
+            color: statusColor[row.original.status] || "#D97706",
+            fontWeight: 500,
           }}
         >
           {row.original.status}
@@ -194,23 +282,24 @@ export const MDReview = () => {
       enableSorting: true,
     },
     {
-      accessorKey: "createdDate",
-      header: "Created Date",
+      accessorKey: "processingDelay",
+      header: "Processing Delay",
       enableSorting: true,
     },
-         {
+    {
       id: "action",
+      header: "Action",
       enableHiding: false,
       cell: ({ row }) => (
         <button
-          className="h-auto py-1 px-3 text-xs border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+          className="flex items-center justify-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
           onClick={(e) => {
             e.stopPropagation();
-           
             navigate(`/md-review/${row.original.id}`);
           }}
+          title="View Details"
         >
-          View
+          <Eye className="h-5 w-5" />
         </button>
       ),
     },
@@ -266,238 +355,261 @@ export const MDReview = () => {
     );
   }
 
+  // Calculate stats
+  const totalAmount = useMemo(() => {
+    const total = tableClaims.reduce((sum, claim) => sum + (claim.submittedAmount || 0), 0);
+    if (total >= 1000000) return `${(total / 1000000).toFixed(2)}M`;
+    if (total >= 1000) return `${(total / 1000).toFixed(0)}K`;
+    return total.toString();
+  }, [tableClaims]);
+
+  const totalPatients = tableClaims.length;
+  const billAccuracy = 75; // This would be calculated from actual data
+
   return (
     <>
-      <div className="p-6">
-        <div className="bg-gray-100 overflow-scroll h-full">
-          <div className="bg-white rounded-md flex flex-col mb-36">
-            {/* Cards section */}
-            <div className="flex flex-wrap gap-4 md:gap-6 p-6">
-              <div className="w-full sm:w-auto flex-1 min-w-[250px]">
-                <DashboardCard
-                  indicatorColor="bg-blue-100 text-blue-600"
-                  value={"1.4M"}
-                  changeColor="text-red-500"
-                  title="Total Amount"
-                />
-              </div>
-
-              <div className="w-full sm:w-auto flex-1 min-w-[250px]">
-                <DashboardCard
-                  indicatorColor="bg-green-100 text-green-600"
-                  value={89}
-                  changeColor="text-green-500"
-                  title="Total Patient"
-                />
-              </div>
-
-              <div className="w-full sm:w-auto flex-1 min-w-[250px]">
-                <DashboardCard
-                  indicatorColor="bg-yellow-100 text-yellow-600"
-                  value={"42%"}
-                  changeColor="text-blue-500"
-                  title="Bill Accuracy"
-                />
-              </div>
+      <div className="p-6 space-y-6">
+        {/* Stat Cards */}
+        <div className="grid grid-cols-3 gap-6 bg-white rounded-lg shadow-sm p-6">
+          {/* Total Amount Card */}
+          <div className="bg-[#E4F7F0] rounded-lg p-6 flex items-center gap-4">
+            <div className="w-12 h-12 bg-[#C4F2E1] rounded-lg flex items-center justify-center">
+              <FileText className="h-6 w-6 text-green-600" />
             </div>
-
-            {/* Header */}
-            <div className="flex flex-wrap gap-4 justify-between items-center p-6">
-              <div className="flex items-center gap-8">
-                <FormHeader>All Claims</FormHeader>
-                <input
-                  type="text"
-                  placeholder="Search claims by description"
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    table.setColumnFilters([
-                      {
-                        id: "description",
-                        value: e.target.value,
-                      },
-                    ]);
-                  }}
-                  className="border rounded-lg hidden lg:block px-4 py-2 lg:w-96 lg:max-w-2xl focus:outline-none"
-                />
-              </div>
-              <div className="flex gap-4 items-center">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    // Refresh claims
-                    loadClaims();
-                  }}
-                >
-                  Refresh
-                </Button>
-                <button
-                  onClick={routeToEmergencyBillPage}
-                  title="Create Emergency Bill"
-                  className="text-red-600 bg-white hover:bg-gray-100 border border-red-600 px-3 py-2 rounded-md transition-colors"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            {/* Provider/SSHIA ID Input Section */}
-            {(!providerId || !sshiaId) && (
-              <div className="px-6 pb-6 border-b">
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h3 className="font-medium text-gray-800 mb-3">
-                    Enter Provider and SSHIA IDs
-                  </h3>
-                  <form onSubmit={handleSubmitIds} className="flex flex-wrap gap-4 items-end">
-                    <div className="flex flex-col gap-1">
-                      <label className="text-sm text-gray-600">Provider ID</label>
-                      <input
-                        type="text"
-                        value={providerId}
-                        onChange={(e) => setProviderId(e.target.value)}
-                        className="p-2 border border-gray-300 rounded-md min-w-64"
-                        placeholder="Enter Provider ID"
-                        required
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <label className="text-sm text-gray-600">SSHIA ID</label>
-                      <input
-                        type="text"
-                        value={sshiaId}
-                        onChange={(e) => setSshiaId(e.target.value)}
-                        className="p-2 border border-gray-300 rounded-md min-w-64"
-                        placeholder="Enter SSHIA ID"
-                        required
-                      />
-                    </div>
-                    <Button type="submit" disabled={!providerId || !sshiaId}>
-                      Load Claims
-                    </Button>
-                  </form>
-                  <p className="text-sm text-gray-500 mt-2">
-                    These IDs are required to fetch emergency claims from the API.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {error && (
-              <div className="px-6 py-3 bg-red-50 border-l-4 border-red-500">
-                <p className="text-red-700">{error}</p>
-                <Button 
-                  onClick={loadClaims} 
-                  className="mt-2 text-red-600 hover:text-red-700"
-                  variant="outline"
-                >
-                  Retry
-                </Button>
-              </div>
-            )}
-
-            {/* Content */}
             <div>
-              {loading ? (
-                <div className="flex items-center justify-center h-64">
-                  <LoadingSpinner />
-                </div>
-              ) : !providerId || !sshiaId ? (
-                <div className="text-center py-10">
-                  <div className="text-gray-500 mb-4">
-                    Please enter Provider ID and SSHIA ID to view claims
-                  </div>
-                </div>
-              ) : tableClaims.length === 0 ? (
-                <EmptyState
-                  icon={<span className="text-2xl">📄</span>}
-                  title="No emergency claims available"
-                  description={error ? "Failed to load claims" : "No claims found for the provided IDs."}
-                  action={
-                    <Button onClick={routeToEmergencyBillPage}>
-                      + Create New Emergency Claim
-                    </Button>
-                  }
-                />
-              ) : (
-                <>
-                  {/* Table */}
-                  <div className="flex-1 lg:px-0 lg:mt-4">
-                    <Table className="min-w-[1000px]">
-                      <TableHeader className="border-y border-gray-200">
-                        {table.getHeaderGroups().map((headerGroup) => (
-                          <TableRow key={headerGroup.id}>
-                            {headerGroup.headers.map((header) => (
-                              <TableHead key={header.id}>
-                                {header.isPlaceholder
-                                  ? null
-                                  : flexRender(
-                                      header.column.columnDef.header,
-                                      header.getContext()
-                                    )}
-                              </TableHead>
-                            ))}
-                          </TableRow>
-                        ))}
-                      </TableHeader>
-                      <TableBody>
-                        {table.getRowModel().rows.length ? (
-                          table.getRowModel().rows.map((row) => (
-                            <TableRow
-                              key={row.id}
-                              className="cursor-pointer hover:bg-gray-50 transition-colors"
-                              onClick={() => handleClaimClick(row.original.id)}
-                            >
-                              {row.getVisibleCells().map((cell) => (
-                                <TableCell key={cell.id}>
-                                  {flexRender(
-                                    cell.column.columnDef.cell,
-                                    cell.getContext()
-                                  )}
-                                </TableCell>
-                              ))}
-                            </TableRow>
-                          ))
-                        ) : (
-                          <TableRow>
-                            <TableCell
-                              colSpan={columns.length}
-                              className="h-24 text-center"
-                            >
-                              <div className="flex flex-col items-center gap-4">
-                                <span className="font-medium">
-                                  No claims found
-                                </span>
-                                <span className="text-gray-500">
-                                  Try adjusting your search criteria
-                                </span>
-                                <Button onClick={routeToEmergencyBillPage}>
-                                  + Create new claim
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
+              <p className="text-3xl font-bold text-gray-900">{totalAmount}</p>
+              <p className="text-sm text-gray-500">Total Amount</p>
+            </div>
+          </div>
 
-                  {/* Pagination */}
-                  <div className="p-4 flex items-center justify-end">
-                    <Pagination
-                      totalEntriesSize={table.getFilteredRowModel().rows.length}
-                      currentPage={pageIndex + 1}
-                      totalPages={totalPages}
-                      pageSize={pageSize}
-                      onPageChange={(p) => setPageIndex(p - 1)}
-                      onPageSizeChange={(size) => {
-                        setPageSize(size);
-                        setPageIndex(0);
-                      }}
+          {/* Total Patient Card */}
+          <div className="bg-[#DB84000D] rounded-lg p-6 flex items-center gap-4">
+            <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
+              <Users className="h-6 w-6 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-3xl font-bold text-gray-900">{totalPatients}</p>
+              <p className="text-sm text-gray-500">Total Patient</p>
+            </div>
+          </div>
+
+          {/* Bill Accuracy Card */}
+          <div className="bg-[#FDEDED] rounded-lg  p-6 flex items-center gap-4">
+            <CircularProgress percentage={billAccuracy} 
+            pathColor="#DC2626"
+            textColor="#DC2626"
+            bgColor="#FFFFFF"
+            />
+            <div>
+              <p className="text-3xl font-bold text-gray-900">{billAccuracy}%</p>
+              <p className="text-sm text-gray-500">Bill Accuracy</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content Card */}
+        <div className="bg-white rounded-lg shadow-sm">
+          {/* Search and Actions */}
+          <div className="p-6 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4 flex-1">
+              <input
+                type="text"
+                placeholder="Search claim description..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  table.setColumnFilters([
+                    {
+                      id: "description",
+                      value: e.target.value,
+                    },
+                  ]);
+                }}
+                className="flex-1 max-w-md px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none"
+              />
+              <button
+                onClick={() => loadClaims()}
+                className="flex w-50 items-center justify-center gap-2 min-w-[120px] px-6 py-2.5 bg-[#DC2626] text-white rounded-sm hover:bg-red-700 transition-colors font-medium"
+              >
+                <Search className="h-4 w-4" />
+                Search
+              </button>
+              <button
+                onClick={() => {/* Filter functionality */}}
+                className="flex w-50 items-center justify-center gap-2 min-w-[100px] px-4 py-2.5 border border-gray-300 text-gray-700 rounded-sm hover:bg-gray-50 transition-colors font-medium"
+              >
+                <Filter className="h-4 w-4" />
+                Filter
+              </button>
+            </div>
+            <button
+              onClick={() => {/* Export functionality */}}
+              className="flex items-center gap-2 px-5 py-2.5 border border-gray-300 text-gray-700 rounded-sm hover:bg-gray-50 transition-colors font-medium"
+            >
+              <Upload className="h-4 w-4" />
+              Export
+            </button>
+          </div>
+
+          {/* Provider/SSHIA ID Input Section */}
+          {(!providerId || !sshiaId) && (
+            <div className="px-6 pb-6 border-b">
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h3 className="font-medium text-gray-800 mb-3">
+                  Enter Provider and SSHIA IDs
+                </h3>
+                <form onSubmit={handleSubmitIds} className="flex flex-wrap gap-4 items-end">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm text-gray-600">Provider ID</label>
+                    <input
+                      type="text"
+                      value={providerId}
+                      onChange={(e) => setProviderId(e.target.value)}
+                      className="p-2 border border-gray-300 rounded-md min-w-64"
+                      placeholder="Enter Provider ID"
+                      required
                     />
                   </div>
-                </>
-              )}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm text-gray-600">SSHIA ID</label>
+                    <input
+                      type="text"
+                      value={sshiaId}
+                      onChange={(e) => setSshiaId(e.target.value)}
+                      className="p-2 border border-gray-300 rounded-md min-w-64"
+                      placeholder="Enter SSHIA ID"
+                      required
+                    />
+                  </div>
+                  <Button type="submit" disabled={!providerId || !sshiaId}>
+                    Load Claims
+                  </Button>
+                </form>
+                <p className="text-sm text-gray-500 mt-2">
+                  These IDs are required to fetch emergency claims from the API.
+                </p>
+              </div>
             </div>
+          )}
+
+          {error && (
+            <div className="px-6 py-3 bg-red-50 border-l-4 border-red-500">
+              <p className="text-red-700">{error}</p>
+              <Button 
+                onClick={loadClaims} 
+                className="mt-2 text-red-600 hover:text-red-700"
+                variant="outline"
+              >
+                Retry
+              </Button>
+            </div>
+          )}
+
+          {/* Content */}
+          <div>
+            {loading ? (
+              <div className="flex items-center justify-center h-64">
+                <LoadingSpinner />
+              </div>
+            ) : !providerId || !sshiaId ? (
+              <div className="text-center py-10">
+                <div className="text-gray-500 mb-4">
+                  Please enter Provider ID and SSHIA ID to view claims
+                </div>
+              </div>
+            ) : tableClaims.length === 0 ? (
+              <EmptyState
+                icon={<span className="text-2xl">📄</span>}
+                title="No emergency claims available"
+                description={error ? "Failed to load claims" : "No claims found for the provided IDs."}
+                action={
+                  <Button onClick={routeToEmergencyBillPage}>
+                    + Create New Emergency Claim
+                  </Button>
+                }
+              />
+            ) : (
+              <>
+                {/* Table */}
+                <div className="flex-1">
+                  <Table className="min-w-[1200px]">
+                    <TableHeader className="bg-[#E9F7F3]">
+                      {table.getHeaderGroups().map((headerGroup) => (
+                        <TableRow key={headerGroup.id} className="hover:bg-transparent">
+                          {headerGroup.headers.map((header) => (
+                            <TableHead key={header.id} className="text-gray-700 font-medium">
+                              {header.isPlaceholder
+                                ? null
+                                : flexRender(
+                                    header.column.columnDef.header,
+                                    header.getContext()
+                                  )}
+                            </TableHead>
+                          ))}
+                        </TableRow>
+                      ))}
+                    </TableHeader>
+                    <TableBody>
+                      {table.getRowModel().rows.length ? (
+                        table.getRowModel().rows.map((row) => (
+                          <TableRow
+                            key={row.id}
+                            className="cursor-pointer hover:bg-[#FFFFFF] transition-colors border-b border-gray-100"
+                            onClick={() => handleClaimClick(row.original.id)}
+                          >
+                            {row.getVisibleCells().map((cell) => (
+                              <TableCell key={cell.id} className="py-4">
+                                {flexRender(
+                                  cell.column.columnDef.cell,
+                                  cell.getContext()
+                                )}
+                              </TableCell>
+                            ))}
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell
+                            colSpan={columns.length}
+                            className="h-24 text-center"
+                          >
+                            <div className="flex flex-col items-center gap-4">
+                              <span className="font-medium">
+                                No claims found
+                              </span>
+                              <span className="text-gray-500">
+                                Try adjusting your search criteria
+                              </span>
+                              <Button onClick={routeToEmergencyBillPage}>
+                                + Create new claim
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Footer */}
+                <div className="px-6 py-4 flex items-center justify-between text-sm text-gray-500">
+                  <span>
+                    Showing all {table.getFilteredRowModel().rows.length} settlements
+                  </span>
+                  <Pagination
+                    totalEntriesSize={table.getFilteredRowModel().rows.length}
+                    currentPage={pageIndex + 1}
+                    totalPages={totalPages}
+                    pageSize={pageSize}
+                    onPageChange={(p) => setPageIndex(p - 1)}
+                    onPageSizeChange={(size) => {
+                      setPageSize(size);
+                      setPageIndex(0);
+                    }}
+                  />
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

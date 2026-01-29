@@ -30,7 +30,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
     switch (type) {
       case 'delete':
         return {
-          confirmButton: 'bg-red-600 hover:bg-red-700 focus:ring-red-500',
+          confirmButton: 'bg-red-600 hover:bg-red-700 focus:ring-hover:bg-red-700',
           icon: (
             <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
               <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
@@ -41,7 +41,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
         };
       case 'warning':
         return {
-          confirmButton: 'bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500',
+          confirmButton: 'bg-[#DC2626] hover:bg-red-700 focus:ring-red-500',
           icon: (
             <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-yellow-100 sm:mx-0 sm:h-10 sm:w-10">
               <svg className="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">

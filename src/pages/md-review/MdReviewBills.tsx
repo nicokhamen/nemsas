@@ -557,7 +557,7 @@ const handleModalClose = () => {
                         table.getRowModel().rows.map((row) => (
                           <TableRow
                             key={row.id}
-                            className="cursor-pointer hover:bg-gray-50 transition-colors"
+                            className="cursor-pointer hover:bg-[#FFFFFF] transition-colors"
                             onClick={() => handleRowClick(row.original.id)}
                           >
                             {row.getVisibleCells().map((cell) => (
@@ -574,7 +574,7 @@ const handleModalClose = () => {
                         <TableRow>
                           <TableCell
                             colSpan={columns.length}
-                            className="h-24 text-center"
+                            className="h-24 text-center hover:bg-[#FFFFFF] transition-colors"
                           >
                             <div className="flex flex-col items-center gap-4">
                               <span className="font-medium">
