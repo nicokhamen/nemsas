@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
+import { Plus, Eye } from "lucide-react";
 import type { RootState } from "../../services/store/store";
 import EmptyState from "../../components/ui/EmptyState";
 import Button from "../../components/ui/Button";
@@ -138,10 +139,10 @@ export const EmergencyBills = () => {
       // Calculate total amount from productServices array
       const totalAmount = Array.isArray(bill.productServices)
         ? bill.productServices.reduce((sum: number, item: any) => {
-            const unitPrice = item?.unitPrice || item?.price || 0;
-            const quantity = item?.quantity || 1;
-            return sum + unitPrice * quantity;
-          }, 0)
+          const unitPrice = item?.unitPrice || item?.price || 0;
+          const quantity = item?.quantity || 1;
+          return sum + unitPrice * quantity;
+        }, 0)
         : 0;
 
       // Get patient information from the patient object
@@ -251,8 +252,8 @@ export const EmergencyBills = () => {
               row.original.insuranceStatus === "Active"
                 ? "#2e7d32"
                 : row.original.insuranceStatus === "Inactive"
-                ? "#d32f2f"
-                : "#757575",
+                  ? "#d32f2f"
+                  : "#757575",
             fontWeight: 500,
           }}
         >
@@ -280,16 +281,18 @@ export const EmergencyBills = () => {
     },
     {
       id: "action",
+      header: "Action",
       enableHiding: false,
       cell: ({ row }) => (
         <button
-          className="h-auto py-1 px-3 text-xs border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+          className="flex items-center justify-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
           onClick={(e) => {
             e.stopPropagation();
             navigate(`/emergency/bills/${row.original.id}`);
           }}
+          title="View Bill"
         >
-          View
+          <Eye className="h-5 w-5" />
         </button>
       ),
     },
@@ -350,46 +353,48 @@ export const EmergencyBills = () => {
       <div className="p-6">
         <div className="bg-gray-100 overflow-scroll h-full">
           <div className="bg-white rounded-md flex flex-col mb-36">
-            {/* Header */}
-            <div className="flex flex-wrap gap-4 justify-between items-center p-6">
-              <div className="flex items-center gap-8">
-                <FormHeader>Emergency Bill Capture List</FormHeader>
-
-              </div>
-              <div className="flex gap-4 items-center">
-                <Button
-                  onClick={routeToEmergencyBillPage}
-                  variant="outline"
-                  title="Create an Emergency Bill"
-                >
-                  + 
-                </Button>
-              </div>
-            </div>
 
             {/* Filters */}
-            <div className="px-6 pb-4 border-b">
-              <div className="grid grid-cols-5 gap-4">
+            {/* <div className="px-6 py-4 border-b bg-gray-50"> */}
+            <div className="flex flex-wrap gap-4 justify-between items-center p-6">
+              <h3 className="text-sm font-semibold text-gray-700 mb-4">Filter By</h3>
+              <div className="grid grid-cols-12 gap-4 items-end">
                 <div className="col-span-2">
-                  <Input
-                    label="search with patient name"
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Patient Number
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter number"
                     value={searchTerm}
                     onChange={(e) => {
                       const value = e.target.value;
                       setSearchTerm(value);
                       table.getColumn("patientName")?.setFilterValue(value);
                     }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none"
                   />
                 </div>
-                {/* <div>
-                  <DatePicker label="Start date"></DatePicker>
+                <div className="col-span-7">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Date
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="date"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none"
+                      placeholder="Start date"
+                    />
+                    <span className="text-sm text-gray-500 font-medium">To</span>
+                    <input
+                      type="date"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none"
+                      placeholder="End date"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <DatePicker label="End date"></DatePicker>
-                </div> */}
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
+                <div className="col-span-3 flex gap-3">
+                  <button
                     onClick={() => {
                       setStartDate("");
                       setEndDate("");
@@ -397,13 +402,47 @@ export const EmergencyBills = () => {
                       table.setColumnFilters([]);
                       loadEmergencyBills();
                     }}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-sm hover:bg-gray-50 transition-colors font-medium"
                   >
                     Reset
-                  </Button>
-                  {/* <Button>Apply Filters</Button> */}
+                  </button>
+                  <button
+                    onClick={() => {
+                      // Apply filters
+                      loadEmergencyBills();
+                    }}
+                    className="flex-1 px-4 py-2 bg-[#DC2626] text-white rounded-sm hover:bg-red-700 transition-colors font-medium"
+                  >
+                    Apply filter
+                  </button>
                 </div>
               </div>
             </div>
+            {/* Header */}
+            <div className="flex flex-wrap gap-4 justify-between items-center py-6 px-0 bg-gray-50">
+              <div className="flex items-center gap-8">
+                <label className="block text-lg  text-gray-700 mb-2">
+                  Emergency Bill Capture List
+                </label>
+              </div>
+              <div className="flex gap-4 items-center">
+                <button
+                  onClick={routeToEmergencyBillPage}
+                  className="flex items-center gap-2 px-4 py-2 bg-[#DC2626] text-white rounded-sm hover:bg-red-700 transition-colors font-medium"
+                >
+                  <Plus className="h-5 w-5" />
+                  Create New Bill
+                </button>
+                <button
+                  onClick={() => {/* Export functionality */ }}
+                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-sm hover:bg-gray-50 transition-colors font-medium"
+                >
+                  Export
+                </button>
+              </div>
+            </div>
+
+
 
             {/* Content */}
             <div>
@@ -434,7 +473,7 @@ export const EmergencyBills = () => {
                   {/* Table */}
                   <div className="flex-1 lg:px-0 lg:mt-4">
                     <Table className="min-w-[800px]">
-                      <TableHeader className="border-y border-[#CDE5F9]">
+                      <TableHeader className="border-y border-[#E4F7F1] bg-[#E4F7F1]">
                         {table.getHeaderGroups().map((headerGroup) => (
                           <TableRow key={headerGroup.id}>
                             {headerGroup.headers.map((header) => (
@@ -442,9 +481,9 @@ export const EmergencyBills = () => {
                                 {header.isPlaceholder
                                   ? null
                                   : flexRender(
-                                      header.column.columnDef.header,
-                                      header.getContext()
-                                    )}
+                                    header.column.columnDef.header,
+                                    header.getContext()
+                                  )}
                               </TableHead>
                             ))}
                           </TableRow>

@@ -16,6 +16,7 @@ import { VettingClaims } from "../pages/vetting/VettingClaims";
 import ProviderDetails from "../pages/provider/ProviderDetails";
 import { Claims } from "../pages/claims-management/EmergencyClaims";
 import EBillCapture from "../pages/bill-center";
+import NewEmergencyBillWizard from "../pages/bill-center/NewEmergencyBillWizard";
 import { MDReview } from "../pages/md-review/MdReviewIndex";
 import EndorsementReview from "../pages/md-review/EndorsementReview";
 import ClaimsDetails from "../pages/claims-management/ClaimsDetails";
@@ -219,6 +220,14 @@ const AppRoutes = () => {
           </Route>
           <Route
             path="emergency/bill-capture"
+            element={
+              <Layout>
+                <NewEmergencyBillWizard />
+              </Layout>
+            }
+          />
+          <Route
+            path="emergency/bill-capture-old"
             element={
               <Layout>
                 <EBillCapture />

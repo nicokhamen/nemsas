@@ -1,23 +1,23 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Search } from "lucide-react";
+import { ChevronDown, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchICDCodes } from "../../services/thunks/icdThunk";
-import type { AppDispatch,RootState } from "../../services/store/store";
+import type { AppDispatch, RootState } from "../../services/store/store";
 import type { ICDItem } from "../../types/emergency-bill";
 
 // Reusable ICD Search Component
-export const ICDSearch: React.FC<{ 
+export const ICDSearch: React.FC<{
   onSelect: (diagnosis: ICDItem & { type: string }) => void,
 }> = ({ onSelect }) => {
   const dispatch = useDispatch<AppDispatch>();
-  
+
   // Get ICD state from Redux store
   const {
     data: icdData,
     loading,
     error,
   } = useSelector((state: RootState) => state.icd);
-  
+
   const [system, setSystem] = useState("");
   const [query, setQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
@@ -111,7 +111,7 @@ export const ICDSearch: React.FC<{
       ...item,
       type: formatDisplayType(getCodeTypeForAPI(system))
     };
-    
+
     onSelect(selectedItem);
     setQuery(item.name);
     setShowDropdown(false);
@@ -124,19 +124,21 @@ export const ICDSearch: React.FC<{
   };
 
   return (
-    <div className="w-full max-w-md space-y-4 p-4 border rounded-2xl shadow">
-      <select
-        className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        value={system}
-        onChange={handleSystemChange}
-      >
-        <option value="">Select ICD Version</option>
-        <option value="ICD-10">ICD-10</option>
-        <option value="ICD-11">ICD-11</option>
-      </select>
-
+    <div className="w-full flex items-start gap-4">
+      <div className="relative w-50">
+        <select
+          className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 appearance-none focus:border-blue-500"
+          value={system}
+          onChange={handleSystemChange}
+        >
+          <option value="">Select ICD Version</option>
+          <option value="ICD-10">ICD-10</option>
+          <option value="ICD-11">ICD-11</option>
+        </select>
+        <ChevronDown size={20} className="absolute right-2 top-2/3 transform -translate-y-1/2 text-gray-500" />
+      </div>
       {system && (
-        <div className="space-y-3 animate-fadeIn relative" ref={dropdownRef}>
+        <div className="w-full space-y-3 animate-fadeIn relative" ref={dropdownRef}>
           {/* Search input with icon */}
           <div className="relative">
             <input
@@ -151,7 +153,7 @@ export const ICDSearch: React.FC<{
             <button
               onClick={handleSearch}
               disabled={loading || !query.trim()}
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none disabled:opacity-50"
+              className="absolute left-3 top-1/2 transform -translate-y-2/3 text-gray-500 hover:text-gray-700 focus:outline-none disabled:opacity-50"
               aria-label="Search"
             >
               {loading ? (

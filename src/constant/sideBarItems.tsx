@@ -7,7 +7,7 @@ export interface SidebarItem {
   icon: React.ReactNode | null;
   label: string;
   active: boolean;
- 
+
   path?: string;
   children?: SidebarItem[];
 }
@@ -40,37 +40,37 @@ export const ADMIN_SIDEBAR: SidebarItem[] = [
       { icon: null, label: "Tracker", active: false, path: "/nemsas/payments/tracker" }
     ]
   },
-    {
+  {
     icon: <EnrolleeIcon className="w-5 h-5" />,
     label: "Reports",
     active: false,
     children: [
       { icon: null, label: "Claims History", active: false, path: "/reports/claims-history" },
       { icon: null, label: "Payments History", active: false, path: "/reports/payments-history" },
-    
+
     ]
   },
-   {
+  {
     icon: <SettingsIcon className="w-5 h-5" />,
     label: "Settings",
     active: false,
- 
+
   }
 ];
 
 // Provider Sidebar
 export const PROVIDER_SIDEBAR: SidebarItem[] = [
   // {  icon: <DashboardIcon className="w-5 h-5" />, label: "Dashboard", active: false, path: "/enrollee/dashboard" },
-   {
+  {
     icon: <EnrolleeIcon className="w-5 h-5" />,
     label: "Claims",
     active: false,
     children: [
-      { icon: null, label: "Claims Management", active: false, path: "/claims-management" },
-      { icon: null, label: "Emergency Bill Capture", active: false, path: "/emergency/bills" }
+      { icon: null, label: "Emergency Bill", active: false, path: "/emergency/bills" },
+      { icon: null, label: "Claims Management", active: false, path: "/claims-management" }
     ]
   },
   { icon: <EnrolleeIcon className="w-5 h-5" />, label: "MD Review & Endorsement", active: false, path: "/md-review" },
-  { icon: <SettingsIcon className="w-5 h-5" />, label: "Settings", active: false, path: "/settings"  },
-  {  icon: <SettingsIcon className="w-5 h-5" />, label: "Tariff", active: false, path: "/tariff"  },
+  { icon: <SettingsIcon className="w-5 h-5" />, label: "Settings", active: false, path: "/settings" },
+  { icon: <SettingsIcon className="w-5 h-5" />, label: "Tariff", active: false, path: "/tariff" },
 ];

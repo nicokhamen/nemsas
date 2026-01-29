@@ -40,7 +40,7 @@ const Dashboard: React.FC = () => {
         <div className="w-[60%]">
           <NumberOfEnrollees />
         </div>
-        
+
         <div className="bg-white justify-center items-center w-[40%] flex flex-col gap-6">
           <StatCard
             percentage={45}
@@ -57,7 +57,7 @@ const Dashboard: React.FC = () => {
             pathColor="#D9534F"
           />
         </div>
-      
+
       </div>
       <div>
         <ClaimsChart />

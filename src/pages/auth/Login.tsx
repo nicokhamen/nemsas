@@ -58,12 +58,12 @@ const Login: React.FC = () => {
           <div className="flex items-center space-x-2">
             {/* <HimisLogo /> */}
             <img src={nemsasImage} alt="NEMSAS Logo" className="w-8 h-8" />
-            <h1 className="text-[#DC2626]-900 font-bold text-lg">NEMSAS</h1>
+            <h1 className="text-[#DC2626] font-semibold text-2xl">NEMSAS</h1>
           </div>
         </div>
 
         <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-          <h2 className="text-center text-[#DC2626]-900 font-semibold mb-6">
+          <h2 className="text-center text-[#DC2626] text-xl font-semibold mb-6">
             LOGIN
           </h2>
 
@@ -98,7 +98,7 @@ const Login: React.FC = () => {
 
             <button
               type="submit"
-              className="w-full flex items-center justify-center gap-2 text-[#DC2626] bg-transparent border border-[#DC2626] py-2 rounded-md hover:bg-[#DC2626] hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2 text-[#DC2626] bg-transparent border border-[#DC2626] py-2 rounded-sm hover:bg-[#DC2626] hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={loading}
             >
               {loading ? (
@@ -109,7 +109,7 @@ const Login: React.FC = () => {
               ) : (
                 <>
                   <LogIn className="w-4 h-4" />
-                  Login
+                  Log in
                 </>
               )}
             </button>

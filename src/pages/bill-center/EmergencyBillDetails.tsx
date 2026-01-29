@@ -4,7 +4,7 @@ import { useAppSelector, useAppDispatch } from "../../hooks/redux";
 import { useProviderContext } from "../../context/useProviderContext";
 import { fetchEmergencyBillDetails } from "../../services/thunks/emergencyBillsThunk";
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { ArrowLeft, Pencil, XCircle } from "lucide-react";
 import { clearCurrentBill, clearError } from "../../services/slices/emergencyBillSlice";
 
 const EmergencyBillDetails = () => {
@@ -21,9 +21,9 @@ const EmergencyBillDetails = () => {
   // Fetch emergency bill details when component mounts
   useEffect(() => {
     if (billId && selectedProviderId) {
-      dispatch(fetchEmergencyBillDetails({ 
-        emergencyBillId: billId, 
-        providerId: selectedProviderId 
+      dispatch(fetchEmergencyBillDetails({
+        emergencyBillId: billId,
+        providerId: selectedProviderId
       }));
     }
   }, [billId, selectedProviderId, dispatch]);
@@ -117,196 +117,207 @@ const EmergencyBillDetails = () => {
 
   return (
     <>
-    <div className="max-w-5xl mx-auto bg-white rounded-xl border shadow-sm">
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b">
-        <h2 className="text-lg font-semibold">Bill Details</h2>
-        <button
-          onClick={handleBack}
-          className="p-2 rounded-full hover:bg-gray-100" title="Back"
-        >
-          <ArrowLeft className="w-5 h-5 text-gray-500"  />
-        </button>
-      </div>
+      <div className="max-w-5xl mx-auto bg-white rounded-sm border shadow-sm">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b">
+          <h2 className="text-lg font-semibold text-gray-500">Bill Details</h2>
+          <button
+            onClick={handleBack}
+            className="p-2 rounded-full hover:bg-gray-100" title="Back"
+          >
+            <XCircle className="w-8 h-8 text-gray-500" />
+          </button>
+        </div>
 
-      {/* Claim Meta */}
-      <div className="flex items-center justify-between px-6 py-4">
-        <div className="flex items-center gap-3 text-sm">
-          <span className="text-red-500 font-medium">Bill Status</span>
-          <span className="text-gray-500">•</span>
-          {/* <span className="font-medium">{currentBill.id}</span> */}
+        {/* Claim Meta */}
+        {/* <div className="flex items-center justify-between px-6 py-4"> */}
+        {/* <div className="flex items-center gap-3 text-sm"> */}
+        {/* <span className="text-red-500 font-medium">Bill Status</span> */}
+        {/* <span className="text-gray-500">•</span> */}
+        {/* <span className="font-medium">{currentBill.id}</span> */}
+        {/* <span */}
+        {/* className={`text-xs font-semibold px-3 py-1 rounded-full ${currentBill.status === "Rejected" */}
+        {/* ? "bg-red-100 text-red-600" */}
+        {/* : currentBill.status === "Approved" */}
+        {/* ? "bg-green-100 text-green-600" */}
+        {/* : currentBill.status === "Pending" */}
+        {/* ? "bg-yellow-100 text-yellow-600" */}
+        {/* : "bg-blue-100 text-blue-600" */}
+        {/* }`}
+            > */}
+
+        {/* No Status */}
+        {/* {currentBill.status || "Unknown"} */}
+        {/* </span> */}
+        {/* </div> */}
+        {/* <button */}
+        {/* onClick={() => navigate(`/emergency-bills/${billId}/edit`)} */}
+        {/* className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white text-sm px-4 py-2 rounded-sm">
+            <Pencil className="w-4 h-4" />
+            Edit & Resubmit
+          </button> */}
+        {/* </div> */}
+
+        {/* Patient Header */}
+        <div className="px-6 py-5 flex items-center gap-4">
+          <div className="w-25 h-25 rounded-full bg-gray-200 overflow-hidden" />
+          <div className="pr-10">
+            <p className="font-semibold text-2xl">
+              {patient.firstName} {patient.lastName}
+            </p>
+            <p className="text-sm text-gray-500 text-xl">
+              {patient.hospitalNumber || "N/A"}
+            </p>
+          </div>
           <span
-            className={`text-xs font-semibold px-3 py-1 rounded-full ${
-              currentBill.status === "Rejected"
-                ? "bg-red-100 text-red-600"
-                : currentBill.status === "Approved"
+            className={`text-lg font-semibold px-3 py-1 rounded-full ${currentBill.status === "Rejected"
+              ? "bg-red-100 text-red-600"
+              : currentBill.status === "Approved"
                 ? "bg-green-100 text-green-600"
                 : currentBill.status === "Pending"
-                ? "bg-yellow-100 text-yellow-600"
-                : "bg-blue-100 text-blue-600"
-            }`}
+                  ? "bg-yellow-100 text-yellow-600"
+                  : "bg-blue-100 text-blue-600"
+              }`}
           >
-            
+
             {/* No Status */}
             {currentBill.status || "Unknown"}
           </span>
         </div>
-        <button 
-      onClick={() => navigate(`/emergency-bills/${billId}/edit`)}
-        className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white text-sm px-4 py-2 rounded-lg">
-          <Pencil className="w-4 h-4" />
-          Edit & Resubmit
-        </button>
-      </div>
 
-      {/* Patient Header */}
-      <div className="px-6 py-5 flex items-center gap-4">
-        <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden" />
-        <div>
-          <p className="font-semibold">
-            {patient.firstName} {patient.lastName}
-          </p>
-          <p className="text-sm text-gray-500">
-            {patient.hospitalNumber || "N/A"}
-          </p>
-        </div>
-      </div>
-
-      {/* Patient Details */}
-      <Section title="Patient Details">
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <Item label="Patient Number" value={patient.hospitalNumber || "N/A"} />
-          <Item label="Gender" value={patient.gender || "N/A"} />
-          <Item label="Phone number" value={patient.phoneNumber || "N/A"} />
-          <Item label="Insurance" value={patient.insuranceStatus || "N/A"} />
-          <Item label="Department Name" value={currentBill.department || "N/A"} />
-          <Item label="Email" value={patient.email || "N/A"} />
-          <Item label="Age" value={patient.age?.toString() || "N/A"} />
-          <Item label="Date of Birth" value={formatDate(patient.dateOfBirth)} />
-        </div>
-      </Section>
-
-      {/* Encounter Details */}
-      <Section title="Encounter Details & Diagnosis">
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <Item label="Encounter ID" value={currentBill.encounterId || "N/A"} />
-          <Item label="Service Type" value={currentBill.serviceType || "N/A"} />
-          <Item
-            label="Encounter Date"
-            value={formatDate(currentBill.encounterStartDateTime)}
-          />
-          <Item
-            label="Discharge Date"
-            value={formatDate(currentBill.dischargeDate)}
-          />
-          <Item
-            label="Attending Physician"
-            value={currentBill.attendingPhysician || "N/A"}
-          />
-          <Item
-            label="Total Amount" className="text-green-600"
-            value={formatCurrency(totalAmount)}
-          />
-        </div>
-      </Section>
-
-      {/* Diagnoses */}
-      {currentBill.diagnoses && currentBill.diagnoses.length > 0 && (
-        <Section title="Diagnoses">
-          <div className="space-y-3">
-            {currentBill.diagnoses.map((diagnosis, index) => (
-              <div
-                key={diagnosis.id || index}
-                className="p-3 border rounded-lg bg-gray-50"
-              >
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <Item label="Type" value={diagnosis.type || "N/A"} />
-                  <Item label="Code" value={diagnosis.code || "N/A"} />
-                  <Item
-                    label="Diagnosis"
-                    value={diagnosis.diagnosis || "N/A"}
-                    className="col-span-2"
-                  />
-                  <Item
-                    label="Note"
-                    value={diagnosis.note || "No comment..."}
-                    className="col-span-2"
-                  />
-                </div>
-              </div>
-            ))}
+        {/* Patient Details */}
+        <Section title="Patient Details"  >
+          <div className="grid grid-cols-2 gap-4 text-sm ">
+            <Item label="Patient Number" value={patient.hospitalNumber || "N/A"} />
+            <Item label="Gender" value={patient.gender || "N/A"} />
+            <Item label="Phone number" value={patient.phoneNumber || "N/A"} />
+            <Item label="Insurance" value={patient.insuranceStatus || "N/A"} />
+            <Item label="Department Name" value={currentBill.department || "N/A"} />
+            <Item label="Email" value={patient.email || "N/A"} />
+            <Item label="Age" value={patient.age?.toString() || "N/A"} />
+            <Item label="Date of Birth" value={formatDate(patient.dateOfBirth)} />
           </div>
         </Section>
-      )}
 
-      {/* Services Billed */}
-   {currentBill.productServices && currentBill.productServices.length > 0 && (
-  <Section title="Services Billed">
-    <div className="overflow-hidden rounded-lg border">
-      {/* Table Header */}
-      <div className="grid grid-cols-7 bg-green-50 text-xs font-medium text-gray-600 px-4 py-3">
-        <div className="col-span-1">Name</div>
-        <div className="col-span-1">Description</div>
-        <div className="col-span-1">NHIS Price</div>
-        <div className="col-span-1">NHIS Percentage</div>
-        <div className="col-span-1 text-right">Qty</div>
-        <div className="col-span-1 text-right">Unit Price</div>
-        <div className="col-span-1 text-right">Total Amount</div>
-      </div>
-
-      {/* Table Body */}
-      {currentBill.productServices.map((service, index) => {
-        const itemTotal = (service.price || 0) * (service.quantity || 1);
-        return (
-          <div
-            key={service.id || index}
-            className="grid grid-cols-7 px-4 py-3 border-t text-sm hover:bg-gray-50"
-          >
-            <div className="col-span-1 font-medium">{service.name || "N/A"}</div>
-            <div className="col-span-1 text-gray-600">{service.description || "—"}</div>
-            <div className="col-span-1 text-gray-500">{service.nhisPrice || "—"}</div>
-            <div className="col-span-1 text-gray-500">{service.nhisPercentage || "—"}</div>
-            <div className="col-span-1 text-right">{service.quantity || 0}</div>
-            <div className="col-span-1 text-right">{formatCurrency(service.price)}</div>
-            <div className="col-span-1 text-right font-medium text-green-600">
-              {formatCurrency(itemTotal)}
-            </div>
+        {/* Encounter Details */}
+        <Section title="Encounter Details & Diagnosis">
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <Item label="Encounter ID" value={currentBill.encounterId || "N/A"} />
+            <Item label="Service Type" value={currentBill.serviceType || "N/A"} />
+            <Item
+              label="Encounter Date"
+              value={formatDate(currentBill.encounterStartDateTime)}
+            />
+            <Item
+              label="Discharge Date"
+              value={formatDate(currentBill.dischargeDate)}
+            />
+            <Item
+              label="Attending Physician"
+              value={currentBill.attendingPhysician || "N/A"}
+            />
+            <Item
+              label="Total Amount" className="text-green-600"
+              value={formatCurrency(totalAmount)}
+            />
           </div>
-        );
-      })}
+        </Section>
 
-      {/* Total Row */}
-      <div className="grid grid-cols-7 px-4 py-3 border-t bg-gray-50 font-medium text-sm">
-        <div className="col-span-5"></div>
-        <div className="col-span-1 text-right">Total:</div>
-        <div className="col-span-1 text-right text-green-600">
-          {formatCurrency(totalAmount)}
-        </div>
-      </div>
-    </div>
-  </Section>
-)}
-
-      {/* Supporting Documents */}
-      {currentBill.supportingDocuments &&
-        currentBill.supportingDocuments.length > 0 && (
-          <Section title="Supporting Documents">
-            <div className="flex flex-wrap gap-2">
-              {currentBill.supportingDocuments.map((doc, index) => (
-                <a
-                  key={index}
-                  href={doc}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded text-sm text-blue-600"
+        {/* Diagnoses */}
+        {currentBill.diagnoses && currentBill.diagnoses.length > 0 && (
+          <Section title="Diagnoses">
+            <div className="space-y-3">
+              {currentBill.diagnoses.map((diagnosis, index) => (
+                <div
+                  key={diagnosis.id || index}
+                  className="p-3 border rounded-lg bg-gray-50"
                 >
-                  Document {index + 1}
-                </a>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <Item label="Type" value={diagnosis.type || "N/A"} />
+                    <Item label="Code" value={diagnosis.code || "N/A"} />
+                    <Item
+                      label="Diagnosis"
+                      value={diagnosis.diagnosis || "N/A"}
+                      className="col-span-2"
+                    />
+                    <Item
+                      label="Note"
+                      value={diagnosis.note || "No comment..."}
+                      className="col-span-2"
+                    />
+                  </div>
+                </div>
               ))}
             </div>
           </Section>
         )}
-    </div>
+
+        {/* Services Billed */}
+        {currentBill.productServices && currentBill.productServices.length > 0 && (
+          <Section title="Services Billed">
+            <div className="overflow-hidden rounded-sm border">
+              {/* Table Header */}
+              <div className="grid grid-cols-[1.2fr_3fr_0.8fr_1fr_1.2fr] bg-green-50 text-lg font-medium text-gray-600 px-4 py-3">
+                <div>Name</div>
+                <div>Description</div>
+                <div className="text-right">Qty</div>
+                <div className="text-right">Unit Price</div>
+                <div className="text-right">Total Amount</div>
+              </div>
+
+
+              {/* Table Body */}
+              {currentBill.productServices.map((service, index) => {
+                const itemTotal = (service.price || 0) * (service.quantity || 1);
+                return (
+                  <div
+                    key={service.id || index}
+                    className="grid grid-cols-[1.2fr_3fr_0.8fr_1fr_1.2fr] px-4 py-3 border-t text-lg hover:bg-gray-50"
+                  >
+
+                    <div >{service.name || "N/A"}</div>
+                    <div >{service.description || "—"}</div>
+                    <div className="text-right">{service.quantity || 0}</div>
+                    <div className="text-right">{formatCurrency(service.price)}</div>
+                    <div className="text-right font-medium text-green-600">
+                      {formatCurrency(itemTotal)}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Total Row */}
+              <div className="grid grid-cols-7 px-4 py-3 border-t bg-gray-50 font-medium text-lg">
+                <div className="col-span-5"></div>
+                <div className="col-span-1 text-right">Total:</div>
+                <div className="col-span-1 text-right text-green-600">
+                  {formatCurrency(totalAmount)}
+                </div>
+              </div>
+            </div>
+          </Section>
+        )}
+
+        {/* Supporting Documents */}
+        {currentBill.supportingDocuments &&
+          currentBill.supportingDocuments.length > 0 && (
+            <Section title="Supporting Documents">
+              <div className="flex flex-wrap gap-2">
+                {currentBill.supportingDocuments.map((doc, index) => (
+                  <a
+                    key={index}
+                    href={doc}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded text-sm text-blue-600"
+                  >
+                    Document {index + 1}
+                  </a>
+                ))}
+              </div>
+            </Section>
+          )}
+      </div>
     </>
   );
 };
@@ -318,8 +329,8 @@ const Section = ({
   title: string;
   children: React.ReactNode;
 }) => (
-  <div className="px-6 py-4 border-t">
-    <h3 className="text-sm font-semibold text-red-500 mb-4">{title}</h3>
+  <div className="px-6 py-4 ">
+    <h3 className="text-xl font-semibold text-red-500 mb-4 border-b-2  pb-1  mb-5 ">{title}</h3>
     {children}
   </div>
 );
@@ -333,9 +344,9 @@ const Item = ({
   value: string;
   className?: string;
 }) => (
-  <div className={`flex flex-col gap-0.5 ${className}`}>
-    <span className="text-gray-500">{label}</span>
-    <span className="font-medium text-gray-800">{value}</span>
+  <div className={`flex flex-row justify-between px-5 py-2 ${className}`}>
+    <span className="text-gray-500 text-lg ">{label}</span>
+    <span className="font-medium text-gray-800 text-lg">{value}</span>
   </div>
 );
 

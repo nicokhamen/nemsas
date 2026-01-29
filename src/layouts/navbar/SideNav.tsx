@@ -42,10 +42,9 @@ const SideNav: React.FC<SideNavProps> = () => {
           <div className="absolute bottom-0 right-[20%]">
             <span
               className={`w-fit inline-flex items-center px-2 pb-0.5 rounded text-[10px] font-semibold tracking-wide uppercase shadow-sm
-              ${
-                user?.isProvider &&
+              ${user?.isProvider &&
                 "bg-green-100 text-green-700 ring-1 ring-green-200"
-              }`}
+                }`}
               title={
                 user?.isProvider
                   ? "You are operating in a Provider context: submit and manage claims."
@@ -67,27 +66,24 @@ const SideNav: React.FC<SideNavProps> = () => {
                 <Link
                   key={index}
                   to={item.path || "#"}
-                  className={`flex items-center space-x-3 px-4 py-3 transition-colors duration-200 group ${
-                    isActive(item.path)
-                      ? " bg-[#DC2626] text-white"
-                      : "hover:bg-[#B91C1C]  hover:text-white"
-                  }`}
+                  className={`flex items-center space-x-3 px-4 py-3 transition-colors duration-200 group ${isActive(item.path)
+                    ? " bg-[#DC2626] text-white"
+                    : "hover:bg-[#B91C1C]  hover:text-white"
+                    }`}
                 >
                   <span
-                    className={`text-xl transition-colors duration-200 ${
-                      isActive(item.path)
-                        ? "text-white"
-                        : "group-hover:text-white"
-                    }`}
+                    className={`text-xl transition-colors duration-200 ${isActive(item.path)
+                      ? "text-white"
+                      : "group-hover:text-white"
+                      }`}
                   >
                     {item.icon}
                   </span>
                   <span
-                    className={`transition-colors duration-200 ${
-                      isActive(item.path)
-                        ? "text-white"
-                        : "group-hover:text-white"
-                    }`}
+                    className={`transition-colors duration-200 ${isActive(item.path)
+                      ? "text-white"
+                      : "group-hover:text-white"
+                      }`}
                   >
                     {item.label}
                   </span>

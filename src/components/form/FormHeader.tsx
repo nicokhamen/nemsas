@@ -5,9 +5,9 @@ interface FormHeaderProps {
   className?: string;
 }
 
-const FormHeader: React.FC<FormHeaderProps> = ({ 
-  children, 
-  className = '' 
+const FormHeader: React.FC<FormHeaderProps> = ({
+  children,
+  className = ''
 }) => {
   return (
     <h1 className={`col-span-2 text-lg font-semibold mt-4 text-[#DC2626] ${className}`}>

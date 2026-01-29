@@ -3,7 +3,7 @@ import React, { type InputHTMLAttributes, useState } from "react";
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
   endAdornment?: React.ReactNode;
-  error?: string; 
+  error?: string;
 }
 
 const Input: React.FC<InputProps> = ({
@@ -28,9 +28,8 @@ const Input: React.FC<InputProps> = ({
           setFocused(e.target.value !== "");
           props.onBlur?.(e);
         }}
-        className={`peer w-full border rounded-md px-3 pr-10 pt-5 pb-2 focus:outline-none focus:ring-2 focus:ring-[#DC2626] ${
-          error ? "border-red-500" : "border-gray-300"
-        }`}
+        className={`peer w-full border rounded-md px-3 pr-10 pt-5 pb-2 focus:outline-none focus:ring-2 focus:ring-[#DC2626] ${error ? "border-red-500" : "border-gray-300"
+          }`}
       />
       <label
         className={`absolute left-3 text-gray-500 transition-all duration-200 
@@ -46,7 +45,7 @@ const Input: React.FC<InputProps> = ({
           {endAdornment}
         </div>
       )}
-      
+
       {/* Error message */}
       {error && (
         <p className="text-red-500 text-sm mt-1">{error}</p>
