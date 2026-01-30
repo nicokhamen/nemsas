@@ -454,10 +454,9 @@ export default function NewEmergencyBillWizard() {
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Patient Number
+                Patient Name or Number
               </label>
               <div className="relative">
-                
                 <input
                   type="text"
                   value={searchTerm}
@@ -466,10 +465,10 @@ export default function NewEmergencyBillWizard() {
                     setShowSearchResults(true);
                   }}
                   onFocus={() => setShowSearchResults(true)}
-                  placeholder="Search patient number..."
+                  placeholder="Search by patient name or number..."
                   className="w-full pl-5 pr-10 py-2.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none text-gray-900 placeholder-gray-400"
                 />
-                <div className="absolute right-3 top-2/3 -translate-y-1/2 pointer-events-none">
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
                   <Search className="h-5 w-5 text-gray-400" />
                 </div>
               </div>
