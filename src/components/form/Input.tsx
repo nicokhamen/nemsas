@@ -1,7 +1,7 @@
 import React, { type InputHTMLAttributes, useState } from "react";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
-  label: string;
+  label?: string;
   endAdornment?: React.ReactNode;
   error?: string;
 }

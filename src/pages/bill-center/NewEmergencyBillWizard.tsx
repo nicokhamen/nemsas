@@ -16,6 +16,9 @@ import { serviceTypeOptions, dischargeTypeOptions } from "../../utils/emergencyB
 import { ProductServiceSearch } from "../../components/ui/ProductServiceSearch";
 import { ICDSearch } from "../../components/ui/ICDSearch";
 import type { ProductItem } from "../../types/productType";
+import PatientFormModal from "../../components/ui/PatientFormModal";
+import { resetEncounterState } from "../../services/slices/encounterSlice";
+import { clearPatientState } from "../../services/slices/patientSlice";
 
 // Step indicator component
 const StepIndicator = ({
@@ -37,11 +40,10 @@ const StepIndicator = ({
             {/* Step icon + label */}
             <div className="flex items-center gap-2">
               <div
-                className={`flex items-center justify-center w-6 h-6 rounded-full ${
-                  isCompleted
+                className={`flex items-center justify-center w-6 h-6 rounded-full ${isCompleted
                     ? "bg-[#DC2626] text-white"
                     : "bg-gray-400 text-white"
-                }`}
+                  }`}
               >
                 <svg
                   className="w-4 h-4"
@@ -57,9 +59,8 @@ const StepIndicator = ({
               </div>
 
               <span
-                className={`text-lg font-medium ${
-                  isCompleted ? "text-gray-900" : "text-gray-400"
-                }`}
+                className={`text-lg font-medium ${isCompleted ? "text-gray-900" : "text-gray-400"
+                  }`}
               >
                 Step {step}
               </span>
@@ -68,9 +69,8 @@ const StepIndicator = ({
             {/* Connector */}
             {index < steps.length - 1 && (
               <div
-                className={`mx-4 h-px w-16 ${
-                  step < currentStep ? "bg-[#DC2626]" : "bg-gray-300"
-                }`}
+                className={`mx-4 h-px w-16 ${step < currentStep ? "bg-[#DC2626]" : "bg-gray-300"
+                  }`}
               />
             )}
           </div>
@@ -98,13 +98,97 @@ export default function NewEmergencyBillWizard() {
   const dispatch = useDispatch<AppDispatch>();
   const { success: toastSuccess, error: toastError } = useCustomToast();
   const { selectedProviderId } = useProviderContext();
+  const [isPatientModalOpen, setIsPatientModalOpen] = useState(false);
+
+const resetAllState = useCallback(() => {
+  // Reset Redux states
+  dispatch(resetEncounterState());
+  dispatch(clearPatientState()); 
+  // Add this if you have a patient slice to reset
+  // dispatch(resetPatientState()); 
+  
+  // Reset all local states
+  setShowSuccess(false);
+  setCurrentStep(1);
+  setSelectedPatient(null);
+  setSearchTerm("");
+  setShowSearchResults(false);
+  setEncounterData({
+    emergencyType: "",
+    arrivalType: "",
+    attendingClinician: "",
+    encounterStartDate: "",
+    encounterEndDate: "",
+    dischargeStatus: "",
+    dischargeDate: "",
+    wardClinic: "",
+    serviceType: "",
+    selectedMedicalHistory: [],
+  });
+  setDiagnoses([]);
+  setServices([]);
+  setUploadedFiles([]);
+  setCreatedBillId("");
+  
+  // Also reset any confirmation modals
+  setShowPatientConfirm(false);
+  setShowFinalConfirm(false);
+  setShowDiagnosisSearch(false);
+  setShowProductSearch(false);
+}, [dispatch]);
+
+  // Reset state when component mounts
+  useEffect(() => {
+    resetAllState();
+  }, [resetAllState]);
+
+const handlePatientRegistered = (patientId: string, patientData?: any) => {
+  
+  console.log('New patient registered with ID:', patientId);
+  dispatch(resetEncounterState());
+setShowSuccess(false);
+  // if (selectedPatient?.id === patientId) {
+  //   console.log('Patient already selected, skipping duplicate call');
+  //   return;
+  // }
+  
+  // Create patient object from the registered data
+  const newPatient: Patient = {
+    id: patientId,
+    firstName: patientData?.firstName || "",
+    lastName: patientData?.lastName || "",
+    hospitalNumber: patientData?.hospitalNumber || "",
+    phoneNumber: patientData?.phoneNumber || "",
+    gender: patientData?.gender || "",
+    insuranceStatus: patientData?.insuranceStatus || "",
+    dateOfBirth: patientData?.dateOfBirth || "",
+    email: patientData?.email || "",
+    address: patientData?.address || "",
+  };
+  
+  // Set the selected patient (attach to bill)
+  setSelectedPatient(newPatient);
+  setSearchTerm(`${newPatient.firstName} ${newPatient.lastName}`);
+  
+  // Automatically move to step 2 WITHOUT showing confirmation modal
+  setCurrentStep(2);
+  
+  // Show success toast
+  toastSuccess(`Patient ${newPatient.firstName} ${newPatient.lastName} created and attached to bill`);
+  
+  // Close the patient form modal
+  setIsPatientModalOpen(false);
+  
+  // Optional: Log the patient data for debugging
+  console.log('New patient attached to bill:', newPatient);
+};
 
   // Redux state
   const {
     bills: emergencyBills,
     loading: billsLoading,
   } = useSelector((state: RootState) => state.emergencyBills);
-  
+
   const {
     departments,
     loading: departmentsLoading,
@@ -130,7 +214,7 @@ export default function NewEmergencyBillWizard() {
   const [createdBillId, setCreatedBillId] = useState<string>("");
   const [showDiagnosisSearch, setShowDiagnosisSearch] = useState(false);
   const [showProductSearch, setShowProductSearch] = useState(false);
-    // Patient search state
+  // Patient search state
   const [searchTerm, setSearchTerm] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(false);
 
@@ -172,21 +256,21 @@ export default function NewEmergencyBillWizard() {
   // Extract unique patients from emergency bills
   const availablePatients = useMemo(() => {
     if (!emergencyBills || emergencyBills.length === 0) return [];
-    
+
     const uniquePatientsMap = new Map();
     emergencyBills.forEach((bill: any) => {
       if (bill.patient && bill.patient.id) {
         uniquePatientsMap.set(bill.patient.id, bill.patient);
       }
     });
-    
+
     return Array.from(uniquePatientsMap.values());
   }, [emergencyBills]);
 
   // Search patients
   const searchResults = useMemo(() => {
     if (searchTerm.trim().length < 2) return [];
-    
+
     const term = searchTerm.toLowerCase();
     return availablePatients.filter((patient: any) => {
       const fullName = `${patient.firstName} ${patient.lastName}`.toLowerCase();
@@ -197,6 +281,7 @@ export default function NewEmergencyBillWizard() {
 
   // Handle patient selection
   const handlePatientSelect = (patient: Patient) => {
+    dispatch(resetEncounterState());
     setSelectedPatient(patient);
     setSearchTerm(`${patient.firstName} ${patient.lastName}`);
     setShowSearchResults(false);
@@ -408,6 +493,12 @@ export default function NewEmergencyBillWizard() {
       setCreatedBillId(`EB-${Date.now()}`);
       setShowSuccess(true);
     }
+      const timer = setTimeout(() => {
+      dispatch(resetEncounterState());
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  
   }, [encounterSuccess, encounterLoading, showSuccess]);
 
   // Handle errors
@@ -418,6 +509,8 @@ export default function NewEmergencyBillWizard() {
   }, [encounterError, toastError]);
 
   const handleCreateAnother = () => {
+
+    dispatch(resetEncounterState());
     setShowSuccess(false);
     setCurrentStep(1);
     setSelectedPatient(null);
@@ -441,8 +534,15 @@ export default function NewEmergencyBillWizard() {
   };
 
   const handleGoToBills = () => {
+    dispatch(resetEncounterState());
     navigate("/emergency/bills");
   };
+  useEffect(() => {
+  // Cleanup when component unmounts
+  return () => {
+    dispatch(resetEncounterState());
+  };
+}, [dispatch]);
 
   // Render step content
   const renderStepContent = () => {
@@ -451,12 +551,12 @@ export default function NewEmergencyBillWizard() {
         return (
           <div className="space-y-6">
             <h2 className="text-xl font-semibold text-gray-900">Patient Identification</h2>
-            
-            <div>
+
+            <div className="relative">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Patient Name or Number
               </label>
-              <div className="relative">
+              <div className="relative"> 
                 <input
                   type="text"
                   value={searchTerm}
@@ -495,31 +595,31 @@ export default function NewEmergencyBillWizard() {
                   ))}
                 </div>
               )}
-
-              {selectedPatient && (
-                <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold text-gray-900">
-                        {selectedPatient.firstName} {selectedPatient.lastName}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        Patient #: {selectedPatient.hospitalNumber}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setSelectedPatient(null);
-                        setSearchTerm("");
-                      }}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      <X className="h-5 w-5" />
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
+
+            {selectedPatient && (
+              <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold text-gray-900">
+                      {selectedPatient.firstName} {selectedPatient.lastName}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Patient #: {selectedPatient.hospitalNumber}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setSelectedPatient(null);
+                      setSearchTerm("");
+                    }}
+                    className="text-red-600 hover:text-red-800"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         );
 
@@ -540,7 +640,7 @@ export default function NewEmergencyBillWizard() {
         return (
           <div className="space-y-8">
             <h2 className="text-xl font-semibold text-gray-900">Emergency Encounter Details</h2>
-            
+
             {/* Row 1: Emergency Type, Arrival Type, Attending Clinician */}
             <div className="grid grid-cols-3 gap-6">
               <div>
@@ -1149,11 +1249,11 @@ export default function NewEmergencyBillWizard() {
   return (
     <div className="min-h-screen bg-gray-50 py-6">
       <div className="max-w-6xl mx-auto px-6">
-     
+
 
         {/* Main Content */}
         <div className="bg-white rounded-lg shadow-sm px-8 py-10">
-        <h1 className="text-2xl font-semibold text-gray-700 border-b-2  border-gray-200 pb-4 mb-8 ">Create New Bill</h1>
+          <h1 className="text-2xl font-semibold text-gray-700 border-b-2  border-gray-200 pb-4 mb-8 ">Create New Bill</h1>
 
           {/* Step Indicator */}
           <StepIndicator currentStep={currentStep} totalSteps={5} />
@@ -1163,17 +1263,16 @@ export default function NewEmergencyBillWizard() {
 
           {/* Navigation Buttons */}
           <div className="mt-10 flex  items-center max-w-4xl">
-           
+
 
             {currentStep < 5 ? (
               <button
                 onClick={goToNextStep}
                 disabled={isNextDisabled()}
-                className={`px-8 py-2.5 rounded-sm font-normal transition-colors w-50 ${
-                  isNextDisabled()
+                className={`px-8 py-2.5 rounded-sm font-normal transition-colors w-50 ${isNextDisabled()
                     ? "bg-red-200 text-red-400 cursor-not-allowed"
                     : "bg-[#DC2626] text-white hover:bg-red-700"
-                }`}
+                  }`}
               >
                 Next
               </button>
@@ -1181,17 +1280,16 @@ export default function NewEmergencyBillWizard() {
               <button
                 onClick={() => setShowFinalConfirm(true)}
                 disabled={encounterLoading}
-                className={`px-8 py-2.5 rounded-sm font-normal transition-colors w-50  ${
-                  encounterLoading
+                className={`px-8 py-2.5 rounded-sm font-normal transition-colors w-50  ${encounterLoading
                     ? "bg-red-200 text-red-400 cursor-not-allowed"
                     : "bg-[#DC2626] text-white hover:bg-red-700"
-                }`}
+                  }`}
               >
                 {encounterLoading ? "Submitting..." : "Submit"}
               </button>
             )}
 
-{currentStep > 1 ? (
+            {currentStep > 1 ? (
               <button
                 onClick={goToPreviousStep}
                 className="flex items-center gap-2 px-6 py-2.5  text-gray-700 hover:bg-gray-50 transition-colors font-semibold"
@@ -1200,16 +1298,31 @@ export default function NewEmergencyBillWizard() {
                 Previous
               </button>
             ) : (
+              <>
               <button
                 onClick={() => navigate("/emergency/bills")}
                 className="px-8 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors font-semibold"
               >
                 Cancel
               </button>
+               <button
+                onClick={() => setIsPatientModalOpen(true)}
+                className="px-8 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors font-semibold"
+              >
+                Create new patient
+              </button>
+              </>
             )}
           </div>
         </div>
       </div>
+
+      {/* Patient Form Modal */}
+         <PatientFormModal
+        isOpen={isPatientModalOpen}
+        onClose={() => setIsPatientModalOpen(false)}
+        onPatientRegistered={handlePatientRegistered}
+      />
 
       {/* Patient Confirmation Modal */}
       <ConfirmModal
@@ -1261,14 +1374,14 @@ export default function NewEmergencyBillWizard() {
         billDetails={
           selectedPatient
             ? {
-                billId: createdBillId,
-                patientName: `${selectedPatient.firstName} ${selectedPatient.lastName}`,
-                patientNumber: selectedPatient.hospitalNumber,
-                totalAmount: totalAmount,
-                servicesCount: services.length,
-                diagnosisCount: diagnoses.length,
-                encounterId: `ENC-${Date.now()}`,
-              }
+              billId: createdBillId,
+              patientName: `${selectedPatient.firstName} ${selectedPatient.lastName}`,
+              patientNumber: selectedPatient.hospitalNumber,
+              totalAmount: totalAmount,
+              servicesCount: services.length,
+              diagnosisCount: diagnoses.length,
+              encounterId: `ENC-${Date.now()}`,
+            }
             : undefined
         }
       />
