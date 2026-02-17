@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import PatientForm from "./PatientForm";
 import EmergencyBillCapture from "./EmergencyBillCapture";
 import { useSelector } from "react-redux";
-import type { RootState } from "../../services/store/store";
-import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
+import type { RootState } from "../../../services/store/store";
+import { LoadingSpinner } from "../../../components/ui/LoadingSpinner";
 
 const tabs = [
   { key: "patient", label: "Patient Record" },

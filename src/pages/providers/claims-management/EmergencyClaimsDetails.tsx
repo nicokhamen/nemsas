@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import type { RootState } from "../../services/store/store";
-import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
-import EmptyState from "../../components/ui/EmptyState";
-import Button from "../../components/ui/Button";
-import FormHeader from "../../components/form/FormHeader";
-import { useAppDispatch } from "../../hooks/redux";
+import type { RootState } from "../../../services/store/store";
+import { LoadingSpinner } from "../../../components/ui/LoadingSpinner";
+import EmptyState from "../../../components/ui/EmptyState";
+import Button from "../../../components/ui/Button";
+import FormHeader from "../../../components/form/FormHeader";
+import { useAppDispatch } from "../../../hooks/redux";
 
 // Table imports
 import {
@@ -28,12 +28,12 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../../components/table";
-import { Pagination } from "../../components/pagination";
+} from "../../../components/table";
+import { Pagination } from "../../../components/pagination";
 
 // Thunk and actions
-import { fetchClaimsEmergencyBills } from "../../services/thunks/claimEmergencyThunk";
-import { clearCurrentEmergencyBills } from "../../services/slices/claimEmergencyBillsSlice";
+import { fetchClaimsEmergencyBills } from "../../../services/thunks/claimEmergencyThunk";
+import { clearCurrentEmergencyBills } from "../../../services/slices/claimEmergencyBillsSlice";
 
 // Status color map for discharge status
 const dischargeStatusColor: Record<string, string> = {

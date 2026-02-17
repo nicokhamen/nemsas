@@ -2,23 +2,23 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { ChevronLeft, ChevronDown, Plus, Search, X, Edit2, Trash2, Upload } from "lucide-react";
-import type { AppDispatch, RootState } from "../../services/store/store";
-import { useProviderContext } from "../../context/useProviderContext";
-import { createEncounter, fetchDepartments, fetchServiceCategories } from "../../services/thunks/departmentThunk";
-import { useCustomToast } from "../../hooks/useCustomToast";
-import { buildEncounterPayload } from "../../utils/buildEncounterPayload";
-import FormSelect from "../../components/form/FormSelect";
-import Input from "../../components/form/Input";
-import Button from "../../components/ui/Button";
-import ConfirmModal from "../../components/ui/ConfirmModal";
-import BillSuccessModal from "../../components/ui/BillSuccessModal";
-import { serviceTypeOptions, dischargeTypeOptions } from "../../utils/emergencyBillUtils";
-import { ProductServiceSearch } from "../../components/ui/ProductServiceSearch";
-import { ICDSearch } from "../../components/ui/ICDSearch";
-import type { ProductItem } from "../../types/productType";
-import PatientFormModal from "../../components/ui/PatientFormModal";
-import { resetEncounterState } from "../../services/slices/encounterSlice";
-import { clearPatientState } from "../../services/slices/patientSlice";
+import type { AppDispatch, RootState } from "../../../services/store/store";
+import { useProviderContext } from "../../../context/useProviderContext";
+import { createEncounter, fetchDepartments, fetchServiceCategories } from "../../../services/thunks/departmentThunk";
+import { useCustomToast } from "../../../hooks/useCustomToast";
+import { buildEncounterPayload } from "../../../utils/buildEncounterPayload";
+import FormSelect from "../../../components/form/FormSelect";
+import Input from "../../../components/form/Input";
+import Button from "../../../components/ui/Button";
+import ConfirmModal from "../../../components/ui/ConfirmModal";
+import BillSuccessModal from "../../../components/ui/BillSuccessModal";
+import { serviceTypeOptions, dischargeTypeOptions } from "../../../utils/emergencyBillUtils";
+import { ProductServiceSearch } from "../../../components/ui/ProductServiceSearch";
+import { ICDSearch } from "../../../components/ui/ICDSearch";
+import type { ProductItem } from "../../../types/productType";
+import PatientFormModal from "../../../components/ui/PatientFormModal";
+import { resetEncounterState } from "../../../services/slices/encounterSlice";
+import { clearPatientState } from "../../../services/slices/patientSlice";
 
 // Step indicator component
 const StepIndicator = ({
@@ -1098,7 +1098,7 @@ setShowSuccess(false);
       case 5:
         return (
           <div className="space-y-6">
-            <h2 className="text-xl font-bold text-gray-800">Claim Summary</h2>
+            <h2 className="text-xl font-bold text-gray-800">Bill Summary</h2>
 
             {/* Patient Details */}
             {selectedPatient && (
@@ -1232,7 +1232,7 @@ setShowSuccess(false);
               <div className="mt-4 flex justify-end">
                 <div className="text-right">
                   <p className="text-sm text-gray-600">Total Amount:</p>
-                  <p className="text-2xl font-bold text-[#DC2626]">
+                  <p className="text-2xl font-bold text-[#10B981]">
                     ₦{totalAmount.toFixed(2)}
                   </p>
                 </div>

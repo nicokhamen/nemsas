@@ -1,28 +1,28 @@
 // src/components/emergencyBills/EditEmergencyBill.tsx
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useAppSelector, useAppDispatch } from "../../hooks/redux";
-import { useProviderContext } from "../../context/useProviderContext";
+import { useAppSelector, useAppDispatch } from "../../../hooks/redux";
+import { useProviderContext } from "../../../context/useProviderContext";
 import { 
   deleteEmergencyBill,
   fetchEmergencyBillDetails, 
   updateEmergencyBill 
-} from "../../services/thunks/emergencyBillsThunk";
-import { clearCurrentBill, clearError } from "../../services/slices/emergencyBillSlice";
-import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
+} from "../../../services/thunks/emergencyBillsThunk";
+import { clearCurrentBill, clearError } from "../../../services/slices/emergencyBillSlice";
+import { LoadingSpinner } from "../../../components/ui/LoadingSpinner";
 import { ArrowLeft, Save, Trash2 } from "lucide-react";
-import FormSelect from "../../components/form/FormSelect";
-import { dischargeTypeOptions, serviceTypeOptions } from "../../utils/emergencyBillUtils";
-import type { RootState } from "../../services/store/store";
+import FormSelect from "../../../components/form/FormSelect";
+import { dischargeTypeOptions, serviceTypeOptions } from "../../../utils/emergencyBillUtils";
+import type { RootState } from "../../../services/store/store";
 import { useSelector } from "react-redux";
-import { fetchDepartments, fetchServiceCategories } from "../../services/thunks/departmentThunk";
-import { DiagnosisSearchTable } from "../../components/ui/DIagnosisSearchTable";
-import { ProductServiceSearch } from "../../components/ui/ProductServiceSearch";
-import { ProductServiceTable } from "../../components/ui/ProductServiceTable";
-import type { ProductItem } from "../../types/productType";
-import { FileUpload } from "../../components/FileUpload";
-import ConfirmModal from "../../components/ui/ConfirmModal";
-import { useCustomToast } from "../../hooks/useCustomToast";
+import { fetchDepartments, fetchServiceCategories } from "../../../services/thunks/departmentThunk";
+import { DiagnosisSearchTable } from "../../../components/ui/DIagnosisSearchTable";
+import { ProductServiceSearch } from "../../../components/ui/ProductServiceSearch";
+import { ProductServiceTable } from "../../../components/ui/ProductServiceTable";
+import type { ProductItem } from "../../../types/productType";
+import { FileUpload } from "../../../components/FileUpload";
+import ConfirmModal from "../../../components/ui/ConfirmModal";
+import { useCustomToast } from "../../../hooks/useCustomToast";
 
 interface Diagnosis {
   id: string;

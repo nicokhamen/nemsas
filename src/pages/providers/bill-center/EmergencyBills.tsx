@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
 import { Plus, Eye } from "lucide-react";
-import type { RootState } from "../../services/store/store";
-import EmptyState from "../../components/ui/EmptyState";
-import Button from "../../components/ui/Button";
-import FormHeader from "../../components/form/FormHeader";
-import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
-import { useAppSelector, useAppDispatch } from "../../hooks/redux";
-import { fetchEmergencyBills } from "../../services/thunks/emergencyBillsThunk";
-import { useProviderContext } from "../../context/useProviderContext";
+import type { RootState } from "../../../services/store/store";
+import EmptyState from "../../../components/ui/EmptyState";
+import Button from "../../../components/ui/Button";
+import FormHeader from "../../../components/form/FormHeader";
+import { LoadingSpinner } from "../../../components/ui/LoadingSpinner";
+import { useAppSelector, useAppDispatch } from "../../../hooks/redux";
+import { fetchEmergencyBills } from "../../../services/thunks/emergencyBillsThunk";
+import { useProviderContext } from "../../../context/useProviderContext";
 
 // Table imports
 import {
@@ -30,12 +30,12 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../../components/table";
-import { Pagination } from "../../components/pagination";
+} from "../../../components/table";
+import { Pagination } from "../../../components/pagination";
 import { useNavigate } from "react-router-dom";
-import type { EmergencyBill } from "../../types/emergency-bills";
-import { patientNameFilter } from "../../components/ui/patientNameFilter";
-import Input from "../../components/form/Input";
+import type { EmergencyBill } from "../../../types/emergency-bills";
+import { patientNameFilter } from "../../../components/ui/patientNameFilter";
+import Input from "../../../components/form/Input";
 // import DatePicker from "../../components/form/DatePicker";
 
 // Status color map for emergency bills

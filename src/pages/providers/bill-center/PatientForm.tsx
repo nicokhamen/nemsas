@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { ArrowRight } from "lucide-react";
-import { useProviderContext } from "../../context/useProviderContext";
-import { registerPatient } from "../../services/thunks/patientThunk";
-import { clearPatientState } from "../../services/slices/patientSlice";
-import type { AppDispatch, RootState } from "../../services/store/store";
-import Input from "../../components/form/Input";
-import FormSelect from "../../components/form/FormSelect";
-import { insuranceTypeOptions } from "../../utils/insuranceTypeUtils";
-import { genderTypeOptions } from "../../utils/genderType";
-import ConfirmModal from "../../components/ui/ConfirmModal";
-import PatientSearch from "../../components/ui/PatientSearch";
+import { useProviderContext } from "../../../context/useProviderContext";
+import { registerPatient } from "../../../services/thunks/patientThunk";
+import { clearPatientState } from "../../../services/slices/patientSlice";
+import type { AppDispatch, RootState } from "../../../services/store/store";
+import Input from "../../../components/form/Input";
+import FormSelect from "../../../components/form/FormSelect";
+import { insuranceTypeOptions } from "../../../utils/insuranceTypeUtils";
+import { genderTypeOptions } from "../../../utils/genderType";
+import ConfirmModal from "../../../components/ui/ConfirmModal";
+import PatientSearch from "../../../components/ui/PatientSearch";
 
 interface FormData {
   hospitalNumber: string;

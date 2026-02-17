@@ -7,26 +7,31 @@ import Dashboard from "../pages/Dashboard";
 
 import Tariffs from "../pages/Tariffs";
 import Settings from "../pages/Settings";
-// import EnrolleesManagement from "../pages/EnrolleesManagement";
-// import EnrolleeDetails from "../pages/EnrolleeDetails";
 
 import AllProviders from "../pages/provider/AllProviders";
 import { ProviderRegistration } from "../pages/provider/Registration";
 import { VettingClaims } from "../pages/vetting/VettingClaims";
 import ProviderDetails from "../pages/provider/ProviderDetails";
-import { Claims } from "../pages/claims-management/EmergencyClaims";
-import EBillCapture from "../pages/bill-center";
-import NewEmergencyBillWizard from "../pages/bill-center/NewEmergencyBillWizard";
-import { MDReview } from "../pages/md-review/MdReviewIndex";
-import EndorsementReview from "../pages/md-review/EndorsementReview";
-import ClaimsDetails from "../pages/claims-management/ClaimsDetails";
-// import CreateClaim from "../pages/claims-management/CreateClaim";
-import { EmergencyBills } from "../pages/bill-center/EmergencyBills";
-import EmergencyBillDetails from "../pages/bill-center/EmergencyBillDetails";
-import EditEmergencyBill from "../pages/bill-center/EditEmergencyBill";
-import EmergencyClaimsDetails from "../pages/claims-management/EmergencyClaimsDetails";
-import MdReviewBills from "../pages/md-review/MdReviewBills";
-import EmergencyClaimsView from "../pages/claims-management/EmergencyClaimsView";
+import { Claims } from "../pages/providers/claims-management/EmergencyClaims";
+// import EBillCapture from "../../pages/bill-center";
+// import NewEmergencyBillWizard from "../pages/bill-center/NewEmergencyBillWizard";
+// import { MDReview } from "../pages/md-review/MdReviewIndex";
+// import EndorsementReview from "../pages/md-review/EndorsementReview";
+import ClaimsDetails from "../pages/providers/claims-management/ClaimsDetails";
+// import { EmergencyBills } from "../pages/bill-center/EmergencyBills";
+// import EmergencyBillDetails from "../pages/bill-center/EmergencyBillDetails";
+// import EditEmergencyBill from "../pages/bill-center/EditEmergencyBill";
+import EmergencyClaimsDetails from "../pages/providers/claims-management/EmergencyClaimsDetails";
+// import MdReviewBills from "../pages/md-review/MdReviewBills";
+import EmergencyClaimsView from "../pages/providers/claims-management/EmergencyClaimsView";
+import { MDReview } from "../pages/providers/md-review/MdReviewIndex";
+import EndorsementReview from "../pages/providers/md-review/EndorsementDetails";
+import MdReviewBills from "../pages/providers/md-review/MdReviewBills";
+import EBillCapture from "../pages/providers/bill-center";
+import NewEmergencyBillWizard from "../pages/providers/bill-center/NewEmergencyBillWizard";
+import { EmergencyBills } from "../pages/providers/bill-center/EmergencyBills";
+import EmergencyBillDetails from "../pages/providers/bill-center/EmergencyBillDetails";
+import EditEmergencyBill from "../pages/providers/bill-center/EditEmergencyBill";
 
 const AppRoutes = () => {
   return (
@@ -62,7 +67,7 @@ const AppRoutes = () => {
               </Layout>
             }
           />
-             <Route
+          <Route
             path="emergency/claims/bills/:id"
             element={
               <Layout>
@@ -86,14 +91,6 @@ const AppRoutes = () => {
               </Layout>
             }
           />
-          {/* <Route
-            path="create-claim"
-            element={
-              <Layout>
-                <CreateClaim />
-              </Layout>
-            }
-          /> */}
 
           <Route
             path="emergency/bills"
@@ -123,11 +120,11 @@ const AppRoutes = () => {
               </Layout>
             }
           />
-                  <Route
+          <Route
             path="md-review/:id"
             element={
               <Layout>
-                <MdReviewBills/>
+                <MdReviewBills />
               </Layout>
             }
           />
@@ -139,23 +136,7 @@ const AppRoutes = () => {
               </Layout>
             }
           />
-{/* 
-          <Route
-            path="enrollee-management"
-            element={
-              <Layout>
-                <EnrolleesManagement />
-              </Layout>
-            }
-          /> */}
-          {/* <Route
-            path="enrollees/:id"
-            element={
-              <Layout>
-                <EnrolleeDetails />
-              </Layout>
-            }
-          /> */}
+
           <Route
             path="tariff"
             element={

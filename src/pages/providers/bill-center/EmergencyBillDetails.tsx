@@ -1,11 +1,11 @@
 import React, { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useAppSelector, useAppDispatch } from "../../hooks/redux";
-import { useProviderContext } from "../../context/useProviderContext";
-import { fetchEmergencyBillDetails } from "../../services/thunks/emergencyBillsThunk";
-import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
+import { useAppSelector, useAppDispatch } from "../../../hooks/redux";
+import { useProviderContext } from "../../../context/useProviderContext";
+import { fetchEmergencyBillDetails } from "../../../services/thunks/emergencyBillsThunk";
+import { LoadingSpinner } from "../../../components/ui/LoadingSpinner";
 import { ArrowLeft, Pencil, XCircle } from "lucide-react";
-import { clearCurrentBill, clearError } from "../../services/slices/emergencyBillSlice";
+import { clearCurrentBill, clearError } from "../../../services/slices/emergencyBillSlice";
 
 const EmergencyBillDetails = () => {
   const { billId } = useParams<{ billId: string }>();

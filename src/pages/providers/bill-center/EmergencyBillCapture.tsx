@@ -1,26 +1,26 @@
 import { useDispatch, useSelector } from "react-redux";
 import { useCallback, useEffect, useRef, useState } from "react";
-import FormSelect from "../../components/form/FormSelect";
-import Input from "../../components/form/Input";
-import Button from "../../components/ui/Button";
-import type { AppDispatch, RootState } from "../../services/store/store";
+import FormSelect from "../../../components/form/FormSelect";
+import Input from "../../../components/form/Input";
+import Button from "../../../components/ui/Button";
+import type { AppDispatch, RootState } from "../../../services/store/store";
 import {
   dischargeTypeOptions,
   serviceTypeOptions,
-} from "../../utils/emergencyBillUtils";
+} from "../../../utils/emergencyBillUtils";
 import {
   fetchDepartments,
   fetchServiceCategories,
-} from "../../services/thunks/departmentThunk";
+} from "../../../services/thunks/departmentThunk";
 // import { FileUpload } from "../../components/FileUpload";
-import { ProductServiceSearch } from "../../components/ui/ProductServiceSearch";
-import { ProductServiceTable } from "../../components/ui/ProductServiceTable";
-import type { ProductItem } from "../../types/productType";
-import { createEncounter } from "../../services/thunks/departmentThunk";
-import ConfirmModal from "../../components/ui/ConfirmModal";
-import { useCustomToast } from "../../hooks/useCustomToast";
+import { ProductServiceSearch } from "../../../components/ui/ProductServiceSearch";
+import { ProductServiceTable } from "../../../components/ui/ProductServiceTable";
+import type { ProductItem } from "../../../types/productType";
+import { createEncounter } from "../../../services/thunks/departmentThunk";
+import ConfirmModal from "../../../components/ui/ConfirmModal";
+import { useCustomToast } from "../../../hooks/useCustomToast";
 import { useNavigate } from "react-router-dom";
-import { DiagnosisSearchTable } from "../../components/ui/DIagnosisSearchTable";
+import { DiagnosisSearchTable } from "../../../components/ui/DIagnosisSearchTable";
 
 // Define Diagnosis type
 interface Diagnosis {

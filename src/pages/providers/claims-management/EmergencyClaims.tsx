@@ -1,13 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
-import type { RootState } from "../../services/store/store";
-import EmptyState from "../../components/ui/EmptyState";
-import Button from "../../components/ui/Button";
-import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
-import { useAppDispatch } from "../../hooks/redux";
-import { clearError } from "../../services/slices/emergencyClaimSlice";
-import { fetchEmergencyClaims } from "../../services/thunks/emergencyClaimThunk";
-import { Search, Filter, Upload, Eye, FileText, Users, PieChart } from "lucide-react";
+import type { RootState } from "../../../services/store/store";
+import EmptyState from "../../../components/ui/EmptyState";
+import Button from "../../../components/ui/Button";
+import FormHeader from "../../../components/form/FormHeader";
+import { LoadingSpinner } from "../../../components/ui/LoadingSpinner";
+import { useAppDispatch } from "../../../hooks/redux";
+
 
 // Table imports
 import {
@@ -29,76 +28,19 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../../components/table";
-import { Pagination } from "../../components/pagination";
+} from "../../../components/table";
+import { Pagination } from "../../../components/pagination";
 import { useNavigate } from "react-router-dom";
+import { fetchEmergencyClaims } from "../../../services/thunks/emergencyClaimThunk";
+import { clearError } from "../../../services/slices/emergencyClaimSlice";
 
 // Status color map
 const statusColor: Record<string, string> = {
-  "Awaiting Review": "#D97706",
-  "Pending PIU Review": "#D97706",
-  Pending: "#D97706",
+  Pending: "#ff9800",
   Processing: "#1976d2",
   Rejected: "#d32f2f",
   Approved: "#2e7d32",
-  Vetted: "#059669",
   Paid: "#6b6f80",
-};
-
-// Circular Progress Component
-const CircularProgress = ({ 
-  percentage, 
-  pathColor = "#DC2626", 
-  textColor = "#374151", 
-  bgColor = "#FEE2E2" 
-}: { 
-  percentage: number; 
-  pathColor?: string; 
-  textColor?: string; 
-  bgColor?: string; 
-}) => {
-  const radius = 20;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (percentage / 100) * circumference;
-  const size = 56;
-  const center = size / 2;
-  
-  return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <svg 
-        width={size} 
-        height={size} 
-        viewBox={`0 0 ${size} ${size}`}
-        className="transform -rotate-90"
-      >
-        <circle
-          cx={center}
-          cy={center}
-          r={radius}
-          stroke={bgColor}
-          strokeWidth="5"
-          fill="none"
-        />
-        <circle
-          cx={center}
-          cy={center}
-          r={radius}
-          stroke={pathColor}
-          strokeWidth="5"
-          fill="none"
-          strokeDasharray={circumference}
-          strokeDashoffset={strokeDashoffset}
-          strokeLinecap="round"
-        />
-      </svg>
-      <span 
-        className="absolute inset-0 flex items-center justify-center text-sm font-semibold"
-        style={{ color: textColor }}
-      >
-        {percentage}%
-      </span>
-    </div>
-  );
 };
 
 // Format currency
@@ -118,10 +60,10 @@ const formatDate = (dateString: string): string => {
   });
 };
 
-export const MDReview = () => {
+export const Claims = () => {
   const [providerId, setProviderId] = useState<string>("");
   const [sshiaId, setSshiaId] = useState<string>("");
-
+  
   // Filter states
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -138,6 +80,7 @@ export const MDReview = () => {
     claims: emergencyClaims, 
     loading, 
     error,
+    // successMessage 
   } = useSelector((state: RootState) => state.emergencyClaim);
   
   const dispatch = useAppDispatch();
@@ -176,54 +119,26 @@ export const MDReview = () => {
     };
   }, [dispatch]);
 
-  // Calculate processing delay
-  const calculateProcessingDelay = (createdDate: string): string => {
-    const created = new Date(createdDate);
-    const now = new Date();
-    const diffMs = now.getTime() - created.getTime();
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-    
-    if (diffDays > 0) {
-      return `${diffDays}days ${diffHours}hr ${diffMins}min`;
-    } else if (diffHours > 0) {
-      return `${diffHours}hr ${diffMins}min`;
-    }
-    return `${diffMins}min`;
-  };
-
   // Map emergency claims to table format
   const tableClaims = useMemo(() => {
     return (emergencyClaims || []).map((claim, index) => ({
       id: claim.id,
       sn: index + 1,
-      claimId: `FCT/ETC/${String(index + 2).padStart(3, '0')}`,
       description: claim.description,
-      claimType: claim.claimType || "ETC",
+      claimType: claim.claimType,
       date: formatDate(claim.date),
       rawDate: claim.date,
       submittedAmount: claim.submittedAmount,
       formattedAmount: formatCurrency(claim.submittedAmount),
       vettedAmount: claim.vettedAmount,
       formattedVettedAmount: formatCurrency(claim.vettedAmount),
-      vettedDate: formatDate(claim.createdDate),
       status: claim.status,
-      processingDelay: calculateProcessingDelay(claim.createdDate),
+      createdDate: formatDate(claim.createdDate),
       emergencyBillCount: claim.emergencyBillIds?.length || 0,
     }));
   }, [emergencyClaims]);
 
-  const routeToEmergencyBillPage = () => {
-    navigate("/emergency/bill-capture");
-  };
-
-  // Handle navigation to MdReviewBills page when a claim is clicked
-  const handleClaimClick = (claimId: string) => {
-    navigate(`/md-review/${claimId}`);
-  };
-
-  // Define columns based on design
+  // Define columns based on emergency claim schema
   const columns: ColumnDef<(typeof tableClaims)[0]>[] = [
     {
       accessorKey: "sn",
@@ -231,24 +146,18 @@ export const MDReview = () => {
       size: 60,
     },
     {
-      accessorKey: "claimId",
-      header: "Claim ID",
-      enableSorting: true,
-    },
-    {
       accessorKey: "description",
-      header: "Claim Description",
+      header: "Description",
       enableSorting: true,
     },
     {
       accessorKey: "claimType",
       header: "Claim Type",
       enableSorting: true,
-      size: 80,
     },
     {
       accessorKey: "date",
-      header: "Date",
+      header: "Claim Date",
       enableSorting: true,
     },
     {
@@ -262,18 +171,13 @@ export const MDReview = () => {
       enableSorting: true,
     },
     {
-      accessorKey: "vettedDate",
-      header: "Vetted Date",
-      enableSorting: true,
-    },
-    {
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => (
         <span
           style={{
-            color: statusColor[row.original.status] || "#D97706",
-            fontWeight: 500,
+            color: statusColor[row.original.status] || "#000",
+            fontWeight: 600,
           }}
         >
           {row.original.status}
@@ -282,24 +186,32 @@ export const MDReview = () => {
       enableSorting: true,
     },
     {
-      accessorKey: "processingDelay",
-      header: "Processing Delay",
+      accessorKey: "createdDate",
+      header: "Created Date",
       enableSorting: true,
     },
-    {
+    // {
+    //   accessorKey: "emergencyBillCount",
+    //   header: "Bills",
+    //   cell: ({ row }) => (
+    //     <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+    //       {row.original.emergencyBillCount}
+    //     </span>
+    //   ),
+    // },
+        {
       id: "action",
-      header: "Action",
       enableHiding: false,
       cell: ({ row }) => (
         <button
-          className="flex items-center justify-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
+          className="h-auto py-1 px-3 text-xs border border-gray-300 rounded hover:bg-gray-50 transition-colors"
           onClick={(e) => {
             e.stopPropagation();
-            navigate(`/md-review/${row.original.id}`);
+           
+            navigate(`/emergency/claims/${row.original.id}`);
           }}
-          title="View Details"
         >
-          <Eye className="h-5 w-5" />
+          View
         </button>
       ),
     },
@@ -346,6 +258,11 @@ export const MDReview = () => {
     }
   };
 
+  // Navigate to create new claim
+  // const navigateToCreateClaim = () => {
+  //   navigate("/emergency/claims/create");
+  // };
+
   // Show loading while waiting for user data
   if (!currentUser) {
     return (
@@ -355,66 +272,17 @@ export const MDReview = () => {
     );
   }
 
-  // Calculate stats
-  const totalAmount = useMemo(() => {
-    const total = tableClaims.reduce((sum, claim) => sum + (claim.submittedAmount || 0), 0);
-    if (total >= 1000000) return `${(total / 1000000).toFixed(2)}M`;
-    if (total >= 1000) return `${(total / 1000).toFixed(0)}K`;
-    return total.toString();
-  }, [tableClaims]);
-
-  const totalPatients = tableClaims.length;
-  const billAccuracy = 75; // This would be calculated from actual data
-
   return (
-    <>
-      <div className="p-6 space-y-6">
-        {/* Stat Cards */}
-        <div className="grid grid-cols-3 gap-6 bg-white rounded-lg shadow-sm p-6">
-          {/* Total Amount Card */}
-          <div className="bg-[#E4F7F0] rounded-lg p-6 flex items-center gap-4">
-            <div className="w-12 h-12 bg-[#C4F2E1] rounded-lg flex items-center justify-center">
-              <FileText className="h-6 w-6 text-green-600" />
-            </div>
-            <div>
-              <p className="text-3xl font-bold text-gray-900">{totalAmount}</p>
-              <p className="text-sm text-gray-500">Total Amount</p>
-            </div>
-          </div>
-
-          {/* Total Patient Card */}
-          <div className="bg-[#DB84000D] rounded-lg p-6 flex items-center gap-4">
-            <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
-              <Users className="h-6 w-6 text-amber-600" />
-            </div>
-            <div>
-              <p className="text-3xl font-bold text-gray-900">{totalPatients}</p>
-              <p className="text-sm text-gray-500">Total Patient</p>
-            </div>
-          </div>
-
-          {/* Bill Accuracy Card */}
-          <div className="bg-[#FDEDED] rounded-lg  p-6 flex items-center gap-4">
-            <CircularProgress percentage={billAccuracy} 
-            pathColor="#DC2626"
-            textColor="#DC2626"
-            bgColor="#FFFFFF"
-            />
-            <div>
-              <p className="text-3xl font-bold text-gray-900">{billAccuracy}%</p>
-              <p className="text-sm text-gray-500">Bill Accuracy</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content Card */}
-        <div className="bg-white rounded-lg shadow-sm">
-          {/* Search and Actions */}
-          <div className="p-6 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4 flex-1">
+    <div className="p-6">
+      <div className="bg-gray-100 overflow-scroll h-full">
+        <div className="bg-white rounded-md flex flex-col mb-36">
+          {/* Header */}
+          <div className="flex flex-wrap gap-4 justify-between items-center p-6">
+            <div className="flex items-center gap-8">
+              <FormHeader>Emergency Claims Management</FormHeader>
               <input
                 type="text"
-                placeholder="Search claim description..."
+                placeholder="Search claims by description"
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
@@ -425,30 +293,26 @@ export const MDReview = () => {
                     },
                   ]);
                 }}
-                className="flex-1 max-w-md px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none"
+                className="border rounded-lg hidden lg:block px-4 py-2 lg:w-96 lg:max-w-2xl focus:outline-none"
               />
-              <button
-                onClick={() => loadClaims()}
-                className="flex w-50 items-center justify-center gap-2 min-w-[120px] px-6 py-2.5 bg-[#DC2626] text-white rounded-sm hover:bg-red-700 transition-colors font-medium"
-              >
-                <Search className="h-4 w-4" />
-                Search
-              </button>
-              <button
-                onClick={() => {/* Filter functionality */}}
-                className="flex w-50 items-center justify-center gap-2 min-w-[100px] px-4 py-2.5 border border-gray-300 text-gray-700 rounded-sm hover:bg-gray-50 transition-colors font-medium"
-              >
-                <Filter className="h-4 w-4" />
-                Filter
-              </button>
             </div>
-            <button
-              onClick={() => {/* Export functionality */}}
-              className="flex items-center gap-2 px-5 py-2.5 border border-gray-300 text-gray-700 rounded-sm hover:bg-gray-50 transition-colors font-medium"
-            >
-              <Upload className="h-4 w-4" />
-              Export
-            </button>
+            <div className="flex gap-4 items-center">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  // Refresh claims
+                  loadClaims();
+                }}
+              >
+                Refresh
+              </Button>
+              {/* <Button
+               onClick={() => navigate("/create-claim")}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                + New Claim
+              </Button> */}
+            </div>
           </div>
 
           {/* Provider/SSHIA ID Input Section */}
@@ -492,6 +356,13 @@ export const MDReview = () => {
             </div>
           )}
 
+          {/* Success/Error Messages */}
+          {/* {successMessage && (
+            <div className="px-6 py-3 bg-green-50 border-l-4 border-green-500">
+              <p className="text-green-700">{successMessage}</p>
+            </div>
+          )} */}
+
           {error && (
             <div className="px-6 py-3 bg-red-50 border-l-4 border-red-500">
               <p className="text-red-700">{error}</p>
@@ -523,7 +394,7 @@ export const MDReview = () => {
                 title="No emergency claims available"
                 description={error ? "Failed to load claims" : "No claims found for the provided IDs."}
                 action={
-                  <Button onClick={routeToEmergencyBillPage}>
+                  <Button  onClick={() => navigate("/create-claim")}>
                     + Create New Emergency Claim
                   </Button>
                 }
@@ -531,13 +402,13 @@ export const MDReview = () => {
             ) : (
               <>
                 {/* Table */}
-                <div className="flex-1">
-                  <Table className="min-w-[1200px]">
-                    <TableHeader className="bg-[#E9F7F3]">
+                <div className="flex-1 lg:px-0 lg:mt-4">
+                  <Table className="min-w-[1000px]">
+                    <TableHeader className="border-y border-gray-200">
                       {table.getHeaderGroups().map((headerGroup) => (
-                        <TableRow key={headerGroup.id} className="hover:bg-transparent">
+                        <TableRow key={headerGroup.id}>
                           {headerGroup.headers.map((header) => (
-                            <TableHead key={header.id} className="text-gray-700 font-medium">
+                            <TableHead key={header.id}>
                               {header.isPlaceholder
                                 ? null
                                 : flexRender(
@@ -554,11 +425,14 @@ export const MDReview = () => {
                         table.getRowModel().rows.map((row) => (
                           <TableRow
                             key={row.id}
-                            className="cursor-pointer hover:bg-[#FFFFFF] transition-colors border-b border-gray-100"
-                            onClick={() => handleClaimClick(row.original.id)}
+                            className="cursor-pointer hover:bg-gray-50 transition-colors"
+                            onClick={() => {
+                              // Navigate to claim details or open modal
+                              navigate(`/emergency/claims/${row.original.id}`);
+                            }}
                           >
                             {row.getVisibleCells().map((cell) => (
-                              <TableCell key={cell.id} className="py-4">
+                              <TableCell key={cell.id}>
                                 {flexRender(
                                   cell.column.columnDef.cell,
                                   cell.getContext()
@@ -580,7 +454,7 @@ export const MDReview = () => {
                               <span className="text-gray-500">
                                 Try adjusting your search criteria
                               </span>
-                              <Button onClick={routeToEmergencyBillPage}>
+                              <Button >
                                 + Create new claim
                               </Button>
                             </div>
@@ -591,11 +465,8 @@ export const MDReview = () => {
                   </Table>
                 </div>
 
-                {/* Footer */}
-                <div className="px-6 py-4 flex items-center justify-between text-sm text-gray-500">
-                  <span>
-                    Showing all {table.getFilteredRowModel().rows.length} settlements
-                  </span>
+                {/* Pagination */}
+                <div className="p-4 flex items-center justify-end">
                   <Pagination
                     totalEntriesSize={table.getFilteredRowModel().rows.length}
                     currentPage={pageIndex + 1}
@@ -613,6 +484,6 @@ export const MDReview = () => {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
