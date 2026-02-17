@@ -361,11 +361,11 @@ export const EmergencyBills = () => {
               <div className="grid grid-cols-12 gap-4 items-end">
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Patient Number
+                    Patient Name
                   </label>
                   <input
                     type="text"
-                    placeholder="Enter number"
+                    placeholder="Enter name"
                     value={searchTerm}
                     onChange={(e) => {
                       const value = e.target.value;
