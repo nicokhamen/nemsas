@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import type { ICDItem } from "../../../../types/emergency-bill";
+import type { ICDItem } from "../../../../../types/emergency-bill";
 
 interface Diagnosis {
   id: string;

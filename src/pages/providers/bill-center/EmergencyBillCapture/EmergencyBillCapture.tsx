@@ -1,19 +1,19 @@
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import type { AppDispatch, RootState } from "../../../services/store/store";
-import { useCustomToast } from "../../../hooks/useCustomToast";
+import type { AppDispatch, RootState } from "../../../../services/store/store";
+import { useCustomToast } from "../../../../hooks/useCustomToast";
 import { useEmergencyBillData } from "./hooks/useEmergencyBillData";
 import { useEmergencyBillForm } from "./hooks/useEmergencyBillForm";
 import { useDiagnosisManager } from "./hooks/useDiagnosisManager";
-import { createEncounter } from "../../../services/thunks/departmentThunk";
+import { createEncounter } from "../../../../services/thunks/departmentThunk";
 import EncounterDetailsSection from "./sections/EncounterDetailsSection";
 import ServiceCategorySection from "./sections/ServiceCategorySection";
 import DiagnosisSection from "./sections/DiagnosisSection";
 import FileUploadSection from "./sections/FileUploadSection";
 import PhysicianSection from "./sections/PhysicianSection";
 import ProductServiceSection from "./sections/ProductServiceSection";
-import ConfirmModal from "../../../components/ui/ConfirmModal";
-import  {buildEncounterPayload}  from "../../../utils/buildEncounterPayload"
+import ConfirmModal from "../../../../components/ui/ConfirmModal";
+import  {buildEncounterPayload}  from "../../../../utils/buildEncounterPayload"
 
 interface EmergencyBillCaptureProps {
   patientId: string;

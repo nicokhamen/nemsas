@@ -1,5 +1,5 @@
-import { ICDSearch } from "../../../../components/ui/ICDSearch";
-import type { ICDItem } from "../../../../types/emergency-bill";
+import { ICDSearch } from "../../../../../components/ui/ICDSearch";
+import type { ICDItem } from "../../../../../types/emergency-bill";
 
 interface Diagnosis {
   id: string;

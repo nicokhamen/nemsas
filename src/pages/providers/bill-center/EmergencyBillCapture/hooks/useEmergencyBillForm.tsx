@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import type { ProductItem } from "../../../../types/productType";
+import type { ProductItem } from "../../../../../types/productType";
 // import type { ProductItem } from "../../types/productType";
 
 interface FormState {

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchDepartments, fetchServiceCategories } from "../../../../services/thunks/departmentThunk";
-import type { AppDispatch, RootState } from "../../../../services/store/store";
+import { fetchDepartments, fetchServiceCategories } from "../../../../../services/thunks/departmentThunk";
+import type { AppDispatch, RootState } from "../../../../../services/store/store";
 
 export const useEmergencyBillData = () => {
   const dispatch = useDispatch<AppDispatch>();

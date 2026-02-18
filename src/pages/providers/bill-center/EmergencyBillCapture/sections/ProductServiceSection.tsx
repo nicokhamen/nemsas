@@ -1,7 +1,7 @@
-import Button from "../../../../components/ui/Button";
-import { ProductServiceSearch } from "../../../../components/ui/ProductServiceSearch";
-import { ProductServiceTable } from "../../../../components/ui/ProductServiceTable";
-import type { ProductItem } from "../../../../types/productType";
+import Button from "../../../../../components/ui/Button";
+import { ProductServiceSearch } from "../../../../../components/ui/ProductServiceSearch";
+import { ProductServiceTable } from "../../../../../components/ui/ProductServiceTable";
+import type { ProductItem } from "../../../../../types/productType";
 
 interface ProductServiceSectionProps {
   productServiceItems: ProductItem[];

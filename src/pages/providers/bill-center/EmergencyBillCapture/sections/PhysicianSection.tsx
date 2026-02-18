@@ -1,4 +1,4 @@
-import Input from "../../../../components/form/Input";
+import Input from "../../../../../components/form/Input";
 
 interface PhysicianSectionProps {
   attendingPhysician: string;

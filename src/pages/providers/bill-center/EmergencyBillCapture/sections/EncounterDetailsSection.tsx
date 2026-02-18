@@ -1,5 +1,5 @@
-import FormSelect from "../../../../components/form/FormSelect";
-import { serviceTypeOptions, dischargeTypeOptions } from "../../../../utils/emergencyBillUtils";
+import FormSelect from "../../../../../components/form/FormSelect";
+import { serviceTypeOptions, dischargeTypeOptions } from "../../../../../utils/emergencyBillUtils";
 
 interface EncounterDetailsSectionProps {
   departments: Array<{ id: string; name: string }>;
