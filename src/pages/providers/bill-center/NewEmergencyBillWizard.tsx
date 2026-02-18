@@ -550,12 +550,23 @@ setShowSuccess(false);
       case 1:
         return (
           <div className="space-y-6">
-            <h2 className="text-xl font-semibold text-gray-900">Patient Identification</h2>
+              <div className="flex items-center justify-between">
+      <h2 className="text-xl font-semibold text-gray-900">Patient Identification</h2>
+      <button
+        onClick={() => setIsPatientModalOpen(true)}
+        className="px-8 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors font-semibold"
+      >
+        Create new patient
+      </button>
+    </div>
+
 
             <div className="relative">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Patient Name or Number
               </label>
+              
+              
               <div className="relative"> 
                 <input
                   type="text"
@@ -887,7 +898,7 @@ setShowSuccess(false);
             {/* Diagnosis Table */}
             <div className="border border-gray-200 rounded-lg overflow-hidden">
               <table className="w-full">
-                <thead className="bg-gray-50">
+                <thead className="bg-[#E4F7F078]">
                   <tr>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Type</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Code</th>
@@ -981,14 +992,15 @@ setShowSuccess(false);
             {/* Services Table */}
             <div className="border border-gray-200 rounded-lg overflow-hidden">
               <table className="w-full">
-                <thead className="bg-gray-50">
+                <thead className="bg-[#E4F7F078]">
                   <tr>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Tariff Code</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Service</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Qty</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">NHIS Price</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">NHIS(%)</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Total</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Flag</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1007,6 +1019,7 @@ setShowSuccess(false);
                         <tr key={service.id} className="border-t border-gray-200">
                           <td className="px-4 py-3 text-sm">{service.code || "N/A"}</td>
                           <td className="px-4 py-3 text-sm">{service.name}</td>
+                         
                           <td className="px-4 py-3 text-sm">
                             <input
                               type="number"
@@ -1018,7 +1031,8 @@ setShowSuccess(false);
                               className="w-20 border border-gray-300 rounded px-2 py-1"
                             />
                           </td>
-                          <td className="px-4 py-3 text-sm">-</td>
+                           <td className="px-4 py-3 text-sm">{service.nhisPrice}</td>
+                          <td className="px-4 py-3 text-sm">{service.nhisPercentage}</td>
                           <td className="px-4 py-3 text-sm font-semibold">
                             ₦{total.toFixed(2)}
                           </td>
@@ -1305,12 +1319,7 @@ setShowSuccess(false);
               >
                 Cancel
               </button>
-               <button
-                onClick={() => setIsPatientModalOpen(true)}
-                className="px-8 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors font-semibold"
-              >
-                Create new patient
-              </button>
+              
               </>
             )}
           </div>
