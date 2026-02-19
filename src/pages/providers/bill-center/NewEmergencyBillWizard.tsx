@@ -970,13 +970,13 @@ setShowSuccess(false);
         return (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-800">Services</h2>
+              <h2 className="text-xl font-bold text-gray-800">Product/Service</h2>
               <button
                 onClick={() => setShowProductSearch(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-[#DC2626] text-white rounded-sm hover:bg-red-700 transition-colors"
               >
                 <Plus className="h-5 w-5" />
-                Add Service
+                Add Product/Service
               </button>
             </div>
 
