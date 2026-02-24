@@ -404,7 +404,7 @@ useEffect(() => {
                       Phone Number <span className="text-red-500">*</span>
                     </label>
                     <Input
-                      type="tel"
+                      type="number"
                       value={formData.phoneNumber}
                       onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
                       onBlur={() => handleBlur("phoneNumber")}

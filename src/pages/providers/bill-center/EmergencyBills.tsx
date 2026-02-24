@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
-import { Plus, Eye } from "lucide-react";
+import { Plus, Eye, Share } from "lucide-react";
 import type { RootState } from "../../../services/store/store";
 import EmptyState from "../../../components/ui/EmptyState";
 import Button from "../../../components/ui/Button";
@@ -37,6 +37,11 @@ import type { EmergencyBill } from "../../../types/emergency-bills";
 import { patientNameFilter } from "../../../components/ui/patientNameFilter";
 import Input from "../../../components/form/Input";
 // import DatePicker from "../../components/form/DatePicker";
+// Files export
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
+import "../../../utils/pdfFont";
 
 // Status color map for emergency bills
 const statusColor: Record<string, string> = {
@@ -50,10 +55,126 @@ const statusColor: Record<string, string> = {
   Draft: "#757575",
 };
 
+// Custom filter function for searching across multiple fields
+const multiFieldFilter = (row: any, columnId: string, filterValue: string) => {
+  if (!filterValue) return true;
+
+  const searchTerm = filterValue.toLowerCase();
+  const patientName = (row.getValue("patientName") || "").toLowerCase();
+  const patientNumber = (row.getValue("patientNumber") || "").toLowerCase();
+
+  return patientName.includes(searchTerm) || patientNumber.includes(searchTerm);
+};
 // Helper to get status text
 const getEmergencyBillStatus = (status: string | undefined): string => {
   if (!status) return "Draft";
   return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+};
+
+// file export
+const exportTableToPDF = (
+  tableData: any[],
+  fileName = "emergencybills.pdf",
+) => {
+  const doc = new jsPDF({
+    orientation: "landscape",
+    unit: "mm",
+    format: "a4",
+  });
+
+  // set unicode font
+  doc.setFont("Roboto", "normal");
+
+  doc.setFontSize(16);
+  doc.text("Emergency Bills Report", 14, 12);
+
+  doc.setFontSize(10);
+  doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 18);
+
+  // Safely process rows with null checks
+  const rows = tableData.map((claim, i) => {
+    // Helper function to safely format amount
+    const formatAmount = (amount: string | undefined) => {
+      if (!amount) return "NGN 0.00";
+      // Remove ₦ symbol and add NGN
+      return amount.replace("₦", "NGN ");
+    };
+
+    return [
+      i + 1,
+      claim.patientName || "N/A",
+      claim.patientNumber || "N/A",
+      claim.lastEncounter || "N/A",
+      formatAmount(claim.formattedAmount),
+      formatAmount(claim.formattedVettedAmount),
+      claim.insuranceStatus || "N/A",
+      claim.status || "N/A",
+    ];
+  });
+
+  autoTable(doc, {
+    startY: 24,
+    head: [
+      [
+        "S/N",
+        "Patient Name",
+        "Patient No.",
+        "Last Encounter",
+        "Total Amount",
+        "Vetted Amount",
+        "Insurance Status",
+        "Bill Status",
+      ],
+    ],
+    body: rows,
+
+    styles: {
+      font: "Roboto",
+      fontSize: 9,
+      cellPadding: 3,
+      overflow: "linebreak",
+    },
+
+    columnStyles: {
+      0: { cellWidth: 15 },
+      1: { cellWidth: 45 },
+      2: { cellWidth: 30 },
+      3: { cellWidth: 35 },
+      4: { cellWidth: 35, halign: "right" },
+      5: { cellWidth: 35, halign: "right" },
+      6: { cellWidth: 35 },
+      7: { cellWidth: 30 },
+    },
+
+    theme: "grid",
+    headStyles: {
+      fillColor: [220, 38, 38],
+      textColor: 255,
+    },
+
+    // Format amount columns with proper styling
+    didParseCell: function (data: any) {
+      if (
+        data.section === "body" &&
+        (data.column.index === 4 || data.column.index === 5)
+      ) {
+        const cellData = data.cell.raw;
+        if (
+          typeof cellData === "string" &&
+          cellData &&
+          !cellData.includes("NGN")
+        ) {
+          // Add NGN symbol and format with commas if it's a number
+          const numValue = parseFloat(cellData);
+          if (!isNaN(numValue)) {
+            data.cell.text = ["NGN " + numValue.toLocaleString()];
+          }
+        }
+      }
+    },
+  });
+
+  doc.save(fileName);
 };
 
 // Format currency
@@ -139,10 +260,10 @@ export const EmergencyBills = () => {
       // Calculate total amount from productServices array
       const totalAmount = Array.isArray(bill.productServices)
         ? bill.productServices.reduce((sum: number, item: any) => {
-          const unitPrice = item?.unitPrice || item?.price || 0;
-          const quantity = item?.quantity || 1;
-          return sum + unitPrice * quantity;
-        }, 0)
+            const unitPrice = item?.unitPrice || item?.price || 0;
+            const quantity = item?.quantity || 1;
+            return sum + unitPrice * quantity;
+          }, 0)
         : 0;
 
       // Get patient information from the patient object
@@ -215,12 +336,13 @@ export const EmergencyBills = () => {
       accessorKey: "patientName",
       header: "Patient Name",
       enableSorting: true,
-      filterFn: patientNameFilter,
+      filterFn: multiFieldFilter,
     },
     {
       accessorKey: "patientNumber",
       header: "Patient Number",
       enableSorting: true,
+      filterFn: multiFieldFilter,
     },
     {
       accessorKey: "age",
@@ -353,11 +475,12 @@ export const EmergencyBills = () => {
       <div className="p-6">
         <div className="bg-gray-100 overflow-scroll h-full">
           <div className="bg-white rounded-md flex flex-col mb-36">
-
             {/* Filters */}
             {/* <div className="px-6 py-4 border-b bg-gray-50"> */}
             <div className="flex flex-wrap gap-4 justify-between items-center p-6">
-              <h3 className="text-lg font-semibold text-gray-700 mb-4">Filter By</h3>
+              <h3 className="text-lg font-semibold text-gray-700 mb-4">
+                Filter By
+              </h3>
               <div className="grid grid-cols-12 gap-4 items-end">
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -385,7 +508,9 @@ export const EmergencyBills = () => {
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none"
                       placeholder="Start date"
                     />
-                    <span className="text-sm text-gray-500 font-medium">To</span>
+                    <span className="text-sm text-gray-500 font-medium">
+                      To
+                    </span>
                     <input
                       type="date"
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none"
@@ -433,16 +558,17 @@ export const EmergencyBills = () => {
                   <Plus className="h-5 w-5" />
                   Create New Bill
                 </button>
-                <button
-                  onClick={() => {/* Export functionality */ }}
-                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-sm hover:bg-gray-50 transition-colors font-medium"
-                >
-                  Export
-                </button>
+                <div className="flex gap-4 items-center">
+                  <button
+                    onClick={() => exportTableToPDF(tableBills)}
+                    className="flex items-center gap-2 border border-gray-400 px-4 py-2 rounded-md text-gray-700 hover:bg-gray-50 hover:border-gray-600 transition"
+                  >
+                    <Share className="h-4 w-4" />
+                    Export
+                  </button>
+                </div>
               </div>
             </div>
-
-
 
             {/* Content */}
             <div>
@@ -475,15 +601,18 @@ export const EmergencyBills = () => {
                     <Table className="min-w-[800px]">
                       <TableHeader className=" bg-[#E4F7F1] hover:bg-[#E4F7F1] transition-colors">
                         {table.getHeaderGroups().map((headerGroup) => (
-                          <TableRow key={headerGroup.id} className="hover:bg-[#E4F7F1] transition-colors border-b border-[#E4F7F1]">
+                          <TableRow
+                            key={headerGroup.id}
+                            className="hover:bg-[#E4F7F1] transition-colors border-b border-[#E4F7F1]"
+                          >
                             {headerGroup.headers.map((header) => (
                               <TableHead key={header.id}>
                                 {header.isPlaceholder
                                   ? null
                                   : flexRender(
-                                    header.column.columnDef.header,
-                                    header.getContext()
-                                  )}
+                                      header.column.columnDef.header,
+                                      header.getContext(),
+                                    )}
                               </TableHead>
                             ))}
                           </TableRow>
@@ -504,7 +633,7 @@ export const EmergencyBills = () => {
                                 <TableCell key={cell.id}>
                                   {flexRender(
                                     cell.column.columnDef.cell,
-                                    cell.getContext()
+                                    cell.getContext(),
                                   )}
                                 </TableCell>
                               ))}
