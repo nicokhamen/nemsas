@@ -56,7 +56,7 @@ const statusColor: Record<string, string> = {
 };
 
 // Custom filter function for searching across multiple fields
-const multiFieldFilter = (row: any, columnId: string, filterValue: string) => {
+const multiFieldFilter = (row: any, _columnId: string, filterValue: string) => {
   if (!filterValue) return true;
 
   const searchTerm = filterValue.toLowerCase();
