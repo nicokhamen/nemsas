@@ -153,7 +153,7 @@ export const ICDSearch: React.FC<{
             <button
               onClick={handleSearch}
               disabled={loading || !query.trim()}
-              className="absolute left-3 top-1/2 transform -translate-y-2/3 text-gray-500 hover:text-gray-700 focus:outline-none disabled:opacity-50"
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none disabled:opacity-50"
               aria-label="Search"
             >
               {loading ? (

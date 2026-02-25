@@ -120,7 +120,7 @@ const EmergencyBillDetails = () => {
       <div className="max-w-5xl mx-auto bg-white rounded-sm border shadow-sm">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b">
-          <h2 className="text-lg font-semibold text-gray-500">Bill Details</h2>
+          <h2 className="text-lg font-semibold text-gray-500">Bill - Details</h2>
           <button
             onClick={handleBack}
             className="p-2 rounded-full hover:bg-gray-100" title="Back"

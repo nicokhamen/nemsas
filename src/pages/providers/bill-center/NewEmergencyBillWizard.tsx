@@ -1,10 +1,23 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { ChevronLeft, ChevronDown, Plus, Search, X, Edit2, Trash2, Upload } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronDown,
+  Plus,
+  Search,
+  X,
+  Edit2,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import type { AppDispatch, RootState } from "../../../services/store/store";
 import { useProviderContext } from "../../../context/useProviderContext";
-import { createEncounter, fetchDepartments, fetchServiceCategories } from "../../../services/thunks/departmentThunk";
+import {
+  createEncounter,
+  fetchDepartments,
+  fetchServiceCategories,
+} from "../../../services/thunks/departmentThunk";
 import { useCustomToast } from "../../../hooks/useCustomToast";
 import { buildEncounterPayload } from "../../../utils/buildEncounterPayload";
 import FormSelect from "../../../components/form/FormSelect";
@@ -12,7 +25,10 @@ import Input from "../../../components/form/Input";
 import Button from "../../../components/ui/Button";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
 import BillSuccessModal from "../../../components/ui/BillSuccessModal";
-import { serviceTypeOptions, dischargeTypeOptions } from "../../../utils/emergencyBillUtils";
+import {
+  serviceTypeOptions,
+  dischargeTypeOptions,
+} from "../../../utils/emergencyBillUtils";
 import { ProductServiceSearch } from "../../../components/ui/ProductServiceSearch";
 import { ICDSearch } from "../../../components/ui/ICDSearch";
 import type { ProductItem } from "../../../types/productType";
@@ -100,94 +116,96 @@ export default function NewEmergencyBillWizard() {
   const { selectedProviderId } = useProviderContext();
   const [isPatientModalOpen, setIsPatientModalOpen] = useState(false);
 
-const resetAllState = useCallback(() => {
-  // Reset Redux states
-  dispatch(resetEncounterState());
-  dispatch(clearPatientState()); 
-  // Add this if you have a patient slice to reset
-  // dispatch(resetPatientState()); 
-  
-  // Reset all local states
-  setShowSuccess(false);
-  setCurrentStep(1);
-  setSelectedPatient(null);
-  setSearchTerm("");
-  setShowSearchResults(false);
-  setEncounterData({
-    emergencyType: "",
-    arrivalType: "",
-    attendingClinician: "",
-    encounterStartDate: "",
-    encounterEndDate: "",
-    dischargeStatus: "",
-    dischargeDate: "",
-    wardClinic: "",
-    serviceType: "",
-    selectedMedicalHistory: [],
-  });
-  setDiagnoses([]);
-  setServices([]);
-  setUploadedFiles([]);
-  setCreatedBillId("");
-  
-  // Also reset any confirmation modals
-  setShowPatientConfirm(false);
-  setShowFinalConfirm(false);
-  setShowDiagnosisSearch(false);
-  setShowProductSearch(false);
-}, [dispatch]);
+  const resetAllState = useCallback(() => {
+    // Reset Redux states
+    dispatch(resetEncounterState());
+    dispatch(clearPatientState());
+    // Add this if you have a patient slice to reset
+    // dispatch(resetPatientState());
+
+    // Reset all local states
+    setShowSuccess(false);
+    setCurrentStep(1);
+    setSelectedPatient(null);
+    setSearchTerm("");
+    setShowSearchResults(false);
+    setEncounterData({
+      emergencyType: "",
+      arrivalType: "",
+      attendingClinician: "",
+      encounterStartDate: "",
+      encounterEndDate: "",
+      dischargeStatus: "",
+      dischargeDate: "",
+      wardClinic: "",
+      serviceType: "",
+      selectedMedicalHistory: [],
+    });
+    setDiagnoses([]);
+    setServices([]);
+    setUploadedFiles([]);
+    setCreatedBillId("");
+
+    // Also reset any confirmation modals
+    setShowPatientConfirm(false);
+    setShowFinalConfirm(false);
+    setShowDiagnosisSearch(false);
+    setShowProductSearch(false);
+  }, [dispatch]);
+
+
 
   // Reset state when component mounts
   useEffect(() => {
     resetAllState();
   }, [resetAllState]);
 
-const handlePatientRegistered = (patientId: string, patientData?: any) => {
-  
-  console.log('New patient registered with ID:', patientId);
-  dispatch(resetEncounterState());
-setShowSuccess(false);
-  // if (selectedPatient?.id === patientId) {
-  //   console.log('Patient already selected, skipping duplicate call');
-  //   return;
-  // }
-  
-  // Create patient object from the registered data
-  const newPatient: Patient = {
-    id: patientId,
-    firstName: patientData?.firstName || "",
-    lastName: patientData?.lastName || "",
-    hospitalNumber: patientData?.hospitalNumber || "",
-    phoneNumber: patientData?.phoneNumber || "",
-    gender: patientData?.gender || "",
-    insuranceStatus: patientData?.insuranceStatus || "",
-    dateOfBirth: patientData?.dateOfBirth || "",
-    email: patientData?.email || "",
-    address: patientData?.address || "",
+  const handlePatientRegistered = (patientId: string, patientData?: any) => {
+    console.log("New patient registered with ID:", patientId);
+    dispatch(resetEncounterState());
+    setShowSuccess(false);
+    // if (selectedPatient?.id === patientId) {
+    //   console.log('Patient already selected, skipping duplicate call');
+    //   return;
+    // }
+
+    // Create patient object from the registered data
+    const newPatient: Patient = {
+      id: patientId,
+      firstName: patientData?.firstName || "",
+      lastName: patientData?.lastName || "",
+      hospitalNumber: patientData?.hospitalNumber || "",
+      phoneNumber: patientData?.phoneNumber || "",
+      gender: patientData?.gender || "",
+      insuranceStatus: patientData?.insuranceStatus || "",
+      dateOfBirth: patientData?.dateOfBirth || "",
+      email: patientData?.email || "",
+      address: patientData?.address || "",
+    };
+
+    // Set the selected patient (attach to bill)
+    setSelectedPatient(newPatient);
+    setSearchTerm(`${newPatient.firstName} ${newPatient.lastName}`);
+
+    // Automatically move to step 2 WITHOUT showing confirmation modal
+    setCurrentStep(2);
+
+    // Show success toast
+    toastSuccess(
+      `Patient ${newPatient.firstName} ${newPatient.lastName} created and attached to bill`,
+    );
+
+    // Close the patient form modal
+    setIsPatientModalOpen(false);
+
+    // Optional: Log the patient data for debugging
+    console.log("New patient attached to bill:", newPatient);
   };
-  
-  // Set the selected patient (attach to bill)
-  setSelectedPatient(newPatient);
-  setSearchTerm(`${newPatient.firstName} ${newPatient.lastName}`);
-  
-  // Automatically move to step 2 WITHOUT showing confirmation modal
-  setCurrentStep(2);
-  
-  // Show success toast
-  toastSuccess(`Patient ${newPatient.firstName} ${newPatient.lastName} created and attached to bill`);
-  
-  // Close the patient form modal
-  setIsPatientModalOpen(false);
-  
-  // Optional: Log the patient data for debugging
-  console.log('New patient attached to bill:', newPatient);
-};
 
   // Redux state
-  const {
-    bills: emergencyBills,
-    loading: billsLoading,
-  } = useSelector((state: RootState) => state.emergencyBills);
+  const { bills: emergencyBills, loading: billsLoading } = useSelector(
+    (state: RootState) => state.emergencyBills,
+  );
 
   const {
     departments,
@@ -195,9 +213,9 @@ setShowSuccess(false);
     error: departmentsError,
   } = useSelector((state: RootState) => state.departments);
 
-  const {
-    categories,
-  } = useSelector((state: RootState) => state.serviceCategories);
+  const { categories } = useSelector(
+    (state: RootState) => state.serviceCategories,
+  );
 
   const {
     loading: encounterLoading,
@@ -233,13 +251,15 @@ setShowSuccess(false);
   });
 
   // Step 3: Diagnosis
-  const [diagnoses, setDiagnoses] = useState<Array<{
-    id: string;
-    type: string;
-    code: string;
-    diagnosis: string;
-    note: string;
-  }>>([]);
+  const [diagnoses, setDiagnoses] = useState<
+    Array<{
+      id: string;
+      type: string;
+      code: string;
+      diagnosis: string;
+      note: string;
+    }>
+  >([]);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [noteInput, setNoteInput] = useState("");
 
@@ -325,7 +345,7 @@ setShowSuccess(false);
           "serviceType",
         ];
         const missingFields = requiredFields.filter(
-          (field) => !encounterData[field as keyof typeof encounterData]
+          (field) => !encounterData[field as keyof typeof encounterData],
         );
         if (missingFields.length > 0) {
           toastError("Please fill all required fields");
@@ -355,13 +375,15 @@ setShowSuccess(false);
       case 1:
         return !selectedPatient;
       case 2:
-        return !encounterData.emergencyType ||
+        return (
+          !encounterData.emergencyType ||
           !encounterData.arrivalType ||
           !encounterData.attendingClinician ||
           !encounterData.encounterStartDate ||
           !encounterData.dischargeStatus ||
           !encounterData.wardClinic ||
-          !encounterData.serviceType;
+          !encounterData.serviceType
+        );
       case 3:
         return diagnoses.length === 0;
       case 4:
@@ -401,8 +423,8 @@ setShowSuccess(false);
     if (editingNoteId) {
       setDiagnoses(
         diagnoses.map((d) =>
-          d.id === editingNoteId ? { ...d, note: noteInput } : d
-        )
+          d.id === editingNoteId ? { ...d, note: noteInput } : d,
+        ),
       );
       setEditingNoteId(null);
       setNoteInput("");
@@ -420,9 +442,7 @@ setShowSuccess(false);
   };
 
   const handleUpdateQuantity = (id: string, quantity: number) => {
-    setServices(
-      services.map((s) => (s.id === id ? { ...s, quantity } : s))
-    );
+    setServices(services.map((s) => (s.id === id ? { ...s, quantity } : s)));
   };
 
   const handleRemoveService = (id: string) => {
@@ -493,12 +513,11 @@ setShowSuccess(false);
       setCreatedBillId(`EB-${Date.now()}`);
       setShowSuccess(true);
     }
-      const timer = setTimeout(() => {
+    const timer = setTimeout(() => {
       dispatch(resetEncounterState());
     }, 500);
-    
+
     return () => clearTimeout(timer);
-  
   }, [encounterSuccess, encounterLoading, showSuccess]);
 
   // Handle errors
@@ -509,7 +528,6 @@ setShowSuccess(false);
   }, [encounterError, toastError]);
 
   const handleCreateAnother = () => {
-
     dispatch(resetEncounterState());
     setShowSuccess(false);
     setCurrentStep(1);
@@ -538,11 +556,31 @@ setShowSuccess(false);
     navigate("/emergency/bills");
   };
   useEffect(() => {
-  // Cleanup when component unmounts
-  return () => {
-    dispatch(resetEncounterState());
-  };
-}, [dispatch]);
+    // Cleanup when component unmounts
+    return () => {
+      dispatch(resetEncounterState());
+    };
+  }, [dispatch]);
+
+  // 72 hr date logic
+  const maxEndDate = useMemo(() => {
+    if (!encounterData.encounterStartDate) return ""
+
+    const d = new Date(encounterData.encounterStartDate)
+    d.setHours(d.getHours() + 72)
+
+    return d.toISOString().split("T")[0]
+  }, [encounterData.encounterStartDate])
+  // clean up for dates
+  useEffect(() => {
+    if (
+      encounterData.encounterEndDate &&
+      maxEndDate &&
+      encounterData.encounterEndDate > maxEndDate
+    ) {
+      setEncounterData(prev => ({ ...prev, encounterEndDate: "" }))
+    }
+  }, [maxEndDate])
 
   // Render step content
   const renderStepContent = () => {
@@ -550,24 +588,24 @@ setShowSuccess(false);
       case 1:
         return (
           <div className="space-y-6">
-              <div className="flex items-center justify-between">
-      <h2 className="text-xl font-semibold text-gray-900">Patient Identification</h2>
-      <button
-        onClick={() => setIsPatientModalOpen(true)}
-        className="px-8 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors font-semibold"
-      >
-        Create new patient
-      </button>
-    </div>
-
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Patient Identification
+              </h2>
+              <button
+                onClick={() => setIsPatientModalOpen(true)}
+                className="px-8 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors font-semibold"
+              >
+                Create new patient
+              </button>
+            </div>
 
             <div className="relative">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Patient Name or Number
               </label>
-              
-              
-              <div className="relative"> 
+
+              <div className="relative">
                 <input
                   type="text"
                   value={searchTerm}
@@ -579,7 +617,7 @@ setShowSuccess(false);
                   placeholder="Search by patient name or number..."
                   className="w-full pl-5 pr-10 py-2.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none text-gray-900 placeholder-gray-400"
                 />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                   <Search className="h-5 w-5 text-gray-400" />
                 </div>
               </div>
@@ -650,7 +688,9 @@ setShowSuccess(false);
 
         return (
           <div className="space-y-8">
-            <h2 className="text-xl font-semibold text-gray-900">Emergency Encounter Details</h2>
+            <h2 className="text-xl font-semibold text-gray-900">
+              Emergency Encounter Details
+            </h2>
 
             {/* Row 1: Emergency Type, Arrival Type, Attending Clinician */}
             <div className="grid grid-cols-3 gap-6">
@@ -662,7 +702,10 @@ setShowSuccess(false);
                   <select
                     value={encounterData.emergencyType}
                     onChange={(e) =>
-                      setEncounterData({ ...encounterData, emergencyType: e.target.value })
+                      setEncounterData({
+                        ...encounterData,
+                        emergencyType: e.target.value,
+                      })
                     }
                     className="w-full px-4 py-3 border border-gray-300 rounded-md bg-white appearance-none focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none text-gray-500"
                   >
@@ -684,7 +727,10 @@ setShowSuccess(false);
                   <select
                     value={encounterData.arrivalType}
                     onChange={(e) =>
-                      setEncounterData({ ...encounterData, arrivalType: e.target.value })
+                      setEncounterData({
+                        ...encounterData,
+                        arrivalType: e.target.value,
+                      })
                     }
                     className="w-full px-4 py-3 border border-gray-300 rounded-md bg-white appearance-none focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none text-gray-500"
                   >
@@ -705,7 +751,10 @@ setShowSuccess(false);
                   type="text"
                   value={encounterData.attendingClinician}
                   onChange={(e) =>
-                    setEncounterData({ ...encounterData, attendingClinician: e.target.value })
+                    setEncounterData({
+                      ...encounterData,
+                      attendingClinician: e.target.value,
+                    })
                   }
                   placeholder="Enter text"
                   className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none placeholder-gray-400"
@@ -724,7 +773,10 @@ setShowSuccess(false);
                     type="date"
                     value={encounterData.encounterStartDate}
                     onChange={(e) =>
-                      setEncounterData({ ...encounterData, encounterStartDate: e.target.value })
+                      setEncounterData({
+                        ...encounterData,
+                        encounterStartDate: e.target.value,
+                      })
                     }
                     placeholder="mm/dd/yy"
                     className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none"
@@ -737,11 +789,17 @@ setShowSuccess(false);
                   Encounter End Date
                 </label>
                 <div className="relative">
+
                   <input
                     type="date"
                     value={encounterData.encounterEndDate}
+                    min={encounterData.encounterStartDate || undefined}
+                    max={maxEndDate || undefined}
                     onChange={(e) =>
-                      setEncounterData({ ...encounterData, encounterEndDate: e.target.value })
+                      setEncounterData({
+                        ...encounterData,
+                        encounterEndDate: e.target.value,
+                      })
                     }
                     placeholder="mm/dd/yy"
                     className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none"
@@ -757,7 +815,10 @@ setShowSuccess(false);
                   <select
                     value={encounterData.dischargeStatus}
                     onChange={(e) =>
-                      setEncounterData({ ...encounterData, dischargeStatus: e.target.value })
+                      setEncounterData({
+                        ...encounterData,
+                        dischargeStatus: e.target.value,
+                      })
                     }
                     className="w-full px-4 py-3 border border-gray-300 rounded-md bg-white appearance-none focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none text-gray-500"
                   >
@@ -784,7 +845,10 @@ setShowSuccess(false);
                     type="text"
                     value={encounterData.wardClinic}
                     onChange={(e) =>
-                      setEncounterData({ ...encounterData, wardClinic: e.target.value })
+                      setEncounterData({
+                        ...encounterData,
+                        wardClinic: e.target.value,
+                      })
                     }
                     placeholder="Search ward..."
                     className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none placeholder-gray-400"
@@ -808,7 +872,10 @@ setShowSuccess(false);
                     type="date"
                     value={encounterData.dischargeDate}
                     onChange={(e) =>
-                      setEncounterData({ ...encounterData, dischargeDate: e.target.value })
+                      setEncounterData({
+                        ...encounterData,
+                        dischargeDate: e.target.value,
+                      })
                     }
                     placeholder="mm/dd/yy"
                     className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none"
@@ -824,7 +891,10 @@ setShowSuccess(false);
                   <select
                     value={encounterData.serviceType}
                     onChange={(e) =>
-                      setEncounterData({ ...encounterData, serviceType: e.target.value })
+                      setEncounterData({
+                        ...encounterData,
+                        serviceType: e.target.value,
+                      })
                     }
                     className="w-full px-4 py-3 border border-gray-300 rounded-md bg-white appearance-none focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none text-gray-500"
                   >
@@ -842,22 +912,39 @@ setShowSuccess(false);
 
             {/* Emergency Category Checkboxes */}
             <div className="mt-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">Emergency Category</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-6">
+                Emergency Category
+              </h3>
               <div className="grid grid-cols-3 gap-x-8 gap-y-4">
                 {emergencyCategories.map((category) => (
-                  <label key={category.id} className="flex items-center space-x-3 cursor-pointer">
+                  <label
+                    key={category.id}
+                    className="flex items-center space-x-3 cursor-pointer"
+                  >
                     <input
                       type="checkbox"
-                      checked={encounterData.selectedMedicalHistory.includes(category.id)}
+                      checked={encounterData.selectedMedicalHistory.includes(
+                        category.id,
+                      )}
                       onChange={(e) => {
                         const newHistory = e.target.checked
-                          ? [...encounterData.selectedMedicalHistory, category.id]
-                          : encounterData.selectedMedicalHistory.filter((id) => id !== category.id);
-                        setEncounterData({ ...encounterData, selectedMedicalHistory: newHistory });
+                          ? [
+                            ...encounterData.selectedMedicalHistory,
+                            category.id,
+                          ]
+                          : encounterData.selectedMedicalHistory.filter(
+                            (id) => id !== category.id,
+                          );
+                        setEncounterData({
+                          ...encounterData,
+                          selectedMedicalHistory: newHistory,
+                        });
                       }}
                       className="w-5 h-5 text-[#3B7A6F] border-2 border-[#3B7A6F] rounded focus:ring-[#3B7A6F] bg-white"
                     />
-                    <span className="text-sm text-gray-700">{category.name}</span>
+                    <span className="text-sm text-gray-700">
+                      {category.name}
+                    </span>
                   </label>
                 ))}
               </div>
@@ -900,26 +987,44 @@ setShowSuccess(false);
               <table className="w-full">
                 <thead className="bg-[#E4F7F078]">
                   <tr>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Type</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Code</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Diagnosis</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Note</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Action</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                      Type
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                      Code
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                      Diagnosis
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                      Note
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                      Action
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {diagnoses.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                      <td
+                        colSpan={5}
+                        className="px-4 py-8 text-center text-gray-500"
+                      >
                         No diagnosis added yet. Add a diagnosis to continue.
                       </td>
                     </tr>
                   ) : (
                     diagnoses.map((diagnosis) => (
-                      <tr key={diagnosis.id} className="border-t border-gray-200">
+                      <tr
+                        key={diagnosis.id}
+                        className="border-t border-gray-200"
+                      >
                         <td className="px-4 py-3 text-sm">{diagnosis.type}</td>
                         <td className="px-4 py-3 text-sm">{diagnosis.code}</td>
-                        <td className="px-4 py-3 text-sm">{diagnosis.diagnosis}</td>
+                        <td className="px-4 py-3 text-sm">
+                          {diagnosis.diagnosis}
+                        </td>
                         <td className="px-4 py-3 text-sm">
                           {editingNoteId === diagnosis.id ? (
                             <div className="flex gap-2">
@@ -950,7 +1055,9 @@ setShowSuccess(false);
                               <Edit2 className="h-4 w-4" />
                             </button>
                             <button
-                              onClick={() => handleRemoveDiagnosis(diagnosis.id)}
+                              onClick={() =>
+                                handleRemoveDiagnosis(diagnosis.id)
+                              }
                               className="text-red-600 hover:text-red-800"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -970,7 +1077,9 @@ setShowSuccess(false);
         return (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-800">Product/Service</h2>
+              <h2 className="text-xl font-bold text-gray-800">
+                Product/Service
+              </h2>
               <button
                 onClick={() => setShowProductSearch(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-[#DC2626] text-white rounded-sm hover:bg-red-700 transition-colors"
@@ -983,9 +1092,7 @@ setShowSuccess(false);
             {/* show product search when the add service button is clicked */}
             {showProductSearch && (
               <div className="bg-gray-50 p-4 rounded-lg">
-                <ProductServiceSearch
-                  onSelect={handleAddService}
-                />
+                <ProductServiceSearch onSelect={handleAddService} />
               </div>
             )}
 
@@ -994,19 +1101,36 @@ setShowSuccess(false);
               <table className="w-full">
                 <thead className="bg-[#E4F7F078]">
                   <tr>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Tariff Code</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Service</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Qty</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">NHIS Price</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">NHIS(%)</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Total</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Action</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                      Tariff Code
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                      Service
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                      Qty
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                      NHIS Price
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                      NHIS(%)
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                      Total
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                      Action
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {services.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                      <td
+                        colSpan={6}
+                        className="px-4 py-8 text-center text-gray-500"
+                      >
                         No services added yet. Add a service to continue.
                       </td>
                     </tr>
@@ -1016,23 +1140,35 @@ setShowSuccess(false);
                       const quantity = service.quantity ?? 1;
                       const total = price * quantity;
                       return (
-                        <tr key={service.id} className="border-t border-gray-200">
-                          <td className="px-4 py-3 text-sm">{service.code || "N/A"}</td>
+                        <tr
+                          key={service.id}
+                          className="border-t border-gray-200"
+                        >
+                          <td className="px-4 py-3 text-sm">
+                            {service.code || "N/A"}
+                          </td>
                           <td className="px-4 py-3 text-sm">{service.name}</td>
-                         
+
                           <td className="px-4 py-3 text-sm">
                             <input
                               type="number"
                               min="1"
                               value={quantity}
                               onChange={(e) =>
-                                handleUpdateQuantity(service.id, parseInt(e.target.value) || 1)
+                                handleUpdateQuantity(
+                                  service.id,
+                                  parseInt(e.target.value) || 1,
+                                )
                               }
                               className="w-20 border border-gray-300 rounded px-2 py-1"
                             />
                           </td>
-                           <td className="px-4 py-3 text-sm">{service.nhisPrice}</td>
-                          <td className="px-4 py-3 text-sm">{service.nhisPercentage}</td>
+                          <td className="px-4 py-3 text-sm">
+                            {service.nhisPrice}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            {service.nhisPercentage}
+                          </td>
                           <td className="px-4 py-3 text-sm font-semibold">
                             ₦{total.toFixed(2)}
                           </td>
@@ -1086,14 +1222,18 @@ setShowSuccess(false);
                 </h3>
                 <div className="space-y-2">
                   {uploadedFiles.length === 0 ? (
-                    <p className="text-sm text-gray-500">No documents uploaded</p>
+                    <p className="text-sm text-gray-500">
+                      No documents uploaded
+                    </p>
                   ) : (
                     uploadedFiles.map((file, index) => (
                       <div
                         key={index}
                         className="flex items-center justify-between p-2 bg-gray-50 rounded"
                       >
-                        <span className="text-sm text-gray-700">{file.name}</span>
+                        <span className="text-sm text-gray-700">
+                          {file.name}
+                        </span>
                         <button
                           onClick={() => handleRemoveFile(index)}
                           className="text-red-600 hover:text-red-800"
@@ -1120,53 +1260,80 @@ setShowSuccess(false);
                 <div className="flex items-center gap-4 mb-4">
                   <div className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center">
                     <span className="text-2xl font-bold text-gray-600">
-                      {selectedPatient.firstName[0]}{selectedPatient.lastName[0]}
+                      {selectedPatient.firstName[0]}
+                      {selectedPatient.lastName[0]}
                     </span>
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">
                       {selectedPatient.firstName} {selectedPatient.lastName}
                     </h3>
-                    <p className="text-sm text-gray-600">{selectedPatient.hospitalNumber}</p>
+                    <p className="text-sm text-gray-600">
+                      {selectedPatient.hospitalNumber}
+                    </p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-4 text-sm">
                   <div>
-                    <span className="font-medium text-gray-700">Patient Number:</span>{" "}
-                    <span className="text-gray-900">{selectedPatient.hospitalNumber}</span>
+                    <span className="font-medium text-gray-700">
+                      Patient Number:
+                    </span>{" "}
+                    <span className="text-gray-900">
+                      {selectedPatient.hospitalNumber}
+                    </span>
                   </div>
                   <div>
                     <span className="font-medium text-gray-700">Gender:</span>{" "}
-                    <span className="text-gray-900">{selectedPatient.gender || "N/A"}</span>
+                    <span className="text-gray-900">
+                      {selectedPatient.gender || "N/A"}
+                    </span>
                   </div>
                   <div>
                     <span className="font-medium text-gray-700">Address:</span>{" "}
-                    <span className="text-gray-900">{selectedPatient.address || "N/A"}</span>
+                    <span className="text-gray-900">
+                      {selectedPatient.address || "N/A"}
+                    </span>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-700">Phone number:</span>{" "}
-                    <span className="text-gray-900">{selectedPatient.phoneNumber || "N/A"}</span>
+                    <span className="font-medium text-gray-700">
+                      Phone number:
+                    </span>{" "}
+                    <span className="text-gray-900">
+                      {selectedPatient.phoneNumber || "N/A"}
+                    </span>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-700">Insurance:</span>{" "}
-                    <span className="text-gray-900">{selectedPatient.insuranceStatus || "N/A"}</span>
+                    <span className="font-medium text-gray-700">
+                      Insurance:
+                    </span>{" "}
+                    <span className="text-gray-900">
+                      {selectedPatient.insuranceStatus || "N/A"}
+                    </span>
                   </div>
                   <div>
                     <span className="font-medium text-gray-700">D.O.B:</span>{" "}
                     <span className="text-gray-900">
                       {selectedPatient.dateOfBirth
-                        ? new Date(selectedPatient.dateOfBirth).toLocaleDateString()
+                        ? new Date(
+                          selectedPatient.dateOfBirth,
+                        ).toLocaleDateString()
                         : "N/A"}
                     </span>
                   </div>
                   <div className="col-span-2">
-                    <span className="font-medium text-gray-700">Hospital Number:</span>{" "}
-                    <span className="text-gray-900">{selectedPatient.hospitalNumber}</span>
+                    <span className="font-medium text-gray-700">
+                      Hospital Number:
+                    </span>{" "}
+                    <span className="text-gray-900">
+                      {selectedPatient.hospitalNumber}
+                    </span>
                   </div>
                   <div>
                     <span className="font-medium text-gray-700">Email:</span>{" "}
-                    <span className="text-gray-900">{selectedPatient.email || "N/A"}</span>
+                    <span className="text-gray-900">
+                      {selectedPatient.email || "N/A"}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -1174,14 +1341,24 @@ setShowSuccess(false);
 
             {/* Diagnosis List */}
             <div className="bg-white border border-gray-200 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Diagnosis List</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Diagnosis List
+              </h3>
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Type</th>
-                    <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Code</th>
-                    <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Diagnosis</th>
-                    <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Note</th>
+                    <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">
+                      Type
+                    </th>
+                    <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">
+                      Code
+                    </th>
+                    <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">
+                      Diagnosis
+                    </th>
+                    <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">
+                      Note
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1189,8 +1366,12 @@ setShowSuccess(false);
                     <tr key={diagnosis.id} className="border-t border-gray-200">
                       <td className="px-4 py-2 text-sm">{diagnosis.type}</td>
                       <td className="px-4 py-2 text-sm">{diagnosis.code}</td>
-                      <td className="px-4 py-2 text-sm">{diagnosis.diagnosis}</td>
-                      <td className="px-4 py-2 text-sm">{diagnosis.note || "Enter note..."}</td>
+                      <td className="px-4 py-2 text-sm">
+                        {diagnosis.diagnosis}
+                      </td>
+                      <td className="px-4 py-2 text-sm">
+                        {diagnosis.note || "Enter note..."}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -1199,7 +1380,9 @@ setShowSuccess(false);
 
             {/* Uploaded Documents */}
             <div className="bg-white border border-gray-200 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Uploaded Documents</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Uploaded Documents
+              </h3>
               <div className="grid grid-cols-3 gap-4">
                 {uploadedFiles.map((file, index) => (
                   <div key={index} className="text-sm text-gray-700">
@@ -1214,15 +1397,27 @@ setShowSuccess(false);
 
             {/* Services */}
             <div className="bg-white border border-gray-200 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Services</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Services
+              </h3>
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Tariff Code</th>
-                    <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Service</th>
-                    <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Qty</th>
-                    <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Unit Cost</th>
-                    <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Total</th>
+                    <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">
+                      Tariff Code
+                    </th>
+                    <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">
+                      Service
+                    </th>
+                    <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">
+                      Qty
+                    </th>
+                    <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">
+                      Unit Cost
+                    </th>
+                    <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">
+                      Total
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1232,11 +1427,17 @@ setShowSuccess(false);
                     const total = price * quantity;
                     return (
                       <tr key={service.id} className="border-t border-gray-200">
-                        <td className="px-4 py-2 text-sm">{service.code || "N/A"}</td>
+                        <td className="px-4 py-2 text-sm">
+                          {service.code || "N/A"}
+                        </td>
                         <td className="px-4 py-2 text-sm">{service.name}</td>
                         <td className="px-4 py-2 text-sm">{quantity}</td>
-                        <td className="px-4 py-2 text-sm">₦{price.toFixed(2)}</td>
-                        <td className="px-4 py-2 text-sm font-semibold">₦{total.toFixed(2)}</td>
+                        <td className="px-4 py-2 text-sm">
+                          ₦{price.toFixed(2)}
+                        </td>
+                        <td className="px-4 py-2 text-sm font-semibold">
+                          ₦{total.toFixed(2)}
+                        </td>
                       </tr>
                     );
                   })}
@@ -1263,11 +1464,11 @@ setShowSuccess(false);
   return (
     <div className="min-h-screen bg-gray-50 py-6">
       <div className="max-w-6xl mx-auto px-6">
-
-
         {/* Main Content */}
         <div className="bg-white rounded-lg shadow-sm px-8 py-10">
-          <h1 className="text-2xl font-semibold text-gray-700 border-b-2  border-gray-200 pb-4 mb-8 ">Create New Bill</h1>
+          <h1 className="text-2xl font-semibold text-gray-700 border-b-2  border-gray-200 pb-4 mb-8 ">
+            Create New Bill
+          </h1>
 
           {/* Step Indicator */}
           <StepIndicator currentStep={currentStep} totalSteps={5} />
@@ -1277,8 +1478,6 @@ setShowSuccess(false);
 
           {/* Navigation Buttons */}
           <div className="mt-10 flex  items-center max-w-4xl">
-
-
             {currentStep < 5 ? (
               <button
                 onClick={goToNextStep}
@@ -1313,13 +1512,12 @@ setShowSuccess(false);
               </button>
             ) : (
               <>
-              <button
-                onClick={() => navigate("/emergency/bills")}
-                className="px-8 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors font-semibold"
-              >
-                Cancel
-              </button>
-              
+                <button
+                  onClick={() => navigate("/emergency/bills")}
+                  className="px-8 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors font-semibold"
+                >
+                  Cancel
+                </button>
               </>
             )}
           </div>
@@ -1327,7 +1525,7 @@ setShowSuccess(false);
       </div>
 
       {/* Patient Form Modal */}
-         <PatientFormModal
+      <PatientFormModal
         isOpen={isPatientModalOpen}
         onClose={() => setIsPatientModalOpen(false)}
         onPatientRegistered={handlePatientRegistered}

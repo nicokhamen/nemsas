@@ -32,6 +32,9 @@ import {
 } from "../../../components/table";
 import { Pagination } from "../../../components/pagination";
 import { useNavigate } from "react-router-dom";
+// Files export
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 // Status color map
 const statusColor: Record<string, string> = {
@@ -338,6 +341,104 @@ export const MDReview = () => {
 
   const totalPages = table.getPageCount();
 
+   const exportTableToPDF = (
+  tableData: any[],
+  fileName = "emergencyclaims.pdf",
+) => {
+  const doc = new jsPDF({
+    orientation: "landscape",
+    unit: "mm",
+    format: "a4",
+  });
+
+  // set unicode font
+  doc.setFont("Roboto", "normal");
+
+  doc.setFontSize(16);
+  doc.text("Emergency Claims Report", 14, 12);
+
+  doc.setFontSize(10);
+  doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 18);
+
+  // Map table data to match the columns displayed in the UI
+  const rows = tableData.map((claim, i) => [
+    i + 1, // S/N
+    claim.claimId || `FCT/ETC/${String(i + 2).padStart(3, '0')}`, // Claim ID
+    claim.description || "N/A", // Claim Description
+    claim.claimType || "ETC", // Claim Type
+    claim.date || "N/A", // Date
+    claim.formattedAmount?.replace("₦", "NGN ") || "NGN 0.00", // Submitted Amount
+    claim.formattedVettedAmount?.replace("₦", "NGN ") || "NGN 0.00", // Vetted Amount
+    claim.vettedDate || "N/A", // Vetted Date
+    claim.status || "N/A", // Status
+    claim.processingDelay || "0min", // Processing Delay
+  ]);
+
+  autoTable(doc, {
+    startY: 24,
+    head: [
+      [
+        "S/N",
+        "Claim ID",
+        "Description",
+        "Claim Type",
+        "Claim Date",
+        "Submitted Amount",
+        "Vetted Amount",
+        "Vetted Date",
+        "Status",
+        "Processing Delay",
+      ],
+    ],
+    body: rows,
+
+    styles: {
+      font: "Roboto",
+      fontSize: 8,
+      cellPadding: 2,
+      overflow: "linebreak",
+    },
+
+    columnStyles: {
+      0: { cellWidth: 10 }, // S/N
+      1: { cellWidth: 25 }, // Claim ID
+      2: { cellWidth: 35 }, // Description
+      3: { cellWidth: 20 }, // Claim Type
+      4: { cellWidth: 20 }, // Claim Date
+      5: { cellWidth: 25 }, // Submitted Amount
+      6: { cellWidth: 25 }, // Vetted Amount
+      7: { cellWidth: 20 }, // Vetted Date
+      8: { cellWidth: 20 }, // Status
+      9: { cellWidth: 20 }, // Processing Delay
+    },
+
+    theme: "grid",
+    headStyles: {
+      fillColor: [220, 38, 38],
+      textColor: 255,
+      fontSize: 8,
+      fontStyle: "bold",
+    },
+    
+    // Add alternating row colors for better readability
+    bodyStyles: {
+      textColor: 50,
+    },
+    alternateRowStyles: {
+      fillColor: [245, 245, 245],
+    },
+    
+    // Handle long text wrapping
+    didDrawCell: (data) => {
+      // You can add custom cell formatting here if needed
+    },
+  });
+
+  
+
+  doc.save(fileName);
+};
+
   // Handle form submission for provider/SSHIA IDs
   const handleSubmitIds = (e: React.FormEvent) => {
     e.preventDefault();
@@ -443,7 +544,7 @@ export const MDReview = () => {
               </button>
             </div>
             <button
-              onClick={() => {/* Export functionality */}}
+              onClick={() => exportTableToPDF(tableClaims)}
               className="flex items-center gap-2 px-5 py-2.5 border border-gray-300 text-gray-700 rounded-sm hover:bg-gray-50 transition-colors font-medium"
             >
               <Upload className="h-4 w-4" />
