@@ -32,7 +32,7 @@ import { Pagination } from "../../../components/pagination";
 import { useNavigate } from "react-router-dom";
 import { fetchEmergencyClaims } from "../../../services/thunks/emergencyClaimThunk";
 import { clearError } from "../../../services/slices/emergencyClaimSlice";
-import { Share, FileText, Users } from "lucide-react";
+import { Share, FileText, Users, Eye } from "lucide-react";
 // Files export
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -283,14 +283,14 @@ export const Claims = () => {
       enableHiding: false,
       cell: ({ row }) => (
         <button
-          className="h-auto py-1 px-3 text-xs border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+          className="flex items-center justify-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
           onClick={(e) => {
             e.stopPropagation();
 
             navigate(`/emergency/claims/${row.original.id}`);
           }}
         >
-          View
+          <Eye className="h-5 w-5" />
         </button>
       ),
     },
