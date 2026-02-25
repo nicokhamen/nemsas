@@ -429,9 +429,9 @@ export const MDReview = () => {
     },
     
     // Handle long text wrapping
-    didDrawCell: (data) => {
-      // You can add custom cell formatting here if needed
-    },
+    // didDrawCell: (data) => {
+    
+    // },
   });
 
   
