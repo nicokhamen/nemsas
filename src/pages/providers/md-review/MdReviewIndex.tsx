@@ -464,7 +464,7 @@ export const MDReview = () => {
     return total.toString();
   }, [tableClaims]);
 
-  const totalPatients = tableClaims.length;
+  const numOfClaims = tableClaims.length;
   const billAccuracy = 75; // This would be calculated from actual data
 
   return (
@@ -489,8 +489,8 @@ export const MDReview = () => {
               <Users className="h-6 w-6 text-amber-600" />
             </div>
             <div>
-              <p className="text-3xl font-bold text-gray-900">{totalPatients}</p>
-              <p className="text-sm text-gray-500">Total Patient</p>
+              <p className="text-3xl font-bold text-gray-900">{numOfClaims}</p>
+              <p className="text-sm text-gray-500">Total Claims</p>
             </div>
           </div>
 

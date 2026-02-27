@@ -9,6 +9,7 @@ import { useSelector } from "react-redux";
 import type { RootState } from "../../services/store/store";
 import nemsasImage from "../../assets/nemsas.jpg";
 import { LogOut } from "lucide-react";
+import { useProviderContext } from "../../context/useProviderContext";
 
 interface SideNavProps {
   sidebarOpen: boolean;
@@ -16,14 +17,17 @@ interface SideNavProps {
 
 const SideNav: React.FC<SideNavProps> = () => {
   const { user } = useSelector((state: RootState) => state.auth);
+  // const { providers} = useProviderContext();
+  const { providers, selectedProviderId } = useProviderContext();
   const { logout } = useAuth();
 
   const location = useLocation();
 
   const sidebarItems = user?.isProvider ? PROVIDER_SIDEBAR : ADMIN_SIDEBAR;
 
-  // Conditional header text based on user type
-  // const headerText = user?.isProvider ? "Absolute Care" : "NEMSAS";
+  const loggedProvider = providers.find(
+  (p) => p.id === selectedProviderId
+);
 
   const isActive = (path: string | undefined) => {
     return path && location.pathname === path;
@@ -51,7 +55,8 @@ const SideNav: React.FC<SideNavProps> = () => {
                   : "You are operating in an HMO context: review, adjudicate and oversee provider claims."
               }
             >
-              {user?.isProvider && "Provider"}
+             {user?.isProvider && (loggedProvider?.hospitalName || "Provider")}
+              
             </span>
           </div>
         </div>

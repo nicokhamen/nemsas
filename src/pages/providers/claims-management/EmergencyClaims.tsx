@@ -329,6 +329,18 @@ export const Claims = () => {
 
   const totalPages = table.getPageCount();
 
+    // Calculate stats
+    const totalAmount = useMemo(() => {
+      const total = tableClaims.reduce((sum, claim) => sum + (claim.submittedAmount || 0), 0);
+      if (total >= 1000000) return `${(total / 1000000).toFixed(2)}M`;
+      if (total >= 1000) return `${(total / 1000).toFixed(0)}K`;
+      return total.toString();
+    }, [tableClaims]);
+  
+    const numOfClaims = tableClaims.length;
+    
+    const billAccuracy = 75; // This would be calculated from actual data
+
   // Handle form submission for provider/SSHIA IDs
   const handleSubmitIds = (e: React.FormEvent) => {
     e.preventDefault();
@@ -362,7 +374,7 @@ export const Claims = () => {
               <FileText className="h-6 w-6 text-green-600" />
             </div>
             <div>
-              <p className="text-3xl font-bold text-gray-900">23k</p>
+              <p className="text-3xl font-bold text-gray-900">{totalAmount}</p>
               <p className="text-sm text-gray-500">Total Amount</p>
             </div>
           </div>
@@ -373,8 +385,8 @@ export const Claims = () => {
               <Users className="h-6 w-6 text-amber-600" />
             </div>
             <div>
-              <p className="text-3xl font-bold text-gray-900">234</p>
-              <p className="text-sm text-gray-500">Total Patient</p>
+              <p className="text-3xl font-bold text-gray-900">{numOfClaims}</p>
+              <p className="text-sm text-gray-500">Total Claims</p>
             </div>
           </div>
 
