@@ -16,9 +16,10 @@ import productReducer from "../slices/productSlice";
 import encounterReducer from "../slices/encounterSlice";
 import emergencyClaimReducer from "../slices/emergencyClaimSlice";
 import emergencyClaimDetailReducer from "../slices/emergencyClaimDetailSlice";
-import emergencyBillsReducer from "../slices/emergencyBillSlice"
-import claimsEmergencyBillsReducer from "../slices/claimEmergencyBillsSlice"
-import mdEmergencyVettingReducer from "../slices/mdRequestSlice"
+import emergencyBillsReducer from "../slices/emergencyBillSlice";
+import claimsEmergencyBillsReducer from "../slices/claimEmergencyBillsSlice";
+import mdEmergencyVettingReducer from "../slices/mdRequestSlice";
+import emergencyBillPatientsReducer from "../slices/emergencyBillPatientsSlice";
 
 export const store = configureStore({
   reducer: {
@@ -39,7 +40,8 @@ export const store = configureStore({
     emergencyClaim: emergencyClaimReducer,
     emergencyClaimDetail: emergencyClaimDetailReducer,
     claimsEmergencyBills: claimsEmergencyBillsReducer,
-   mdEmergencyVetting: mdEmergencyVettingReducer,
+    mdEmergencyVetting: mdEmergencyVettingReducer,
+    emergencyBillPatients: emergencyBillPatientsReducer,
     [providerApiSlice.reducerPath]: providerApiSlice.reducer,
   },
   middleware: (getDefaultMiddleware) =>

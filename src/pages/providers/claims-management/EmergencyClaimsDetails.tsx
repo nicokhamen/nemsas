@@ -32,29 +32,27 @@ import {
 import { Pagination } from "../../../components/pagination";
 
 // Thunk and actions
-import { fetchClaimsEmergencyBills } from "../../../services/thunks/claimEmergencyThunk";
-import { clearCurrentEmergencyBills } from "../../../services/slices/claimEmergencyBillsSlice";
+import { fetchEmergencyBillPatients } from "../../../services/thunks/emergencyBillPatientsThunk";
+import { clearEmergencyBillPatients } from "../../../services/slices/emergencyBillPatientsSlice";
 
-// Status color map for discharge status
-const dischargeStatusColor: Record<string, string> = {
-  Discharged: "#2e7d32",
-  Admitted: "#1976d2",
-  Transferred: "#ff9800",
-  Deceased: "#d32f2f",
-  Default: "#6b6f80",
-};
-
-// Insurance status color
+// Status color map for insurance status
 const insuranceStatusColor: Record<string, string> = {
   NHIA: "#2196f3",
   Private: "#4caf50",
   'Self-Pay': "#9c27b0",
-  Default: "#4caf50",
+  Default: "#6b6f80",
+};
+
+// Gender color mapping
+const genderColor: Record<string, string> = {
+  Male: "#2196f3",
+  Female: "#e91e63",
+  Other: "#9c27b0",
+  Default: "#6b6f80",
 };
 
 // Format currency
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _formatCurrency = (amount: number): string => {
+const formatCurrency = (amount: number): string => {
   return `₦${amount.toLocaleString("en-NG", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -67,8 +65,6 @@ const formatDate = (dateString: string): string => {
     year: "numeric",
     month: "short",
     day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
   });
 };
 
@@ -77,17 +73,16 @@ export const EmergencyClaimsDetails = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   
-  // Get providerId from auth context (similar to Claims component)
+  // Get providerId from auth context
   const currentUser = useSelector((state: RootState) => state.auth.user);
   const providerId = currentUser?.providerId || "";
   
-  // Get emergency bills data from Redux store
+  // Get emergency bill patients data from Redux store
   const { 
-    data: emergencyBills,
+    data: emergencyBillPatients,
     loading, 
     error,
-    // currentEmergencyClaimId
-  } = useSelector((state: RootState) => state.claimsEmergencyBills);
+  } = useSelector((state: RootState) => state.emergencyBillPatients);
   
   // Local state
   const [searchTerm, setSearchTerm] = useState("");
@@ -98,10 +93,10 @@ export const EmergencyClaimsDetails = () => {
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
 
-  // Load emergency bills when claimId and providerId are available
-  const loadEmergencyBills = useCallback(() => {
+  // Load emergency bill patients when claimId and providerId are available
+  const loadEmergencyBillPatients = useCallback(() => {
     if (claimId && providerId) {
-      dispatch(fetchClaimsEmergencyBills({ 
+      dispatch(fetchEmergencyBillPatients({ 
         emergencyClaimId: claimId, 
         providerId 
       }));
@@ -111,64 +106,61 @@ export const EmergencyClaimsDetails = () => {
   // Load data on component mount or when IDs change
   useEffect(() => {
     if (claimId && providerId) {
-      loadEmergencyBills();
+      loadEmergencyBillPatients();
     }
     
     // Clear data when component unmounts
     return () => {
-      dispatch(clearCurrentEmergencyBills());
+      dispatch(clearEmergencyBillPatients());
     };
-  }, [dispatch, claimId, providerId, loadEmergencyBills]);
+  }, [dispatch, claimId, providerId, loadEmergencyBillPatients]);
 
-  // Map emergency bills to table format
-  const tableBills = useMemo(() => {
-    if (!emergencyBills?.data) return [];
+  // Map emergency bill patients to table format
+  const tablePatients = useMemo(() => {
+    if (!emergencyBillPatients?.data) return [];
     
-    return emergencyBills.data.map((bill, index) => ({
-      id: bill.id,
+    return emergencyBillPatients.data.map((patient, index) => ({
       sn: index + 1,
-      patientName: `${bill.patient?.firstName || ''} ${bill.patient?.lastName || ''}`.trim(),
-      patientHospitalNumber: bill.patient?.hospitalNumber || 'N/A',
-      patientAge: bill.patient?.age || 'N/A',
-      patientGender: bill.patient?.gender || 'N/A',
-      patientInsuranceStatus: bill.patient?.insuranceStatus || 'N/A',
-      hospitalName: bill.hospitalName,
-      department: bill.department,
-      serviceType: bill.serviceType,
-      encounterStart: formatDate(bill.encounterStartDateTime),
-      dischargeStatus: bill.dischargeStatus,
-      dischargeDate: bill.dischargeDate ? formatDate(bill.dischargeDate) : 'N/A',
-      attendingPhysician: bill.attendingPhysician || 'N/A',
-      diagnosesCount: bill.diagnoses?.length || 0,
-      servicesCount: bill.productServices?.length || 0,
-      serviceCategories: bill.serviceCategories?.join(', ') || 'N/A',
-      createdDate: formatDate(bill.createdDate),
-      rawData: bill, // Keep raw data for potential expansion
+      hospitalNumber: patient.hospitalNumber || 'N/A',
+      firstName: patient.firstName || '',
+      lastName: patient.lastName || '',
+      fullName: `${patient.firstName || ''} ${patient.lastName || ''}`.trim() || 'N/A',
+      insuranceStatus: patient.insuranceStatus || 'N/A',
+      dateOfBirth: patient.dateOfBirth ? formatDate(patient.dateOfBirth) : 'N/A',
+      gender: patient.gender || 'N/A',
+      address: patient.address || 'N/A',
+      email: patient.email || 'N/A',
+      phoneNumber: patient.phoneNumber || 'N/A',
+      id: patient.id,
+      isActive: patient.isActive,
+      age: patient.age || 'N/A',
+      totalAmount: patient.totalAmount || 0,
+      numberOfEncounters: patient.numberOfEncounters || 0,
     }));
-  }, [emergencyBills]);
+  }, [emergencyBillPatients]);
 
-  // Define columns for the emergency bills table
-  const columns: ColumnDef<(typeof tableBills)[0]>[] = [
+  // Define columns for the emergency bill patients table
+  const columns: ColumnDef<(typeof tablePatients)[0]>[] = [
     {
       accessorKey: "sn",
       header: "S/N",
       size: 60,
     },
     {
-      accessorKey: "patientName",
+      accessorKey: "hospitalNumber",
+      header: "Hospital No.",
+      enableSorting: true,
+    },
+    {
+      accessorKey: "fullName",
       header: "Patient Name",
       enableSorting: true,
     },
-    // {
-    //   accessorKey: "patientHospitalNumber",
-    //   header: "Hospital No.",
-    //   enableSorting: true,
-    // },
     {
-      accessorKey: "patientInsuranceStatus",
-      header: "Insurance",
+      accessorKey: "insuranceStatus",
+      header: "Insurance Status",
       cell: ({ row }) => {
-        const status = row.original.patientInsuranceStatus;
+        const status = row.original.insuranceStatus;
         return (
           <span
             className="px-2 py-1 rounded-full text-xs font-medium"
@@ -184,72 +176,93 @@ export const EmergencyClaimsDetails = () => {
       enableSorting: true,
     },
     {
-      accessorKey: "hospitalName",
-      header: "Hospital",
+      accessorKey: "dateOfBirth",
+      header: "Date of Birth",
       enableSorting: true,
     },
     {
-      accessorKey: "department",
-      header: "Department",
+      accessorKey: "age",
+      header: "Age",
       enableSorting: true,
     },
     {
-      accessorKey: "serviceType",
-      header: "Service Type",
-      enableSorting: true,
-    },
-    {
-      accessorKey: "encounterStart",
-      header: "Encounter Start",
-      enableSorting: true,
-    },
-    {
-      accessorKey: "dischargeStatus",
-      header: "Status",
+      accessorKey: "gender",
+      header: "Gender",
       cell: ({ row }) => {
-        const status = row.original.dischargeStatus;
+        const gender = row.original.gender;
         return (
           <span
             className="px-2 py-1 rounded-full text-xs font-medium"
             style={{
-              backgroundColor: `${dischargeStatusColor[status] || dischargeStatusColor.Default}20`,
-              color: dischargeStatusColor[status] || dischargeStatusColor.Default,
+              backgroundColor: `${genderColor[gender] || genderColor.Default}20`,
+              color: genderColor[gender] || genderColor.Default,
             }}
           >
-            {status}
+            {gender}
           </span>
         );
       },
       enableSorting: true,
     },
     {
-      accessorKey: "attendingPhysician",
-      header: "Physician",
+      accessorKey: "phoneNumber",
+      header: "Phone",
       enableSorting: true,
     },
     {
-      accessorKey: "diagnosesCount",
-      header: "Diagnoses",
+      accessorKey: "email",
+      header: "Email",
+      enableSorting: true,
       cell: ({ row }) => (
-        <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">
-          {row.original.diagnosesCount}
+        <span className="text-sm truncate max-w-[200px] block">
+          {row.original.email}
         </span>
       ),
     },
     {
-      accessorKey: "servicesCount",
-      header: "Services",
+      accessorKey: "totalAmount",
+      header: "Total Amount",
+      enableSorting: true,
       cell: ({ row }) => (
-        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-          {row.original.servicesCount}
+        <span className="font-medium">
+          {formatCurrency(row.original.totalAmount)}
         </span>
       ),
+    },
+    {
+      accessorKey: "numberOfEncounters",
+      header: "Encounters",
+      enableSorting: true,
+      cell: ({ row }) => (
+        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+          {row.original.numberOfEncounters}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "isActive",
+      header: "Status",
+      cell: ({ row }) => {
+        const isActive = row.original.isActive;
+        return (
+          <span
+            className="px-2 py-1 rounded-full text-xs font-medium"
+            style={{
+              backgroundColor: isActive ? '#4caf5020' : '#f4433620',
+              color: isActive ? '#4caf50' : '#f44336',
+            }}
+          >
+            {isActive ? 'Active' : 'Inactive'}
+          </span>
+        );
+      },
+      enableSorting: true,
     },
   ];
 
   // Initialize table
   const table = useReactTable({
-    data: tableBills,
+    data: tablePatients,
     columns,
     state: {
       sorting,
@@ -287,13 +300,12 @@ export const EmergencyClaimsDetails = () => {
 
   // Handle refresh
   const handleRefresh = () => {
-    loadEmergencyBills();
+    loadEmergencyBillPatients();
   };
 
-  // Handle row click to view bill details
-  const handleRowClick = (id: string) => {
-    
-    navigate(`/emergency/claims/bills/${id}`);
+  // Handle row click to view patient details
+  const handleRowClick = (patientId: string) => {
+    navigate(`/emergency/claims/patients/${patientId}`);
   };
 
   // Show loading while waiting for user data
@@ -305,7 +317,7 @@ export const EmergencyClaimsDetails = () => {
     );
   }
 
- return (
+  return (
     <div className="p-6">
       <div className="bg-gray-100 overflow-scroll h-full">
         <div className="bg-white rounded-md flex flex-col mb-36">
@@ -320,22 +332,25 @@ export const EmergencyClaimsDetails = () => {
                 >
                   ← Back
                 </Button>
-                {/* Claim #{claimId?.slice(0, 8)}... */}
-                <FormHeader>Emergency Bills </FormHeader>
+                <FormHeader>Emergency Bill Patients</FormHeader>
               </div>
               <input
                 type="text"
-                placeholder="Search bills by patient name or hospital"
+                placeholder="Search patients by name, hospital no., or phone"
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
                   table.setColumnFilters([
                     {
-                      id: "patientName",
+                      id: "fullName",
                       value: e.target.value,
                     },
                     {
-                      id: "hospitalName",
+                      id: "hospitalNumber",
+                      value: e.target.value,
+                    },
+                    {
+                      id: "phoneNumber",
                       value: e.target.value,
                     },
                   ]);
@@ -370,14 +385,14 @@ export const EmergencyClaimsDetails = () => {
 
           {/* Content */}
           <div>
-            {loading && !emergencyBills ? (
+            {loading && !emergencyBillPatients ? (
               <div className="flex items-center justify-center h-64">
                 <LoadingSpinner />
               </div>
             ) : !providerId ? (
               <div className="text-center py-10">
                 <div className="text-gray-500 mb-4">
-                  Provider ID is required to view emergency bills
+                  Provider ID is required to view emergency bill patients
                 </div>
               </div>
             ) : !claimId ? (
@@ -387,11 +402,11 @@ export const EmergencyClaimsDetails = () => {
                 </div>
                 <Button onClick={handleBack}>Back to Claims</Button>
               </div>
-            ) : tableBills.length === 0 ? (
+            ) : tablePatients.length === 0 ? (
               <EmptyState
                 icon={<span className="text-2xl">🏥</span>}
-                title="No emergency bills available"
-                description={error ? "Failed to load bills" : "No bills found for this claim."}
+                title="No emergency bill patients available"
+                description={error ? "Failed to load patients" : "No patients found for this claim."}
                 action={
                   <Button onClick={handleBack}>
                     ← Back to Claims
@@ -404,27 +419,32 @@ export const EmergencyClaimsDetails = () => {
                 <div className="px-6 py-4 bg-gray-50 border-y border-gray-200">
                   <div className="flex flex-wrap gap-6">
                     <div className="flex flex-col">
-                      <span className="text-sm text-gray-500">Total Bills</span>
-                      <span className="text-2xl font-semibold">{tableBills.length}</span>
+                      <span className="text-sm text-gray-500">Total Patients</span>
+                      <span className="text-2xl font-semibold">{tablePatients.length}</span>
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-sm text-gray-500">Patients</span>
-                      <span className="text-2xl font-semibold">
-                        {new Set(tableBills.map(bill => bill.patientHospitalNumber)).size}
+                      <span className="text-sm text-gray-500">Total Amount</span>
+                      <span className="text-2xl font-semibold text-green-600">
+                        {formatCurrency(tablePatients.reduce((sum, patient) => sum + patient.totalAmount, 0))}
                       </span>
                     </div>
-                    {/* <div className="flex flex-col">
-                      <span className="text-sm text-gray-500">Hospitals</span>
+                    <div className="flex flex-col">
+                      <span className="text-sm text-gray-500">Total Encounters</span>
                       <span className="text-2xl font-semibold">
-                        {new Set(tableBills.map(bill => bill.hospitalName)).size}
+                        {tablePatients.reduce((sum, patient) => sum + patient.numberOfEncounters, 0)}
                       </span>
-                    </div> */}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-sm text-gray-500">Active Patients</span>
+                      <span className="text-2xl font-semibold text-green-600">
+                        {tablePatients.filter(p => p.isActive).length}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
                 {/* Table - Fixed with horizontal scroll */}
                 <div className="flex-1 lg:px-0 lg:mt-4">
-                  {/* Add wrapper div with overflow-x-auto */}
                   <div className="overflow-x-auto">
                     <Table className="min-w-full">
                       <TableHeader className="border-y border-gray-200">
@@ -469,7 +489,7 @@ export const EmergencyClaimsDetails = () => {
                             >
                               <div className="flex flex-col items-center gap-4">
                                 <span className="font-medium">
-                                  No bills found
+                                  No patients found
                                 </span>
                                 <span className="text-gray-500">
                                   Try adjusting your search criteria
