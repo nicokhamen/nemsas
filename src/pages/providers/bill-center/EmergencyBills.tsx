@@ -482,7 +482,7 @@ export const EmergencyBills = () => {
                 Filter By
               </h3>
               <div className="grid grid-cols-12 gap-4 items-end">
-                <div className="col-span-2">
+                <div className="col-span-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Patient Name or Number
                   </label>
@@ -498,7 +498,7 @@ export const EmergencyBills = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none"
                   />
                 </div>
-                <div className="col-span-7">
+                <div className="col-span-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Date
                   </label>

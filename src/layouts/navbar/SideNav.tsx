@@ -37,8 +37,8 @@ const SideNav: React.FC<SideNavProps> = () => {
 
   return (
     <>
-      <aside className="w-64 bg-white text-gray-700 h-full flex flex-col font-avenir">
-        <div className="relative">
+      <aside className="w-64 bg-white text-gray-700 h-full flex flex-col font-avenir flex-shrink-0 min-w-[256px] max-w-[256px] overflow-hidden">
+        <div className="relative flex-shrink-0">
           <div className="flex items-center justify-center p-4 gap-2">
             <img src={nemsasImage} alt="NEMSAS Logo" className="w-8 h-8" />
             <h1 className="text-xl text-[#DC2626] leading-tight">NEMSAS</h1>
@@ -61,7 +61,7 @@ const SideNav: React.FC<SideNavProps> = () => {
           </div>
         </div>
 
-        <nav className="flex-1 space-y-1 mt-2 overflow-y-auto">
+        <nav className="flex-1 space-y-1 mt-2 overflow-y-auto min-h-0">
           {sidebarItems.map((item, index) => {
             if (item.children) {
               // Render dropdown for items with children
@@ -85,7 +85,7 @@ const SideNav: React.FC<SideNavProps> = () => {
                     {item.icon}
                   </span>
                   <span
-                    className={`transition-colors duration-200 ${isActive(item.path)
+                    className={`transition-colors duration-200 truncate ${isActive(item.path)
                       ? "text-white"
                       : "group-hover:text-white"
                       }`}
@@ -98,7 +98,7 @@ const SideNav: React.FC<SideNavProps> = () => {
           })}
         </nav>
 
-        <div className="p-4 mt-auto">
+        <div className="p-4 mt-auto flex-shrink-0">
           <button
             className="w-full justify-center flex items-center gap-2 text-[#DC2626] hover:bg-red-50 rounded-md p-2 transition-colors"
             onClick={logout}

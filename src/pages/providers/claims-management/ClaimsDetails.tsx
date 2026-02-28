@@ -70,7 +70,7 @@ const ClaimsDetails = () => {
             </Section>
 
             {/* Services */}
-            <Section title="Services Billed">
+            <Section title="Products & Services">
                 <div className="overflow-hidden rounded-lg border">
                     <div className="grid grid-cols-5 bg-green-50 text-xs font-medium text-gray-600 px-4 py-3">
                         <div>Tariff Code</div>

@@ -179,7 +179,7 @@ const EmergencyClaimsView = () => {
           <Item label="Gender" value={patient.gender || "N/A"} />
           <Item label="Phone number" value={patient.phoneNumber || "N/A"} />
           <Item label="Insurance" value={patient.insuranceStatus || "N/A"} />
-          <Item label="Department Name" value={currentBill.department || "N/A"} />
+          <Item label="Ward Name" value={currentBill.department || "N/A"} />
           <Item label="Email" value={patient.email || "N/A"} />
           <Item label="Age" value={patient.age?.toString() || "N/A"} />
           <Item label="Date of Birth" value={formatDate(patient.dateOfBirth)} />
@@ -241,7 +241,7 @@ const EmergencyClaimsView = () => {
 
       {/* Services Billed */}
    {currentBill.productServices && currentBill.productServices.length > 0 && (
-  <Section title="Services Billed">
+  <Section title="Products & Services">
     <div className="overflow-hidden rounded-lg border">
       {/* Table Header */}
       <div className="grid grid-cols-7 bg-green-50 text-xs font-medium text-gray-600 px-4 py-3">

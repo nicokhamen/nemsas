@@ -2,11 +2,15 @@ import React from "react";
 import DashboardIcon from "../assets/sidebar-icons/dashboard-icon";
 import EnrolleeIcon from "../assets/sidebar-icons/enrollee-icon";
 import SettingsIcon from "../assets/sidebar-icons/settings-icon";
+import ClaimsIcon from "../assets/sidebar-icons/claims-icon";
+import SettlementIcon from "../assets/sidebar-icons/settlement-icon";
+import TariffIcon from "../assets/sidebar-icons/tarrif-icon";
+
 
 export interface SidebarItem {
-  icon: React.ReactNode | null;
+  icon?: React.ReactNode | null;
   label: string;
-  active: boolean;
+  active?: boolean;
 
   path?: string;
   children?: SidebarItem[];
@@ -60,17 +64,23 @@ export const ADMIN_SIDEBAR: SidebarItem[] = [
 
 // Provider Sidebar
 export const PROVIDER_SIDEBAR: SidebarItem[] = [
-  // {  icon: <DashboardIcon className="w-5 h-5" />, label: "Dashboard", active: false, path: "/enrollee/dashboard" },
-  {
-    icon: <EnrolleeIcon className="w-5 h-5" />,
-    label: "Claims",
-    active: false,
-    children: [
-      { icon: null, label: "Emergency Bill", active: false, path: "/emergency/bills" },
-      { icon: null, label: "Claims Management", active: false, path: "/claims-management" }
-    ]
-  },
-  { icon: <EnrolleeIcon className="w-5 h-5" />, label: "MD Review & Endorsement", active: false, path: "/md-review" },
+  {  icon: <DashboardIcon className="w-5 h-5" />, label: "Dashboard", active: false},
+{
+  icon: <ClaimsIcon className="w-5 h-5" />,
+  label: "Claims",
+  active: false,
+  children: [
+    {
+      label: "NEMSAS",
+      children: [
+        { label: "Emergency Bill", path: "/emergency/bills" },
+        { label: "Claims Management", path: "/claims-management" }
+      ]
+    }
+  ]
+},
+  { icon: <ClaimsIcon className="w-5 h-5" />, label: "MD Review & Endorsement", active: false, path: "/md-review" },
+  { icon: <SettlementIcon className="w-5 h-5" />, label: "Settlement", active: false },
+  { icon: <TariffIcon className="w-5 h-5" />, label: "Tariff", active: false, path: "/tariff" },
   { icon: <SettingsIcon className="w-5 h-5" />, label: "Settings", active: false, path: "/settings" },
-  { icon: <SettingsIcon className="w-5 h-5" />, label: "Tariff", active: false, path: "/tariff" },
 ];

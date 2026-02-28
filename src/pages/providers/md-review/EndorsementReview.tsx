@@ -67,7 +67,7 @@ export default function EndorsementReview() {
 
           {/* Services Billed */}
           <section>
-            <FormHeader className="py-4 ">Services Billed</FormHeader>
+            <FormHeader className="py-4 ">Products & Services</FormHeader>
             <hr className="py-4 " />
             <table className="w-full text-sm border rounded-lg overflow-hidden">
               <thead className="bg-gray-100">

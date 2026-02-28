@@ -410,13 +410,13 @@ const handleModalClose = () => {
     );
   }
 
-  return (
-    <>
-    <div className="p-6">
-      <div className="bg-gray-100 overflow-scroll h-full">
-        <div className="bg-white rounded-md flex flex-col mb-36">
+ return (
+  <>
+    <div className="p-6 h-full">
+      <div className="bg-gray-100 h-full overflow-hidden">
+        <div className="bg-white rounded-md flex flex-col h-full">
           {/* Header */}
-          <div className="flex flex-wrap gap-4 justify-between items-center p-6">
+          <div className="flex flex-wrap gap-4 justify-between items-center p-6 flex-shrink-0">
             <div className="flex items-center gap-8">
               <div className="flex items-center gap-4">
                 <Button
@@ -426,7 +426,6 @@ const handleModalClose = () => {
                 >
                   ← Back
                 </Button>
-                {/* #{claimId?.slice(0, 8)}... */}
                 <FormHeader>
                   Emergency Bills for Claim 
                 </FormHeader>
@@ -451,12 +450,11 @@ const handleModalClose = () => {
                 className="border rounded-lg hidden lg:block px-4 py-2 lg:w-96 lg:max-w-2xl focus:outline-none"
               />
             </div>
-        
           </div>
 
           {/* Error Messages */}
           {error && (
-            <div className="px-6 py-3 bg-red-50 border-l-4 border-red-500">
+            <div className="px-6 py-3 bg-red-50 border-l-4 border-red-500 flex-shrink-0">
               <p className="text-red-700">{error}</p>
               <Button 
                 onClick={handleRefresh} 
@@ -468,10 +466,10 @@ const handleModalClose = () => {
             </div>
           )}
 
-          {/* Content */}
-          <div>
+          {/* Content - with proper scrolling */}
+          <div className="flex-1 overflow-hidden">
             {loading && !emergencyBills ? (
-              <div className="flex items-center justify-center h-64">
+              <div className="flex items-center justify-center h-full">
                 <LoadingSpinner />
               </div>
             ) : !providerId ? (
@@ -499,12 +497,10 @@ const handleModalClose = () => {
                 }
               />
             ) : (
-              <>
-        
-
+              <div className="h-full flex flex-col overflow-hidden">
                 {/* Selected rows info */}
                 {selectedBills.length > 0 && (
-                  <div className="px-6 py-3 bg-blue-50 border-b border-blue-100">
+                  <div className="px-6 py-3 bg-blue-50 border-b border-blue-100 flex-shrink-0">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-6">
                         <span className="text-sm text-blue-700">
@@ -533,69 +529,79 @@ const handleModalClose = () => {
                   </div>
                 )}
 
-                {/* Table */}
-                <div className="flex-1 lg:px-0 lg:mt-4">
-                  <Table className="min-w-[1000px]">
-                    <TableHeader className="border-y border-gray-200">
-                      {table.getHeaderGroups().map((headerGroup) => (
-                        <TableRow key={headerGroup.id}>
-                          {headerGroup.headers.map((header) => (
-                            <TableHead key={header.id}>
-                              {header.isPlaceholder
-                                ? null
-                                : flexRender(
-                                    header.column.columnDef.header,
-                                    header.getContext()
-                                  )}
-                            </TableHead>
+                {/* Table container with horizontal scroll */}
+                <div className="flex-1 overflow-auto min-h-0">
+                  <div className="inline-block min-w-full align-middle">
+                    <div className="overflow-x-auto">
+                      <Table className="min-w-[1200px] w-full border-collapse">
+                        <TableHeader className="border-y border-gray-200 sticky top-0 bg-white z-10">
+                          {table.getHeaderGroups().map((headerGroup) => (
+                            <TableRow key={headerGroup.id}>
+                              {headerGroup.headers.map((header) => (
+                                <TableHead 
+                                  key={header.id}
+                                  className="whitespace-nowrap px-4 py-3"
+                                >
+                                  {header.isPlaceholder
+                                    ? null
+                                    : flexRender(
+                                        header.column.columnDef.header,
+                                        header.getContext()
+                                      )}
+                                </TableHead>
+                              ))}
+                            </TableRow>
                           ))}
-                        </TableRow>
-                      ))}
-                    </TableHeader>
-                    <TableBody>
-                      {table.getRowModel().rows.length ? (
-                        table.getRowModel().rows.map((row) => (
-                          <TableRow
-                            key={row.id}
-                            className="cursor-pointer hover:bg-[#FFFFFF] transition-colors"
-                            onClick={() => handleRowClick(row.original.id)}
-                          >
-                            {row.getVisibleCells().map((cell) => (
-                              <TableCell key={cell.id}>
-                                {flexRender(
-                                  cell.column.columnDef.cell,
-                                  cell.getContext()
-                                )}
+                        </TableHeader>
+                        <TableBody>
+                          {table.getRowModel().rows.length ? (
+                            table.getRowModel().rows.map((row) => (
+                              <TableRow
+                                key={row.id}
+                                className="cursor-pointer hover:bg-gray-50 transition-colors"
+                                onClick={() => handleRowClick(row.original.id)}
+                              >
+                                {row.getVisibleCells().map((cell) => (
+                                  <TableCell 
+                                    key={cell.id}
+                                    className="whitespace-nowrap px-4 py-3"
+                                  >
+                                    {flexRender(
+                                      cell.column.columnDef.cell,
+                                      cell.getContext()
+                                    )}
+                                  </TableCell>
+                                ))}
+                              </TableRow>
+                            ))
+                          ) : (
+                            <TableRow>
+                              <TableCell
+                                colSpan={columns.length}
+                                className="h-24 text-center hover:bg-gray-50 transition-colors"
+                              >
+                                <div className="flex flex-col items-center gap-4">
+                                  <span className="font-medium">
+                                    No bills found
+                                  </span>
+                                  <span className="text-gray-500">
+                                    Try adjusting your search criteria
+                                  </span>
+                                  <Button onClick={handleRefresh}>
+                                    Refresh Data
+                                  </Button>
+                                </div>
                               </TableCell>
-                            ))}
-                          </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell
-                            colSpan={columns.length}
-                            className="h-24 text-center hover:bg-[#FFFFFF] transition-colors"
-                          >
-                            <div className="flex flex-col items-center gap-4">
-                              <span className="font-medium">
-                                No bills found
-                              </span>
-                              <span className="text-gray-500">
-                                Try adjusting your search criteria
-                              </span>
-                              <Button onClick={handleRefresh}>
-                                Refresh Data
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Pagination */}
-                <div className="p-4 flex items-center justify-end">
+                <div className="p-4 flex items-center justify-end border-t border-gray-200 flex-shrink-0">
                   <Pagination
                     totalEntriesSize={table.getFilteredRowModel().rows.length}
                     currentPage={pageIndex + 1}
@@ -608,26 +614,26 @@ const handleModalClose = () => {
                     }}
                   />
                 </div>
-              </>
+              </div>
             )}
           </div>
         </div>
       </div>
    
-     <VettingModal
-      isOpen={showVettingModal}
-      onClose={handleModalClose}
-      onApprove={handleApproveBills}
-      onReject={handleRejectBills}
-      title={`Vet ${selectedBills.length} Selected Bill(s)`}
-      message={`You are about to process ${selectedBills.length} bill(s) with a total amount of ${formatCurrency(selectedTotalAmount)}. Do you want to approve or reject these bills?`}
-      approveText={`Approve (${selectedBills.length})`}
-      rejectText={`Reject (${selectedBills.length})`}
-      isLoading={isProcessing}
-    />
+      <VettingModal
+        isOpen={showVettingModal}
+        onClose={handleModalClose}
+        onApprove={handleApproveBills}
+        onReject={handleRejectBills}
+        title={`Vet ${selectedBills.length} Selected Bill(s)`}
+        message={`You are about to process ${selectedBills.length} bill(s) with a total amount of ${formatCurrency(selectedTotalAmount)}. Do you want to approve or reject these bills?`}
+        approveText={`Approve (${selectedBills.length})`}
+        rejectText={`Reject (${selectedBills.length})`}
+        isLoading={isProcessing}
+      />
     </div>
-    </>
-  );
+  </>
+);
 };
 
 export default MdReviewBills;

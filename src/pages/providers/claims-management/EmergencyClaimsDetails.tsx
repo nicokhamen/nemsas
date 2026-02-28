@@ -305,7 +305,7 @@ export const EmergencyClaimsDetails = () => {
     );
   }
 
-  return (
+ return (
     <div className="p-6">
       <div className="bg-gray-100 overflow-scroll h-full">
         <div className="bg-white rounded-md flex flex-col mb-36">
@@ -422,65 +422,68 @@ export const EmergencyClaimsDetails = () => {
                   </div>
                 </div>
 
-                {/* Table */}
+                {/* Table - Fixed with horizontal scroll */}
                 <div className="flex-1 lg:px-0 lg:mt-4">
-                  <Table className="min-w-[1200px]">
-                    <TableHeader className="border-y border-gray-200">
-                      {table.getHeaderGroups().map((headerGroup) => (
-                        <TableRow key={headerGroup.id}>
-                          {headerGroup.headers.map((header) => (
-                            <TableHead key={header.id}>
-                              {header.isPlaceholder
-                                ? null
-                                : flexRender(
-                                    header.column.columnDef.header,
-                                    header.getContext()
-                                  )}
-                            </TableHead>
-                          ))}
-                        </TableRow>
-                      ))}
-                    </TableHeader>
-                    <TableBody>
-                      {table.getRowModel().rows.length ? (
-                        table.getRowModel().rows.map((row) => (
-                          <TableRow
-                            key={row.id}
-                            className="cursor-pointer hover:bg-gray-50 transition-colors"
-                            onClick={() => handleRowClick(row.original.id)}
-                          >
-                            {row.getVisibleCells().map((cell) => (
-                              <TableCell key={cell.id}>
-                                {flexRender(
-                                  cell.column.columnDef.cell,
-                                  cell.getContext()
-                                )}
-                              </TableCell>
+                  {/* Add wrapper div with overflow-x-auto */}
+                  <div className="overflow-x-auto">
+                    <Table className="min-w-full">
+                      <TableHeader className="border-y border-gray-200">
+                        {table.getHeaderGroups().map((headerGroup) => (
+                          <TableRow key={headerGroup.id}>
+                            {headerGroup.headers.map((header) => (
+                              <TableHead key={header.id}>
+                                {header.isPlaceholder
+                                  ? null
+                                  : flexRender(
+                                      header.column.columnDef.header,
+                                      header.getContext()
+                                    )}
+                              </TableHead>
                             ))}
                           </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell
-                            colSpan={columns.length}
-                            className="h-24 text-center"
-                          >
-                            <div className="flex flex-col items-center gap-4">
-                              <span className="font-medium">
-                                No bills found
-                              </span>
-                              <span className="text-gray-500">
-                                Try adjusting your search criteria
-                              </span>
-                              <Button onClick={handleRefresh}>
-                                Refresh Data
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
+                        ))}
+                      </TableHeader>
+                      <TableBody>
+                        {table.getRowModel().rows.length ? (
+                          table.getRowModel().rows.map((row) => (
+                            <TableRow
+                              key={row.id}
+                              className="cursor-pointer hover:bg-gray-50 transition-colors"
+                              onClick={() => handleRowClick(row.original.id)}
+                            >
+                              {row.getVisibleCells().map((cell) => (
+                                <TableCell key={cell.id}>
+                                  {flexRender(
+                                    cell.column.columnDef.cell,
+                                    cell.getContext()
+                                  )}
+                                </TableCell>
+                              ))}
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell
+                              colSpan={columns.length}
+                              className="h-24 text-center"
+                            >
+                              <div className="flex flex-col items-center gap-4">
+                                <span className="font-medium">
+                                  No bills found
+                                </span>
+                                <span className="text-gray-500">
+                                  Try adjusting your search criteria
+                                </span>
+                                <Button onClick={handleRefresh}>
+                                  Refresh Data
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
 
                 {/* Pagination */}
