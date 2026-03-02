@@ -56,10 +56,11 @@ const StepIndicator = ({
             {/* Step icon + label */}
             <div className="flex items-center gap-2">
               <div
-                className={`flex items-center justify-center w-6 h-6 rounded-full ${isCompleted
+                className={`flex items-center justify-center w-6 h-6 rounded-full ${
+                  isCompleted
                     ? "bg-[#DC2626] text-white"
                     : "bg-gray-400 text-white"
-                  }`}
+                }`}
               >
                 <svg
                   className="w-4 h-4"
@@ -75,8 +76,9 @@ const StepIndicator = ({
               </div>
 
               <span
-                className={`text-lg font-medium ${isCompleted ? "text-gray-900" : "text-gray-400"
-                  }`}
+                className={`text-lg font-medium ${
+                  isCompleted ? "text-gray-900" : "text-gray-400"
+                }`}
               >
                 Step {step}
               </span>
@@ -85,8 +87,9 @@ const StepIndicator = ({
             {/* Connector */}
             {index < steps.length - 1 && (
               <div
-                className={`mx-4 h-px w-16 ${step < currentStep ? "bg-[#DC2626]" : "bg-gray-300"
-                  }`}
+                className={`mx-4 h-px w-16 ${
+                  step < currentStep ? "bg-[#DC2626]" : "bg-gray-300"
+                }`}
               />
             )}
           </div>
@@ -152,8 +155,6 @@ export default function NewEmergencyBillWizard() {
     setShowDiagnosisSearch(false);
     setShowProductSearch(false);
   }, [dispatch]);
-
-
 
   // Reset state when component mounts
   useEffect(() => {
@@ -265,13 +266,22 @@ export default function NewEmergencyBillWizard() {
 
   // Step 4: Services & Documents
   const [services, setServices] = useState<ProductItem[]>([]);
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<
+  { file: File; preview: string }[]
+>([]);
 
   // Load required data
   useEffect(() => {
     dispatch(fetchDepartments());
     dispatch(fetchServiceCategories());
   }, [dispatch]);
+
+  // clean up for files
+  useEffect(() => {
+  return () => {
+    uploadedFiles.forEach(f => URL.revokeObjectURL(f.preview));
+  };
+}, [uploadedFiles]);
 
   // Extract unique patients from emergency bills
   const availablePatients = useMemo(() => {
@@ -350,6 +360,16 @@ export default function NewEmergencyBillWizard() {
         if (missingFields.length > 0) {
           toastError("Please fill all required fields");
           return false;
+        }
+        // Validate discharge date if provided
+        if (encounterData.dischargeDate && encounterData.encounterStartDate) {
+          const dischargeDate = new Date(encounterData.dischargeDate);
+          const startDate = new Date(encounterData.encounterStartDate);
+
+          if (dischargeDate < startDate) {
+            toastError("Discharge date must be after encounter start date");
+            return false;
+          }
         }
         return true;
       case 3:
@@ -451,17 +471,25 @@ export default function NewEmergencyBillWizard() {
   };
 
   // File upload functions
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files) {
-      const newFiles = Array.from(event.target.files);
-      setUploadedFiles([...uploadedFiles, ...newFiles]);
-      toastSuccess(`${newFiles.length} file(s) uploaded`);
-    }
-  };
+ const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  if (!event.target.files) return;
 
-  const handleRemoveFile = (index: number) => {
-    setUploadedFiles(uploadedFiles.filter((_, i) => i !== index));
-  };
+  const files = Array.from(event.target.files).map(file => ({
+    file,
+    preview: URL.createObjectURL(file)
+  }));
+
+  setUploadedFiles(prev => [...prev, ...files]);
+
+  toastSuccess(`${files.length} file(s) uploaded`);
+};
+
+ const handleRemoveFile = (index: number) => {
+  setUploadedFiles(prev => {
+    URL.revokeObjectURL(prev[index].preview);
+    return prev.filter((_, i) => i !== index);
+  });
+};
 
   // Calculate total amount
   const totalAmount = useMemo(() => {
@@ -564,23 +592,47 @@ export default function NewEmergencyBillWizard() {
 
   // 72 hr date logic
   const maxEndDate = useMemo(() => {
-    if (!encounterData.encounterStartDate) return ""
+    if (!encounterData.encounterStartDate) return "";
 
-    const d = new Date(encounterData.encounterStartDate)
-    d.setHours(d.getHours() + 72)
+    const d = new Date(encounterData.encounterStartDate);
+    d.setHours(d.getHours() + 72);
 
-    return d.toISOString().split("T")[0]
-  }, [encounterData.encounterStartDate])
+    return d.toISOString().split("T")[0];
+  }, [encounterData.encounterStartDate]);
+
   // clean up for dates
   useEffect(() => {
-    if (
-      encounterData.encounterEndDate &&
-      maxEndDate &&
-      encounterData.encounterEndDate > maxEndDate
-    ) {
-      setEncounterData(prev => ({ ...prev, encounterEndDate: "" }))
+    const { encounterStartDate, encounterEndDate } = encounterData;
+
+    if (!encounterEndDate || !encounterStartDate) return;
+
+    const start = new Date(encounterStartDate);
+    const end = new Date(encounterEndDate);
+    const max = new Date(maxEndDate);
+
+    const isBeforeStart = end < start;
+    const exceeds72hrs = end > max;
+
+    if (isBeforeStart || exceeds72hrs) {
+      setEncounterData((prev) => ({
+        ...prev,
+        encounterEndDate: "",
+      }));
     }
-  }, [maxEndDate])
+  }, [encounterData.encounterStartDate, maxEndDate]);
+
+  useEffect(() => {
+    if (
+      encounterData.dischargeDate &&
+      encounterData.encounterStartDate &&
+      encounterData.dischargeDate < encounterData.encounterStartDate
+    ) {
+      setEncounterData((prev) => ({
+        ...prev,
+        dischargeDate: "",
+      }));
+    }
+  }, [encounterData.encounterStartDate]);
 
   // Render step content
   const renderStepContent = () => {
@@ -789,7 +841,6 @@ export default function NewEmergencyBillWizard() {
                   Encounter End Date
                 </label>
                 <div className="relative">
-
                   <input
                     type="date"
                     value={encounterData.encounterEndDate}
@@ -877,8 +928,10 @@ export default function NewEmergencyBillWizard() {
                         dischargeDate: e.target.value,
                       })
                     }
+                    min={encounterData.encounterStartDate || undefined}
                     placeholder="mm/dd/yy"
                     className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none"
+                    disabled={!encounterData.encounterStartDate}
                   />
                 </div>
               </div>
@@ -929,12 +982,12 @@ export default function NewEmergencyBillWizard() {
                       onChange={(e) => {
                         const newHistory = e.target.checked
                           ? [
-                            ...encounterData.selectedMedicalHistory,
-                            category.id,
-                          ]
+                              ...encounterData.selectedMedicalHistory,
+                              category.id,
+                            ]
                           : encounterData.selectedMedicalHistory.filter(
-                            (id) => id !== category.id,
-                          );
+                              (id) => id !== category.id,
+                            );
                         setEncounterData({
                           ...encounterData,
                           selectedMedicalHistory: newHistory,
@@ -1220,30 +1273,53 @@ export default function NewEmergencyBillWizard() {
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">
                   Uploaded Documents
                 </h3>
-                <div className="space-y-2">
-                  {uploadedFiles.length === 0 ? (
-                    <p className="text-sm text-gray-500">
-                      No documents uploaded
-                    </p>
-                  ) : (
-                    uploadedFiles.map((file, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-2 bg-gray-50 rounded"
-                      >
-                        <span className="text-sm text-gray-700">
-                          {file.name}
-                        </span>
-                        <button
-                          onClick={() => handleRemoveFile(index)}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))
-                  )}
-                </div>
+                <div className="grid grid-cols-2 gap-4">
+  {uploadedFiles.length === 0 ? (
+    <p className="text-sm text-gray-500">No documents uploaded</p>
+  ) : (
+    uploadedFiles.map((item, index) => {
+      const isImage = item.file.type.startsWith("image/");
+      const isPdf = item.file.type === "application/pdf";
+
+      return (
+        <div
+          key={index}
+          className="relative border rounded-lg overflow-hidden group"
+        >
+          {/* preview */}
+          {isImage ? (
+            <img
+              src={item.preview}
+              alt={item.file.name}
+              className="w-full h-40 object-cover"
+            />
+          ) : isPdf ? (
+            <div className="flex items-center justify-center h-40 bg-gray-100 text-gray-600 text-sm">
+              PDF Document
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-40 bg-gray-100 text-gray-600 text-sm">
+              File
+            </div>
+          )}
+
+          {/* overlay */}
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+            <button
+              onClick={() => handleRemoveFile(index)}
+              className="bg-white p-2 rounded-full shadow hover:bg-red-50"
+            >
+              <X className="w-5 h-5 text-red-600" />
+            </button>
+          </div>
+
+          {/* filename */}
+          <div className="p-2 text-xs truncate">{item.file.name}</div>
+        </div>
+      );
+    })
+  )}
+</div>
               </div>
             </div>
           </div>
@@ -1316,8 +1392,8 @@ export default function NewEmergencyBillWizard() {
                     <span className="text-gray-900">
                       {selectedPatient.dateOfBirth
                         ? new Date(
-                          selectedPatient.dateOfBirth,
-                        ).toLocaleDateString()
+                            selectedPatient.dateOfBirth,
+                          ).toLocaleDateString()
                         : "N/A"}
                     </span>
                   </div>
@@ -1386,7 +1462,7 @@ export default function NewEmergencyBillWizard() {
               <div className="grid grid-cols-3 gap-4">
                 {uploadedFiles.map((file, index) => (
                   <div key={index} className="text-sm text-gray-700">
-                    {file.name}
+                    {file.file.name}
                   </div>
                 ))}
                 {uploadedFiles.length === 0 && (
@@ -1482,10 +1558,11 @@ export default function NewEmergencyBillWizard() {
               <button
                 onClick={goToNextStep}
                 disabled={isNextDisabled()}
-                className={`px-8 py-2.5 rounded-sm font-normal transition-colors w-50 ${isNextDisabled()
+                className={`px-8 py-2.5 rounded-sm font-normal transition-colors w-50 ${
+                  isNextDisabled()
                     ? "bg-red-200 text-red-400 cursor-not-allowed"
                     : "bg-[#DC2626] text-white hover:bg-red-700"
-                  }`}
+                }`}
               >
                 Next
               </button>
@@ -1493,10 +1570,11 @@ export default function NewEmergencyBillWizard() {
               <button
                 onClick={() => setShowFinalConfirm(true)}
                 disabled={encounterLoading}
-                className={`px-8 py-2.5 rounded-sm font-normal transition-colors w-50  ${encounterLoading
+                className={`px-8 py-2.5 rounded-sm font-normal transition-colors w-50  ${
+                  encounterLoading
                     ? "bg-red-200 text-red-400 cursor-not-allowed"
                     : "bg-[#DC2626] text-white hover:bg-red-700"
-                  }`}
+                }`}
               >
                 {encounterLoading ? "Submitting..." : "Submit"}
               </button>
@@ -1581,14 +1659,14 @@ export default function NewEmergencyBillWizard() {
         billDetails={
           selectedPatient
             ? {
-              billId: createdBillId,
-              patientName: `${selectedPatient.firstName} ${selectedPatient.lastName}`,
-              patientNumber: selectedPatient.hospitalNumber,
-              totalAmount: totalAmount,
-              servicesCount: services.length,
-              diagnosisCount: diagnoses.length,
-              encounterId: `ENC-${Date.now()}`,
-            }
+                billId: createdBillId,
+                patientName: `${selectedPatient.firstName} ${selectedPatient.lastName}`,
+                patientNumber: selectedPatient.hospitalNumber,
+                totalAmount: totalAmount,
+                servicesCount: services.length,
+                diagnosisCount: diagnoses.length,
+                encounterId: `ENC-${Date.now()}`,
+              }
             : undefined
         }
       />

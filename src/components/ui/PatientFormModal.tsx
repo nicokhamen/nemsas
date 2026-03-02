@@ -10,6 +10,7 @@ import Input from "../../components/form/Input";
 import FormSelect from "../../components/form/FormSelect";
 import { insuranceTypeOptions } from "../../utils/insuranceTypeUtils";
 import { genderTypeOptions } from "../../utils/genderType";
+import PatientConfirmModal from "./PatientConfirmModal";
 
 interface PatientFormModalProps {
   isOpen: boolean;
@@ -56,6 +57,7 @@ const PatientFormModal: React.FC<PatientFormModalProps> = ({
   );
   const [showSuccess, setShowSuccess] = useState(false);
   const [hasNotified, setHasNotified] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   // Reset form when modal opens/closes
   useEffect(() => {
@@ -171,50 +173,63 @@ const PatientFormModal: React.FC<PatientFormModalProps> = ({
   };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!selectedProviderId) {
-      alert("Please select a provider first");
-      return;
-    }
+  if (!selectedProviderId) {
+    alert("Please select a provider first");
+    return;
+  }
 
-    if (!isFormValid()) {
-      // Mark all fields as touched to show validation errors
-      const allFields: (keyof FormData)[] = [
-        "hospitalNumber",
-        "firstName",
-        "lastName",
-        "insuranceStatus",
-        "dateOfBirth",
-        "gender",
-        "address",
-        "phoneNumber",
-      ];
-      setTouchedFields(new Set(allFields));
-      return;
-    }
+  if (!isFormValid()) {
+    // Mark all fields as touched to show validation errors
+    const allFields: (keyof FormData)[] = [
+      "hospitalNumber",
+      "firstName",
+      "lastName",
+      "insuranceStatus",
+      "dateOfBirth",
+      "gender",
+      "address",
+      "phoneNumber",
+    ];
+    setTouchedFields(new Set(allFields));
+    return;
+  }
 
-    const patientData = {
-      providerId: selectedProviderId,
-      hospitalNumber: formData.hospitalNumber,
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      insuranceStatus: formData.insuranceStatus,
-      dateOfBirth: formData.dateOfBirth
-        ? new Date(formData.dateOfBirth).toISOString()
-        : "",
-      gender: formData.gender,
-      address: formData.address,
-      email: formData.email,
-      phoneNumber: formData.phoneNumber,
-      id: "",
-      isActive: true,
-      createdDate: new Date().toISOString(),
-      age: formData.dateOfBirth ? calculateAge(formData.dateOfBirth) : 0,
-    };
+  // Show confirmation modal instead of submitting directly
+  setShowConfirmModal(true);
+};
 
-    dispatch(registerPatient(patientData));
+const handleConfirmRegistration = () => {
+  // Add a type guard to ensure selectedProviderId is not null
+  if (!selectedProviderId) {
+    alert("Provider selection lost. Please try again.");
+    setShowConfirmModal(false);
+    return;
+  }
+
+  const patientData = {
+    providerId: selectedProviderId, // Now TypeScript knows this is string
+    hospitalNumber: formData.hospitalNumber,
+    firstName: formData.firstName,
+    lastName: formData.lastName,
+    insuranceStatus: formData.insuranceStatus,
+    dateOfBirth: formData.dateOfBirth
+      ? new Date(formData.dateOfBirth).toISOString()
+      : "",
+    gender: formData.gender,
+    address: formData.address,
+    email: formData.email,
+    phoneNumber: formData.phoneNumber,
+    id: "",
+    isActive: true,
+    createdDate: new Date().toISOString(),
+    age: formData.dateOfBirth ? calculateAge(formData.dateOfBirth) : 0,
   };
+
+  dispatch(registerPatient(patientData));
+  setShowConfirmModal(false);
+};
 
   const getFieldError = (field: keyof FormData): string | undefined => {
     if (!touchedFields.has(field)) return undefined;
@@ -228,6 +243,7 @@ const PatientFormModal: React.FC<PatientFormModalProps> = ({
   if (!isOpen) return null;
 
   const modalContent = (
+    <>
     <div className="fixed inset-0 z-[9999]">
       {/* Backdrop */}
       <div
@@ -373,6 +389,7 @@ const PatientFormModal: React.FC<PatientFormModalProps> = ({
                       onChange={(e) =>
                         handleInputChange("dateOfBirth", e.target.value)
                       }
+                      max={new Date().toISOString().split('T')[0]}
                       onBlur={() => handleBlur("dateOfBirth")}
                       className={`w-full rounded-lg border ${
                         getFieldError("dateOfBirth")
@@ -529,10 +546,29 @@ const PatientFormModal: React.FC<PatientFormModalProps> = ({
           </div>
         </div>
       </div>
+      
     </div>
+     </> 
+ 
+
   );
+  return (
+  <>
+    {ReactDOM.createPortal(modalContent, document.body)}
+    {/* Render PatientConfirmModal in its own portal */}
+    <PatientConfirmModal
+      isOpen={showConfirmModal}
+      onClose={() => setShowConfirmModal(false)}
+      onConfirm={handleConfirmRegistration}
+      patientData={formData}
+      isLoading={loading}
+    />
+  </>
+);
 
   return ReactDOM.createPortal(modalContent, document.body);
+
+  
 };
 
 export default PatientFormModal;

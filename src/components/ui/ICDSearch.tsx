@@ -7,7 +7,7 @@ import type { ICDItem } from "../../types/emergency-bill";
 
 // Reusable ICD Search Component
 export const ICDSearch: React.FC<{
-  onSelect: (diagnosis: ICDItem & { type: string }) => void,
+  onSelect: (diagnosis: ICDItem & { type: string }) => void;
 }> = ({ onSelect }) => {
   const dispatch = useDispatch<AppDispatch>();
 
@@ -38,8 +38,8 @@ export const ICDSearch: React.FC<{
   // Format display type
   const formatDisplayType = (apiType: string): string => {
     const typeMap: Record<string, string> = {
-      "ICD10": "ICD-10",
-      "ICD11": "ICD-11",
+      ICD10: "ICD-10",
+      ICD11: "ICD-11",
     };
     return typeMap[apiType] || apiType;
   };
@@ -48,10 +48,12 @@ export const ICDSearch: React.FC<{
   const performSearch = useCallback(() => {
     if (query.trim().length >= 3 && system) {
       const apiCodeType = getCodeTypeForAPI(system);
-      dispatch(fetchICDCodes({
-        codeType: apiCodeType,
-        searchTerm: query.trim()
-      }));
+      dispatch(
+        fetchICDCodes({
+          codeType: apiCodeType,
+          searchTerm: query.trim(),
+        }),
+      );
       setShowDropdown(true);
     }
   }, [query, system, dispatch]);
@@ -82,14 +84,17 @@ export const ICDSearch: React.FC<{
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setShowDropdown(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
@@ -100,7 +105,7 @@ export const ICDSearch: React.FC<{
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && query.trim() && system) {
+    if (e.key === "Enter" && query.trim() && system) {
       e.preventDefault();
       handleSearch();
     }
@@ -109,7 +114,7 @@ export const ICDSearch: React.FC<{
   const handleItemClick = (item: ICDItem) => {
     const selectedItem = {
       ...item,
-      type: formatDisplayType(getCodeTypeForAPI(system))
+      type: formatDisplayType(getCodeTypeForAPI(system)),
     };
 
     onSelect(selectedItem);
@@ -135,10 +140,16 @@ export const ICDSearch: React.FC<{
           <option value="ICD-10">ICD-10</option>
           <option value="ICD-11">ICD-11</option>
         </select>
-        <ChevronDown size={20} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500" />
+        <ChevronDown
+          size={20}
+          className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500"
+        />
       </div>
       {system && (
-        <div className="w-full space-y-3 animate-fadeIn relative" ref={dropdownRef}>
+        <div
+          className="w-full space-y-3 animate-fadeIn relative"
+          ref={dropdownRef}
+        >
           {/* Search input with icon */}
           <div className="relative">
             <input
@@ -150,32 +161,33 @@ export const ICDSearch: React.FC<{
               onKeyDown={handleKeyDown}
               disabled={loading}
             />
-            <button
-              onClick={handleSearch}
-              disabled={loading || !query.trim()}
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none disabled:opacity-50"
-              aria-label="Search"
-            >
-              {loading ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
-              ) : (
-                <Search size={20} />
-              )}
-            </button>
+            <div className="absolute left-0 top-0 h-full flex items-center pl-3 pointer-events-none">
+              <button
+                onClick={handleSearch}
+                disabled={loading || !query.trim()}
+                className="text-gray-500 hover:text-gray-700 focus:outline-none disabled:opacity-50 pointer-events-auto"
+                aria-label="Search"
+              >
+                {loading ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+                ) : (
+                  <Search size={20} />
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Info message */}
           {query.length > 0 && query.length < 3 && (
             <p className="text-sm text-gray-500">
-              Type {3 - query.length} more character{3 - query.length > 1 ? 's' : ''} to search...
+              Type {3 - query.length} more character
+              {3 - query.length > 1 ? "s" : ""} to search...
             </p>
           )}
 
           {/* Loading indicator */}
           {isTyping && query.length >= 3 && (
-            <p className="text-sm text-blue-500">
-              Typing...
-            </p>
+            <p className="text-sm text-blue-500">Typing...</p>
           )}
 
           {/* Error message */}
@@ -191,7 +203,8 @@ export const ICDSearch: React.FC<{
               <div className="py-1">
                 <div className="px-3 py-2 bg-gray-50 border-b">
                   <p className="text-xs font-medium text-gray-500">
-                    Found {icdData.length} result{icdData.length !== 1 ? 's' : ''} for "{query}"
+                    Found {icdData.length} result
+                    {icdData.length !== 1 ? "s" : ""} for "{query}"
                   </p>
                 </div>
                 <ul>
@@ -214,7 +227,9 @@ export const ICDSearch: React.FC<{
                           <p className="text-gray-800">{item.name}</p>
                         </div>
                         <div className="text-right">
-                          <span className="text-xs text-gray-400">Click to select</span>
+                          <span className="text-xs text-gray-400">
+                            Click to select
+                          </span>
                         </div>
                       </div>
                     </li>
@@ -225,13 +240,18 @@ export const ICDSearch: React.FC<{
           )}
 
           {/* No results message */}
-          {showDropdown && icdData.length === 0 && query.length >= 3 && !loading && !isTyping && !error && (
-            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
-              <p className="text-sm text-yellow-700">
-                No ICD codes found for "{query}" in {system}
-              </p>
-            </div>
-          )}
+          {showDropdown &&
+            icdData.length === 0 &&
+            query.length >= 3 &&
+            !loading &&
+            !isTyping &&
+            !error && (
+              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
+                <p className="text-sm text-yellow-700">
+                  No ICD codes found for "{query}" in {system}
+                </p>
+              </div>
+            )}
         </div>
       )}
     </div>
