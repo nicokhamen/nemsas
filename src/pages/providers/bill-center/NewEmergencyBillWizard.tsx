@@ -283,6 +283,17 @@ export default function NewEmergencyBillWizard() {
   };
 }, [uploadedFiles]);
 
+// Clean up object URLs when component unmounts
+useEffect(() => {
+  return () => {
+    uploadedFiles.forEach(item => {
+      if (item.preview) {
+        URL.revokeObjectURL(item.preview);
+      }
+    });
+  };
+}, []);
+
   // Extract unique patients from emergency bills
   const availablePatients = useMemo(() => {
     if (!emergencyBills || emergencyBills.length === 0) return [];
@@ -470,23 +481,42 @@ export default function NewEmergencyBillWizard() {
     toastSuccess("Service removed");
   };
 
-  // File upload functions
- const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+// File upload functions with size restriction
+const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
   if (!event.target.files) return;
 
-  const files = Array.from(event.target.files).map(file => ({
+  const MAX_FILE_SIZE = 300 * 1024; // 300KB in bytes
+  
+  const files = Array.from(event.target.files);
+  
+  // Filter files by size
+  const validFiles = files.filter(file => file.size <= MAX_FILE_SIZE);
+  const oversizedFiles = files.filter(file => file.size > MAX_FILE_SIZE);
+  
+  // Show warning for oversized files
+  if (oversizedFiles.length > 0) {
+    toastError(`${oversizedFiles.length} file(s) exceed the 300KB size limit and were not uploaded`);
+  }
+  
+  // Process valid files
+  const newFiles = validFiles.map(file => ({
     file,
-    preview: URL.createObjectURL(file)
+    preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : ''
   }));
 
-  setUploadedFiles(prev => [...prev, ...files]);
-
-  toastSuccess(`${files.length} file(s) uploaded`);
+  if (newFiles.length > 0) {
+    setUploadedFiles(prev => [...prev, ...newFiles]);
+    event.target.value = "";
+    toastSuccess(`${newFiles.length} file(s) uploaded successfully`);
+  }
 };
 
- const handleRemoveFile = (index: number) => {
+const handleRemoveFile = (index: number) => {
   setUploadedFiles(prev => {
-    URL.revokeObjectURL(prev[index].preview);
+    // Clean up the preview URL for images
+    if (prev[index].preview) {
+      URL.revokeObjectURL(prev[index].preview);
+    }
     return prev.filter((_, i) => i !== index);
   });
 };
@@ -1264,7 +1294,7 @@ export default function NewEmergencyBillWizard() {
                         accept=".png,.jpg,.jpeg,.pdf"
                       />
                     </label>{" "}
-                    to select a PNG file
+                    to select a PNG file or JPEG
                   </p>
                 </div>
               </div>

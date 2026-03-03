@@ -34,6 +34,7 @@ import { Pagination } from "../../../components/pagination";
 // Thunk and actions
 import { fetchEmergencyBillPatients } from "../../../services/thunks/emergencyBillPatientsThunk";
 import { clearEmergencyBillPatients } from "../../../services/slices/emergencyBillPatientsSlice";
+import { Eye } from "lucide-react";
 
 // Status color map for insurance status
 const insuranceStatusColor: Record<string, string> = {
@@ -126,7 +127,7 @@ export const EmergencyClaimsDetails = () => {
       lastName: patient.lastName || '',
       fullName: `${patient.firstName || ''} ${patient.lastName || ''}`.trim() || 'N/A',
       insuranceStatus: patient.insuranceStatus || 'N/A',
-      dateOfBirth: patient.dateOfBirth ? formatDate(patient.dateOfBirth) : 'N/A',
+      // dateOfBirth: patient.dateOfBirth ? formatDate(patient.dateOfBirth) : 'N/A',
       gender: patient.gender || 'N/A',
       address: patient.address || 'N/A',
       email: patient.email || 'N/A',
@@ -175,11 +176,11 @@ export const EmergencyClaimsDetails = () => {
       },
       enableSorting: true,
     },
-    {
-      accessorKey: "dateOfBirth",
-      header: "Date of Birth",
-      enableSorting: true,
-    },
+    // {
+    //   accessorKey: "dateOfBirth",
+    //   header: "Date of Birth",
+    //   enableSorting: true,
+    // },
     {
       accessorKey: "age",
       header: "Age",
@@ -258,6 +259,23 @@ export const EmergencyClaimsDetails = () => {
       },
       enableSorting: true,
     },
+     {
+          id: "action",
+          header: "Action",
+          enableHiding: false,
+          cell: ({ row }) => (
+            <button
+              className="flex items-center justify-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/emergency/claims/patients/${row.id}`);
+              }}
+              title="View Bill"
+            >
+              <Eye className="h-5 w-5" />
+            </button>
+          ),
+        },
   ];
 
   // Initialize table
@@ -434,12 +452,12 @@ export const EmergencyClaimsDetails = () => {
                         {tablePatients.reduce((sum, patient) => sum + patient.numberOfEncounters, 0)}
                       </span>
                     </div>
-                    <div className="flex flex-col">
+                    {/* <div className="flex flex-col">
                       <span className="text-sm text-gray-500">Active Patients</span>
                       <span className="text-2xl font-semibold text-green-600">
                         {tablePatients.filter(p => p.isActive).length}
                       </span>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
 
