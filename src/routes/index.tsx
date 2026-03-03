@@ -17,7 +17,7 @@ import { Claims } from "../pages/providers/claims-management/EmergencyClaims";
 // import NewEmergencyBillWizard from "../pages/bill-center/NewEmergencyBillWizard";
 // import { MDReview } from "../pages/md-review/MdReviewIndex";
 // import EndorsementReview from "../pages/md-review/EndorsementReview";
-import ClaimsDetails from "../pages/providers/claims-management/ClaimsDetails";
+
 // import { EmergencyBills } from "../pages/bill-center/EmergencyBills";
 // import EmergencyBillDetails from "../pages/bill-center/EmergencyBillDetails";
 // import EditEmergencyBill from "../pages/bill-center/EditEmergencyBill";
@@ -83,14 +83,7 @@ const AppRoutes = () => {
               </Layout>
             }
           />
-          <Route
-            path="claim-details"
-            element={
-              <Layout>
-                <ClaimsDetails />
-              </Layout>
-            }
-          />
+        
 
           <Route
             path="emergency/bills"
