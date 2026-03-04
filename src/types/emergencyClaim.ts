@@ -42,6 +42,7 @@ export interface EmergencyClaim {
   id: string;
   description: string;
   claimType: ClaimType;
+  claimNumber: string,
   date: string;
   submittedAmount: number;
   emergencyBillIds: string[];

@@ -130,7 +130,7 @@ export const EmergencyClaimsDetails = () => {
       // dateOfBirth: patient.dateOfBirth ? formatDate(patient.dateOfBirth) : 'N/A',
       gender: patient.gender || 'N/A',
       address: patient.address || 'N/A',
-      email: patient.email || 'N/A',
+      // email: patient.email || 'N/A',
       phoneNumber: patient.phoneNumber || 'N/A',
       id: patient.id,
       isActive: patient.isActive,
@@ -149,7 +149,7 @@ export const EmergencyClaimsDetails = () => {
     },
     {
       accessorKey: "hospitalNumber",
-      header: "Hospital No.",
+      header: "Patient No.",
       enableSorting: true,
     },
     {
@@ -210,16 +210,16 @@ export const EmergencyClaimsDetails = () => {
       header: "Phone",
       enableSorting: true,
     },
-    {
-      accessorKey: "email",
-      header: "Email",
-      enableSorting: true,
-      cell: ({ row }) => (
-        <span className="text-sm truncate max-w-[200px] block">
-          {row.original.email}
-        </span>
-      ),
-    },
+    // {
+    //   accessorKey: "email",
+    //   header: "Email",
+    //   enableSorting: true,
+    //   cell: ({ row }) => (
+    //     <span className="text-sm truncate max-w-[200px] block">
+    //       {row.original.email}
+    //     </span>
+    //   ),
+    // },
     {
       accessorKey: "totalAmount",
       header: "Total Amount",
@@ -259,24 +259,32 @@ export const EmergencyClaimsDetails = () => {
       },
       enableSorting: true,
     },
-     {
-          id: "action",
-          header: "Action",
-          enableHiding: false,
-          cell: ({ row }) => (
-            <button
-              className="flex items-center justify-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/emergency/claims/patients/${row.id}`);
-              }}
-              title="View Bill"
-            >
-              <Eye className="h-5 w-5" />
-            </button>
-          ),
-        },
+    {
+  id: "action",
+  header: "Action",
+  enableHiding: false,
+  cell: ({ row }) => (
+    <button
+      className="flex items-center justify-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+      onClick={(e) => {
+        e.stopPropagation();
+        navigate(`/emergency-bills/${row.original.id}`, {
+          state: {
+            patientId: row.original.id,
+            claimId,
+            providerId,
+            fromEmergencyClaims: true
+          }
+        });
+      }}
+      title="View Patient Encounters"
+    >
+      <Eye className="h-5 w-5" />
+    </button>
+  ),
+}
   ];
+
 
   // Initialize table
   const table = useReactTable({
@@ -323,8 +331,16 @@ export const EmergencyClaimsDetails = () => {
 
   // Handle row click to view patient details
   const handleRowClick = (patientId: string) => {
-    navigate(`/emergency/claims/patients/${patientId}`);
-  };
+  // Navigate to PatientEncounterDetails with patient data in state
+  navigate(`/emergency-bills/${patientId}`, {
+    state: {
+      patientId,
+      claimId, // Pass the current claimId
+      providerId,
+      fromEmergencyClaims: true
+    }
+  });
+};
 
   // Show loading while waiting for user data
   if (!currentUser) {

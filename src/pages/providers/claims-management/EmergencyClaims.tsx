@@ -3,7 +3,6 @@ import { useSelector } from "react-redux";
 import type { RootState } from "../../../services/store/store";
 import EmptyState from "../../../components/ui/EmptyState";
 import Button from "../../../components/ui/Button";
-import FormHeader from "../../../components/form/FormHeader";
 import { LoadingSpinner } from "../../../components/ui/LoadingSpinner";
 import { useAppDispatch } from "../../../hooks/redux";
 
@@ -117,7 +116,8 @@ export const Claims = () => {
     const rows = tableData.map((claim, i) => [
       i + 1,
       claim.description,
-      claim.claimType,
+      // claim.claimType,
+      claim.claimNumber,
       claim.date,
       claim.formattedAmount.replace("₦", "NGN "),
       claim.formattedVettedAmount.replace("₦", "NGN "),
@@ -204,7 +204,8 @@ export const Claims = () => {
       id: claim.id,
       sn: index + 1,
       description: claim.description,
-      claimType: claim.claimType,
+      // claimType: claim.claimType,
+      claimNumber: claim.claimNumber,
       date: formatDate(claim.date),
       rawDate: claim.date,
       submittedAmount: claim.submittedAmount,
@@ -229,9 +230,14 @@ export const Claims = () => {
       header: "Description",
       enableSorting: true,
     },
-    {
-      accessorKey: "claimType",
-      header: "Claim Type",
+    // {
+    //   accessorKey: "claimType",
+    //   header: "Claim Type",
+    //   enableSorting: true,
+    // },
+      {
+      accessorKey: "claimNumber",
+      header: "Claim Number",
       enableSorting: true,
     },
     {

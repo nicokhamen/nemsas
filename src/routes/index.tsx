@@ -32,6 +32,7 @@ import NewEmergencyBillWizard from "../pages/providers/bill-center/NewEmergencyB
 import { EmergencyBills } from "../pages/providers/bill-center/EmergencyBills";
 import EmergencyBillDetails from "../pages/providers/bill-center/EmergencyBillDetails";
 import EditEmergencyBill from "../pages/providers/bill-center/EditEmergencyBill";
+import PatientEncounterDetails from "../pages/providers/claims-management/EncounterDetails";
 
 const AppRoutes = () => {
   return (
@@ -201,10 +202,10 @@ const AppRoutes = () => {
             }
           />
           <Route
-            path="emergency/bill-capture-old"
+            path="/emergency-bills/:patientId"
             element={
               <Layout>
-                <EBillCapture />
+                <PatientEncounterDetails />
               </Layout>
             }
           />
