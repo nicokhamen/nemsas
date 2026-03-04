@@ -7,8 +7,8 @@ import type { ClaimEmergencyBill } from "../../types/ClaimEmergencyBills";
 interface VettingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onApprove: (signature?: string, mdName?: string) => void;
-  onReject: (reason: string) => void;
+  onApprove: (signature?: string, mdName?: string) => Promise<void>;
+  onReject: (reason: string) => Promise<void>;
   isLoading?: boolean;
   bills?: ClaimEmergencyBill[];
   claimId?: string;
@@ -47,16 +47,24 @@ const VettingModal: React.FC<VettingModalProps> = ({
     setCurrentStep("reject-confirm");
   };
 
-  const handleSignatureConfirm = (signature: string, mdName: string) => {
-    onApprove(signature, mdName);
-    setCurrentStep("success");
-    setSuccessType("approved");
+  const handleSignatureConfirm = async (signature: string, mdName: string) => {
+    try {
+      await onApprove(signature, mdName);
+      setCurrentStep("success");
+      setSuccessType("approved");
+    } catch {
+      // stays on signature step; error shown by parent
+    }
   };
 
-  const handleRejectConfirm = (reason: string) => {
-    onReject(reason);
-    setCurrentStep("success");
-    setSuccessType("rejected");
+  const handleRejectConfirm = async (reason: string) => {
+    try {
+      await onReject(reason);
+      setCurrentStep("success");
+      setSuccessType("rejected");
+    } catch {
+      // stays on reject-confirm step; error shown by parent
+    }
   };
 
   const handleSuccessClose = () => {

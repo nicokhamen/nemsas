@@ -393,13 +393,12 @@ export const MdReviewBills = () => {
       await dispatch(mdVetEmergencyClaim(payload)).unwrap();
 
       table.resetRowSelection();
-      setShowVettingModal(false);
-
       loadEmergencyBills();
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : "Failed to approve bills";
       alert(errorMessage);
+      throw err;
     } finally {
       setIsProcessing(false);
     }
@@ -417,14 +416,13 @@ export const MdReviewBills = () => {
       await dispatch(mdVetEmergencyClaim(payload)).unwrap();
 
       table.resetRowSelection();
-      setShowVettingModal(false);
       setVettingAction(null);
-
       loadEmergencyBills();
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : "Failed to reject bills";
       alert(errorMessage);
+      throw err;
     } finally {
       setIsProcessing(false);
     }
