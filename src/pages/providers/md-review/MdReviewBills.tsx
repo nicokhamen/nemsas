@@ -6,6 +6,7 @@ import { LoadingSpinner } from "../../../components/ui/LoadingSpinner";
 import EmptyState from "../../../components/ui/EmptyState";
 import Button from "../../../components/ui/Button";
 import { useAppDispatch } from "../../../hooks/redux";
+import { useCustomToast } from "../../../hooks/useCustomToast";
 
 // Table imports
 import {
@@ -92,6 +93,7 @@ export const MdReviewBills = () => {
   const { id: claimId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const { error: toastError } = useCustomToast();
 
   // Get providerId from auth context
   const currentUser = useSelector((state: RootState) => state.auth.user);
@@ -397,7 +399,7 @@ export const MdReviewBills = () => {
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : "Failed to approve bills";
-      alert(errorMessage);
+      toastError(errorMessage);
       throw err;
     } finally {
       setIsProcessing(false);
@@ -421,7 +423,7 @@ export const MdReviewBills = () => {
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : "Failed to reject bills";
-      alert(errorMessage);
+      toastError(errorMessage);
       throw err;
     } finally {
       setIsProcessing(false);

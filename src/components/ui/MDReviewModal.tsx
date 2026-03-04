@@ -143,51 +143,51 @@ const MDReviewModal: React.FC<MDReviewModalProps> = ({
                 </h4>
                 <hr className="mb-3 border-gray-200" />
                 <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-                  <div className="flex justify-between">
-                    <p className="text-xs text-gray-500">Patient Number</p>
-                    <p className="text-sm font-semibold text-gray-900">
+                  <div className="flex justify-between gap-3">
+                    <p className="text-xs text-gray-500 shrink-0">Patient Number</p>
+                    <p className="text-sm font-semibold text-gray-900 text-right">
                       {patient?.hospitalNumber || "N/A"}
                     </p>
                   </div>
-                  <div className="flex justify-between">
-                    <p className="text-xs text-gray-500">Gender</p>
-                    <p className="text-sm font-semibold text-gray-900">
+                  <div className="flex justify-between gap-3">
+                    <p className="text-xs text-gray-500 shrink-0">Gender</p>
+                    <p className="text-sm font-semibold text-gray-900 text-right">
                       {patient?.gender || "N/A"}
                     </p>
                   </div>
-                  <div className="flex justify-between">
-                    <p className="text-xs text-gray-500">Phone number</p>
-                    <p className="text-sm font-semibold text-gray-900">
+                  <div className="flex justify-between gap-3">
+                    <p className="text-xs text-gray-500 shrink-0">Phone number</p>
+                    <p className="text-sm font-semibold text-gray-900 text-right">
                       {patient?.phoneNumber || "N/A"}
                     </p>
                   </div>
-                  <div className="flex justify-between">
-                    <p className="text-xs text-gray-500">Insurance</p>
-                    <p className="text-sm font-semibold text-gray-900">
+                  <div className="flex justify-between gap-3">
+                    <p className="text-xs text-gray-500 shrink-0">Insurance</p>
+                    <p className="text-sm font-semibold text-gray-900 text-right">
                       {patient?.insuranceStatus || "N/A"}
                     </p>
                   </div>
-                  <div className="flex justify-between">
-                    <p className="text-xs text-gray-500">Hospital Name</p>
-                    <p className="text-sm font-semibold text-gray-900">
+                  <div className="flex justify-between gap-3">
+                    <p className="text-xs text-gray-500 shrink-0">Hospital Name</p>
+                    <p className="text-sm font-semibold text-gray-900 text-right">
                       {primaryBill.hospitalName || "N/A"}
                     </p>
                   </div>
-                  <div className="flex justify-between">
-                    <p className="text-xs text-gray-500">Email</p>
-                    <p className="text-sm font-semibold text-gray-900 truncate max-w-40">
+                  <div className="flex justify-between gap-3">
+                    <p className="text-xs text-gray-500 shrink-0">Email</p>
+                    <p className="text-sm font-semibold text-gray-900 text-right truncate max-w-40">
                       {patient?.email || "N/A"}
                     </p>
                   </div>
-                  <div className="col-span-2 flex justify-between">
-                    <p className="text-xs text-gray-500">Address</p>
-                    <p className="text-sm font-semibold text-gray-900">
+                  <div className="col-span-2 flex justify-between gap-6">
+                    <p className="text-xs text-gray-500 shrink-0">Address</p>
+                    <p className="text-sm font-semibold text-gray-900 text-right">
                       {patient?.address || "N/A"}
                     </p>
                   </div>
-                  <div className="flex justify-between">
-                    <p className="text-xs text-gray-500">Age</p>
-                    <p className="text-sm font-bold text-gray-900">
+                  <div className="flex justify-between gap-3">
+                    <p className="text-xs text-gray-500 shrink-0">Age</p>
+                    <p className="text-sm font-bold text-gray-900 text-right">
                       {patient?.age || "N/A"}
                     </p>
                   </div>
@@ -201,51 +201,51 @@ const MDReviewModal: React.FC<MDReviewModalProps> = ({
                 </h4>
                 <hr className="mb-3 border-gray-200" />
                 <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-                  <div className="flex justify-between">
-                    <p className="text-xs text-gray-500">Encounter ID</p>
-                    <p className="text-sm font-semibold text-gray-900">
+                  <div className="flex justify-between gap-3">
+                    <p className="text-xs text-gray-500 shrink-0">Encounter ID</p>
+                    <p className="text-sm font-semibold text-gray-900 text-right">
                       {encounter.id}
                     </p>
                   </div>
-                  <div className="flex justify-between">
-                    <p className="text-xs text-gray-500">Emergency Type</p>
-                    <p className="text-sm font-semibold text-gray-900">
+                  <div className="flex justify-between gap-3">
+                    <p className="text-xs text-gray-500 shrink-0">Emergency Type</p>
+                    <p className="text-sm font-semibold text-gray-900 text-right">
                       {encounter.emergencyType}
                     </p>
                   </div>
-                  <div className="flex justify-between">
-                    <p className="text-xs text-gray-500">Encounter Date</p>
-                    <p className="text-sm font-semibold text-gray-900">
+                  <div className="flex justify-between gap-3">
+                    <p className="text-xs text-gray-500 shrink-0">Encounter Date</p>
+                    <p className="text-sm font-semibold text-gray-900 text-right">
                       {encounter.date}
                     </p>
                   </div>
-                  <div className="flex justify-between">
-                    <p className="text-xs text-gray-500">Ward/Unit</p>
-                    <p className="text-sm font-semibold text-gray-900">
+                  <div className="flex justify-between gap-3">
+                    <p className="text-xs text-gray-500 shrink-0">Ward/Unit</p>
+                    <p className="text-sm font-semibold text-gray-900 text-right">
                       {encounter.ward}
                     </p>
                   </div>
-                  <div className="flex justify-between">
-                    <p className="text-xs text-gray-500">Diagnosis</p>
-                    <p className="text-sm font-semibold text-gray-900">
-                      {encounter.diagnosis}
-                    </p>
-                  </div>
-                  <div className="flex justify-between">
-                    <p className="text-xs text-gray-500">Type</p>
-                    <p className="text-sm font-semibold text-gray-900">
+                  <div className="flex justify-between gap-3">
+                    <p className="text-xs text-gray-500 shrink-0">Type</p>
+                    <p className="text-sm font-semibold text-gray-900 text-right">
                       {encounter.diagnosisType}
                     </p>
                   </div>
-                  <div className="flex justify-between">
-                    <p className="text-xs text-gray-500">Code</p>
-                    <p className="text-sm font-semibold text-gray-900">
+                  <div className="flex justify-between gap-3">
+                    <p className="text-xs text-gray-500 shrink-0">Code</p>
+                    <p className="text-sm font-semibold text-gray-900 text-right">
                       {encounter.diagnosisCode}
                     </p>
                   </div>
-                  <div className="flex justify-between">
-                    <p className="text-xs text-gray-500">Note</p>
-                    <p className="text-sm font-semibold text-gray-900">
+                  <div className="col-span-2 flex justify-between gap-6">
+                    <p className="text-xs text-gray-500 shrink-0">Diagnosis</p>
+                    <p className="text-sm font-semibold text-gray-900 text-right">
+                      {encounter.diagnosis}
+                    </p>
+                  </div>
+                  <div className="col-span-2 flex justify-between gap-6">
+                    <p className="text-xs text-gray-500 shrink-0">Note</p>
+                    <p className="text-sm font-semibold text-gray-900 text-right">
                       {encounter.diagnosisNote}
                     </p>
                   </div>
