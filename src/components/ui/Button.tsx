@@ -37,9 +37,9 @@ const Button: React.FC<ButtonProps> = ({
       text: "text-[#DC2626] hover:bg-[#DC2626]/10"
     },
     green: {
-      solid: "bg-[#10B981] text-white hover:bg-[#10B981]/90 focus:ring-[#10B981]",
-      outline: "border border-[#10B981] text-[#10B981] hover:bg-[#10B981]/10",
-      text: "text-[#10B981] hover:bg-[#10B981]/10"
+      solid: "bg-[#27AE60] text-white hover:bg-[#27AE60]/90 focus:ring-[#27AE60]",
+      outline: "border border-[#27AE60] text-[#27AE60] hover:bg-[#27AE60]/10",
+      text: "text-[#27AE60] hover:bg-[#27AE60]/10"
     },
     blue: {
       solid: "bg-[#3B82F6] text-white hover:bg-[#3B82F6]/90 focus:ring-[#3B82F6]",
