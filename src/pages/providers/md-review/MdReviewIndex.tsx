@@ -264,26 +264,26 @@ export const MDReview = () => {
       header: "Vetted Amount",
       enableSorting: true,
     },
-    {
-      accessorKey: "vettedDate",
-      header: "Vetted Date",
-      enableSorting: true,
-    },
-    {
-      accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => (
-        <span
-          style={{
-            color: statusColor[row.original.status] || "#D97706",
-            fontWeight: 500,
-          }}
-        >
-          {row.original.status}
-        </span>
-      ),
-      enableSorting: true,
-    },
+    // {
+    //   accessorKey: "vettedDate",
+    //   header: "Vetted Date",
+    //   enableSorting: true,
+    // },
+    // {
+    //   accessorKey: "status",
+    //   header: "Status",
+    //   cell: ({ row }) => (
+    //     <span
+    //       style={{
+    //         color: statusColor[row.original.status] || "#D97706",
+    //         fontWeight: 500,
+    //       }}
+    //     >
+    //       {row.original.status}
+    //     </span>
+    //   ),
+    //   enableSorting: true,
+    // },
     {
       accessorKey: "processingDelay",
       header: "Processing Delay",

@@ -384,23 +384,23 @@ export const EmergencyBills = () => {
       ),
       enableSorting: true,
     },
-    {
-      accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => (
-        <span
-          style={{
-            color:
-              statusColor[row.original.status as keyof typeof statusColor] ||
-              "#000",
-            fontWeight: 600,
-          }}
-        >
-          {row.original.status}
-        </span>
-      ),
-      enableSorting: true,
-    },
+    // {
+    //   accessorKey: "status",
+    //   header: "Status",
+    //   cell: ({ row }) => (
+    //     <span
+    //       style={{
+    //         color:
+    //           statusColor[row.original.status as keyof typeof statusColor] ||
+    //           "#000",
+    //         fontWeight: 600,
+    //       }}
+    //     >
+    //       {row.original.status}
+    //     </span>
+    //   ),
+    //   enableSorting: true,
+    // },
     {
       id: "action",
       header: "Action",
