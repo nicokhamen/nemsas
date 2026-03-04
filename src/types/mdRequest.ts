@@ -1,5 +1,5 @@
 export type EmergencyClaimStatus =
-//   | 'Pending'
+  | 'New'
   | 'Approved'
   | 'Rejected';
 

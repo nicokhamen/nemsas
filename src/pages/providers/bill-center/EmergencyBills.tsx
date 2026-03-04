@@ -476,13 +476,12 @@ export const EmergencyBills = () => {
         <div className="bg-gray-100 overflow-scroll h-full">
           <div className="bg-white rounded-md flex flex-col mb-36">
             {/* Filters */}
-            {/* <div className="px-6 py-4 border-b bg-gray-50"> */}
-            <div className="flex flex-wrap gap-4 justify-between items-center p-6">
+            <div className="p-6 border-b bg-white">
               <h3 className="text-lg font-semibold text-gray-700 mb-4">
                 Filter By
               </h3>
               <div className="grid grid-cols-12 gap-4 items-end">
-                <div className="col-span-4">
+                <div className="col-span-3">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Patient Name or Number
                   </label>
@@ -518,6 +517,7 @@ export const EmergencyBills = () => {
                     />
                   </div>
                 </div>
+                <div className="col-span-2"></div>
                 <div className="col-span-3 flex gap-3">
                   <button
                     onClick={() => {
@@ -544,12 +544,10 @@ export const EmergencyBills = () => {
               </div>
             </div>
             {/* Header */}
-            <div className="flex flex-wrap gap-4 justify-between items-center py-6 px-0 bg-gray-50">
-              <div className="flex items-center gap-8">
-                <label className="block text-lg  text-gray-700 mb-2">
-                  Emergency Bill Capture List
-                </label>
-              </div>
+            <div className="flex flex-wrap gap-4 justify-between items-center py-6 px-6 bg-gray-50">
+              <label className="text-lg font-semibold text-gray-700">
+                Emergency Bill Capture List
+              </label>
               <div className="flex gap-4 items-center">
                 <button
                   onClick={routeToEmergencyBillPage}
