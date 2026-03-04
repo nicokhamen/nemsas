@@ -145,7 +145,7 @@ const PatientEncounterDetails: React.FC = () => {
               />
               <DetailRow 
                 label="Hospital Name" 
-                value={encounters[0]?.hospitalName || 'N/A'} 
+                value={encounters?.[0]?.hospitalName || 'N/A'} 
               />
               <DetailRow
                 label="Address"
