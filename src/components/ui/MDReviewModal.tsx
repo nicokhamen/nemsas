@@ -275,7 +275,7 @@ const MDReviewModal: React.FC<MDReviewModalProps> = ({
               {/* Services Billed */}
               <div className="mb-4">
                 <h4 className="text-sm font-semibold text-red-600 mb-1 uppercase">
-                  Services Billed
+                  Products & Services 
                 </h4>
                 <hr className="mb-3 border-gray-200" />
                 <div className="overflow-x-auto">

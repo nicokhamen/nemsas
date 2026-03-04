@@ -255,21 +255,21 @@ export const Claims = () => {
       header: "Vetted Amount",
       enableSorting: true,
     },
-    // {
-    //   accessorKey: "status",
-    //   header: "Status",
-    //   cell: ({ row }) => (
-    //     <span
-    //       style={{
-    //         color: statusColor[row.original.status] || "#000",
-    //         fontWeight: 600,
-    //       }}
-    //     >
-    //       {row.original.status}
-    //     </span>
-    //   ),
-    //   enableSorting: true,
-    // },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => (
+        <span
+          style={{
+            color: statusColor[row.original.status] || "#000",
+            fontWeight: 600,
+          }}
+        >
+          {row.original.status}
+        </span>
+      ),
+      enableSorting: true,
+    },
     {
       accessorKey: "createdDate",
       header: "Created Date",
