@@ -694,9 +694,9 @@ export const MDReview = () => {
 
                 {/* Footer */}
                 <div className="px-6 py-4 flex items-center justify-between text-sm text-gray-500">
-                  <span>
+                  {/* <span>
                     Showing all {table.getFilteredRowModel().rows.length} settlements
-                  </span>
+                  </span> */}
                   <Pagination
                     totalEntriesSize={table.getFilteredRowModel().rows.length}
                     currentPage={pageIndex + 1}
