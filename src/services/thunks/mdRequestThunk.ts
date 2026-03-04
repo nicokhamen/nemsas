@@ -16,7 +16,7 @@ export const mdVetEmergencyClaim = createAsyncThunk<
     try {
       const { claimId, ...vettingPayload } = payload;
       const response = await axiosInstance.put<ApiResponse<boolean>>(
-        `/api/v1/emergency-bill/vetting/${claimId}`,
+        `/emergency-bill/vetting/${claimId}`,
         vettingPayload
       );
 
