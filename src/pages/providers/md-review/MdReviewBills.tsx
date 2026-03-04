@@ -5,7 +5,6 @@ import type { RootState } from "../../../services/store/store";
 import { LoadingSpinner } from "../../../components/ui/LoadingSpinner";
 import EmptyState from "../../../components/ui/EmptyState";
 import Button from "../../../components/ui/Button";
-import FormHeader from "../../../components/form/FormHeader";
 import { useAppDispatch } from "../../../hooks/redux";
 
 // Table imports
@@ -64,7 +63,7 @@ const formatCurrency = (amount: number): string => {
 
 // Format date
 const formatDate = (dateString: string): string => {
-  if (!dateString) return 'N/A';
+  if (!dateString) return "N/A";
   return new Date(dateString).toLocaleDateString("en-NG", {
     year: "numeric",
     month: "short",
@@ -72,46 +71,65 @@ const formatDate = (dateString: string): string => {
   });
 };
 
+// Custom filter function for searching across patient name and hospital number
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const multiFieldFilter = (row: any, _columnId: string, filterValue: string) => {
+  if (!filterValue) return true;
 
+  const searchTerm = filterValue.toLowerCase();
+  const patientName = (row.getValue("patientName") || "").toLowerCase();
+  const patientHospitalNumber = (
+    row.getValue("patientHospitalNumber") || ""
+  ).toLowerCase();
+
+  return (
+    patientName.includes(searchTerm) ||
+    patientHospitalNumber.includes(searchTerm)
+  );
+};
 
 export const MdReviewBills = () => {
   const { id: claimId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  
+
   // Get providerId from auth context
   const currentUser = useSelector((state: RootState) => state.auth.user);
   const providerId = currentUser?.providerId || "";
 
   // Approve Reject bill state
-    const [showVettingModal, setShowVettingModal] = useState(false);
+  const [showVettingModal, setShowVettingModal] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [_vettingAction, setVettingAction] = useState<'approve' | 'reject' | null>(null);
+  const [_vettingAction, setVettingAction] = useState<
+    "approve" | "reject" | null
+  >(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Payload for vetting
   const buildVettingPayload = (
-  status: 'Approved' | 'Rejected',
-  remark?: string
-) => ({
-  emergencyClaimId: claimId!,
-  emergencyBillIds: selectedBills,
-  status,
-  remark,
-  isBillOnly: true,
-  vettedAmount: selectedTotalAmount,
-});
+    status: "Approved" | "Rejected",
+    remark?: string,
+  ) => ({
+    claimId: claimId!,
+    emergencyClaimId: claimId!,
+    emergencyBillIds: selectedBills,
+    status,
+    remark,
+    isBillOnly: true,
+    vettedAmount: selectedTotalAmount,
+  });
 
-  
   // Get emergency bills data from Redux store
-  const { 
+  const {
     data: emergencyBills,
-    loading, 
+    loading,
     error,
   } = useSelector((state: RootState) => state.claimsEmergencyBills);
-  
+
   // Local state
   const [searchTerm, setSearchTerm] = useState("");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -123,10 +141,12 @@ export const MdReviewBills = () => {
   // Load emergency bills when claimId and providerId are available
   const loadEmergencyBills = useCallback(() => {
     if (claimId && providerId) {
-      dispatch(fetchClaimsEmergencyBills({ 
-        emergencyClaimId: claimId, 
-        providerId 
-      }));
+      dispatch(
+        fetchClaimsEmergencyBills({
+          emergencyClaimId: claimId,
+          providerId,
+        }),
+      );
     }
   }, [dispatch, claimId, providerId]);
 
@@ -135,7 +155,7 @@ export const MdReviewBills = () => {
     if (claimId && providerId) {
       loadEmergencyBills();
     }
-    
+
     // Clear data when component unmounts
     return () => {
       dispatch(clearCurrentEmergencyBills());
@@ -143,39 +163,45 @@ export const MdReviewBills = () => {
   }, [dispatch, claimId, providerId, loadEmergencyBills]);
 
   const calculateTotalAmount = (bill: ClaimEmergencyBill): number => {
-  if (!bill.productServices || bill.productServices.length === 0) return 0;
-  return bill.productServices.reduce((total, service) => total + service.netAmount, 0);
-};
+    if (!bill.productServices || bill.productServices.length === 0) return 0;
+    return bill.productServices.reduce(
+      (total, service) => total + service.netAmount,
+      0,
+    );
+  };
 
   // Map emergency bills to table format
-const tableBills = useMemo(() => {
-  if (!emergencyBills?.data) return [];
-  
-  return emergencyBills.data.map((bill, index) => ({
-    id: bill.id,
-    sn: index + 1,
-    patientName: `${bill.patient?.firstName || ''} ${bill.patient?.lastName || ''}`.trim(),
-    patientHospitalNumber: bill.patient?.hospitalNumber || 'N/A',
-    patientAge: bill.patient?.age || 'N/A',
-    patientGender: bill.patient?.gender || 'N/A',
-    patientInsuranceStatus: bill.patient?.insuranceStatus || 'N/A',
-    hospitalName: bill.hospitalName,
-    department: bill.department,
-    serviceType: bill.serviceType,
-    encounterStart: formatDate(bill.encounterStartDateTime),
-    dischargeStatus: bill.dischargeStatus,
-    status: bill.status,
-    dischargeDate: bill.dischargeDate ? formatDate(bill.dischargeDate) : 'N/A',
-    attendingPhysician: bill.attendingPhysician || 'N/A',
-    diagnosesCount: bill.diagnoses?.length || 0,
-    servicesCount: bill.productServices?.length || 0,
-    totalAmount: calculateTotalAmount(bill), // Use calculated amount
-    formattedTotalAmount: formatCurrency(calculateTotalAmount(bill)),
-    serviceCategories: bill.serviceCategories?.join(', ') || 'N/A',
-    createdDate: formatDate(bill.createdDate),
-    rawData: bill,
-  }));
-}, [emergencyBills]);
+  const tableBills = useMemo(() => {
+    if (!emergencyBills?.data) return [];
+
+    return emergencyBills.data.map((bill, index) => ({
+      id: bill.id,
+      sn: index + 1,
+      patientName:
+        `${bill.patient?.firstName || ""} ${bill.patient?.lastName || ""}`.trim(),
+      patientHospitalNumber: bill.patient?.hospitalNumber || "N/A",
+      patientAge: bill.patient?.age || "N/A",
+      patientGender: bill.patient?.gender || "N/A",
+      patientInsuranceStatus: bill.patient?.insuranceStatus || "N/A",
+      hospitalName: bill.hospitalName,
+      department: bill.department,
+      serviceType: bill.serviceType,
+      encounterStart: formatDate(bill.encounterStartDateTime),
+      dischargeStatus: bill.dischargeStatus,
+      status: bill.status,
+      dischargeDate: bill.dischargeDate
+        ? formatDate(bill.dischargeDate)
+        : "N/A",
+      attendingPhysician: bill.attendingPhysician || "N/A",
+      diagnosesCount: bill.diagnoses?.length || 0,
+      servicesCount: bill.productServices?.length || 0,
+      totalAmount: calculateTotalAmount(bill), // Use calculated amount
+      formattedTotalAmount: formatCurrency(calculateTotalAmount(bill)),
+      serviceCategories: bill.serviceCategories?.join(", ") || "N/A",
+      createdDate: formatDate(bill.createdDate),
+      rawData: bill,
+    }));
+  }, [emergencyBills]);
 
   // Update selected bills when row selection changes
   useEffect(() => {
@@ -217,11 +243,13 @@ const tableBills = useMemo(() => {
       accessorKey: "patientName",
       header: "Patient Name",
       enableSorting: true,
+      filterFn: multiFieldFilter,
     },
     {
       accessorKey: "patientHospitalNumber",
       header: "Hospital No.",
       enableSorting: true,
+      filterFn: multiFieldFilter,
     },
     {
       accessorKey: "patientInsuranceStatus",
@@ -233,7 +261,8 @@ const tableBills = useMemo(() => {
             className="px-2 py-1 rounded-full text-xs font-medium"
             style={{
               backgroundColor: `${insuranceStatusColor[status] || insuranceStatusColor.Default}20`,
-              color: insuranceStatusColor[status] || insuranceStatusColor.Default,
+              color:
+                insuranceStatusColor[status] || insuranceStatusColor.Default,
             }}
           >
             {status}
@@ -247,7 +276,10 @@ const tableBills = useMemo(() => {
       header: "Hospital",
       enableSorting: true,
       cell: ({ row }) => (
-        <div className="max-w-[150px] truncate" title={row.original.hospitalName}>
+        <div
+          className="max-w-[150px] truncate"
+          title={row.original.hospitalName}
+        >
           {row.original.hospitalName}
         </div>
       ),
@@ -313,11 +345,10 @@ const tableBills = useMemo(() => {
 
   // Calculate total amount of selected bills
   const selectedTotalAmount = useMemo(() => {
-    return Object.keys(rowSelection)
-      .reduce((sum, rowIndex) => {
-        const bill = tableBills[parseInt(rowIndex)];
-        return sum + (bill?.totalAmount || 0);
-      }, 0);
+    return Object.keys(rowSelection).reduce((sum, rowIndex) => {
+      const bill = tableBills[parseInt(rowIndex)];
+      return sum + (bill?.totalAmount || 0);
+    }, 0);
   }, [rowSelection, tableBills]);
 
   // Handle back navigation
@@ -340,66 +371,72 @@ const tableBills = useMemo(() => {
     if (selectedBills.length > 0) {
       // console.log("Selected bill IDs:", selectedBills);
       // console.log("Total selected amount:", formatCurrency(selectedTotalAmount));
-      
+
       // alert(`Processing ${selectedBills.length} bill(s) with total amount: ${formatCurrency(selectedTotalAmount)}`);
-         setShowVettingModal(true);
-    setVettingAction(null);
+      setShowVettingModal(true);
+      setVettingAction(null);
     }
   };
-  // Handle approve action
-const handleApproveBills = async () => {
-  if (!claimId || selectedBills.length === 0) return;
+  // Handle approve action with signature
+  const handleApproveBills = async (_signature?: string, mdName?: string) => {
+    if (!claimId || selectedBills.length === 0) return;
 
-  setIsProcessing(true);
+    setIsProcessing(true);
 
-  try {
-    const payload = buildVettingPayload( 'Approved',
-      'Approved by Medical Director');
+    try {
+      const remark = mdName
+        ? `Approved by Medical Director: ${mdName}`
+        : "Approved by Medical Director";
 
-    await dispatch(mdVetEmergencyClaim(payload)).unwrap();
+      const payload = buildVettingPayload("Approved", remark);
 
-    table.resetRowSelection();
-    setShowVettingModal(false);
+      await dispatch(mdVetEmergencyClaim(payload)).unwrap();
 
-    loadEmergencyBills();
-  } catch (err: any) {
-    alert(err ?? 'Failed to approve bills');
-  } finally {
-    setIsProcessing(false);
-  }
-};
+      table.resetRowSelection();
+      setShowVettingModal(false);
 
-// Handle reject action
-const handleRejectBills = async (reason: string) => {
-  if (!claimId || selectedBills.length === 0) return;
+      loadEmergencyBills();
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to approve bills";
+      alert(errorMessage);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
-  setIsProcessing(true);
+  // Handle reject action
+  const handleRejectBills = async (reason: string) => {
+    if (!claimId || selectedBills.length === 0) return;
 
-  try {
-    const payload = buildVettingPayload('Rejected', reason);
+    setIsProcessing(true);
 
-    await dispatch(mdVetEmergencyClaim(payload)).unwrap();
+    try {
+      const payload = buildVettingPayload("Rejected", reason);
 
-    table.resetRowSelection();
-    setShowVettingModal(false);
-    setVettingAction(null);
+      await dispatch(mdVetEmergencyClaim(payload)).unwrap();
 
-    loadEmergencyBills();
-  } catch (err: any) {
-    alert(err ?? 'Failed to reject bills');
-  } finally {
-    setIsProcessing(false);
-  }
-};
+      table.resetRowSelection();
+      setShowVettingModal(false);
+      setVettingAction(null);
 
+      loadEmergencyBills();
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to reject bills";
+      alert(errorMessage);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
-// Handle modal close
-const handleModalClose = () => {
-  if (!isProcessing) {
-    setShowVettingModal(false);
-    setVettingAction(null);
-  }
-};
+  // Handle modal close
+  const handleModalClose = () => {
+    if (!isProcessing) {
+      setShowVettingModal(false);
+      setVettingAction(null);
+    }
+  };
 
   // Show loading while waiting for user data
   if (!currentUser) {
@@ -410,230 +447,299 @@ const handleModalClose = () => {
     );
   }
 
- return (
-  <>
-    <div className="p-6 h-full">
-      <div className="bg-gray-100 h-full overflow-hidden">
-        <div className="bg-white rounded-md flex flex-col h-full">
-          {/* Header */}
-          <div className="flex flex-wrap gap-4 justify-between items-center p-6 flex-shrink-0">
-            <div className="flex items-center gap-8">
-              <div className="flex items-center gap-4">
-                <Button
-                  variant="outline"
-                  onClick={handleBack}
-                  className="flex items-center gap-2"
-                >
-                  ← Back
-                </Button>
-                <FormHeader>
-                  Emergency Bills for Claim 
-                </FormHeader>
-              </div>
-              <input
-                type="text"
-                placeholder="Search bills by patient name or hospital"
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  table.setColumnFilters([
-                    {
-                      id: "patientName",
-                      value: e.target.value,
-                    },
-                    {
-                      id: "hospitalName",
-                      value: e.target.value,
-                    },
-                  ]);
-                }}
-                className="border rounded-lg hidden lg:block px-4 py-2 lg:w-96 lg:max-w-2xl focus:outline-none"
-              />
-            </div>
-          </div>
-
-          {/* Error Messages */}
-          {error && (
-            <div className="px-6 py-3 bg-red-50 border-l-4 border-red-500 flex-shrink-0">
-              <p className="text-red-700">{error}</p>
-              <Button 
-                onClick={handleRefresh} 
-                className="mt-2 text-red-600 hover:text-red-700"
-                variant="outline"
-              >
-                Retry
-              </Button>
-            </div>
-          )}
-
-          {/* Content - with proper scrolling */}
-          <div className="flex-1 overflow-hidden">
-            {loading && !emergencyBills ? (
-              <div className="flex items-center justify-center h-full">
-                <LoadingSpinner />
-              </div>
-            ) : !providerId ? (
-              <div className="text-center py-10">
-                <div className="text-gray-500 mb-4">
-                  Provider ID is required to view emergency bills
-                </div>
-              </div>
-            ) : !claimId ? (
-              <div className="text-center py-10">
-                <div className="text-gray-500 mb-4">
-                  Claim ID is missing. Please go back and select a claim.
-                </div>
-                <Button onClick={handleBack}>Back to Claims</Button>
-              </div>
-            ) : tableBills.length === 0 ? (
-              <EmptyState
-                icon={<span className="text-2xl">🏥</span>}
-                title="No emergency bills available"
-                description={error ? "Failed to load bills" : "No bills found for this claim."}
-                action={
-                  <Button onClick={handleBack}>
-                    ← Back to Claims
-                  </Button>
-                }
-              />
-            ) : (
-              <div className="h-full flex flex-col overflow-hidden">
-                {/* Selected rows info */}
-                {selectedBills.length > 0 && (
-                  <div className="px-6 py-3 bg-blue-50 border-b border-blue-100 flex-shrink-0">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-6">
-                        <span className="text-sm text-blue-700">
-                          {selectedBills.length} bill(s) selected
-                        </span>
-                        <span className="text-sm text-blue-700">
-                          Total amount: {formatCurrency(selectedTotalAmount)}
-                        </span>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => table.resetRowSelection()}
-                        >
-                          Clear Selection
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={handleBulkAction}
-                        >
-                          Process Selected ({selectedBills.length})
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Table container with horizontal scroll */}
-                <div className="flex-1 overflow-auto min-h-0">
-                  <div className="inline-block min-w-full align-middle">
-                    <div className="overflow-x-auto">
-                      <Table className="min-w-[1200px] w-full border-collapse">
-                        <TableHeader className="border-y border-gray-200 sticky top-0 bg-white z-10">
-                          {table.getHeaderGroups().map((headerGroup) => (
-                            <TableRow key={headerGroup.id}>
-                              {headerGroup.headers.map((header) => (
-                                <TableHead 
-                                  key={header.id}
-                                  className="whitespace-nowrap px-4 py-3"
-                                >
-                                  {header.isPlaceholder
-                                    ? null
-                                    : flexRender(
-                                        header.column.columnDef.header,
-                                        header.getContext()
-                                      )}
-                                </TableHead>
-                              ))}
-                            </TableRow>
-                          ))}
-                        </TableHeader>
-                        <TableBody>
-                          {table.getRowModel().rows.length ? (
-                            table.getRowModel().rows.map((row) => (
-                              <TableRow
-                                key={row.id}
-                                className="cursor-pointer hover:bg-gray-50 transition-colors"
-                                onClick={() => handleRowClick(row.original.id)}
-                              >
-                                {row.getVisibleCells().map((cell) => (
-                                  <TableCell 
-                                    key={cell.id}
-                                    className="whitespace-nowrap px-4 py-3"
-                                  >
-                                    {flexRender(
-                                      cell.column.columnDef.cell,
-                                      cell.getContext()
-                                    )}
-                                  </TableCell>
-                                ))}
-                              </TableRow>
-                            ))
-                          ) : (
-                            <TableRow>
-                              <TableCell
-                                colSpan={columns.length}
-                                className="h-24 text-center hover:bg-gray-50 transition-colors"
-                              >
-                                <div className="flex flex-col items-center gap-4">
-                                  <span className="font-medium">
-                                    No bills found
-                                  </span>
-                                  <span className="text-gray-500">
-                                    Try adjusting your search criteria
-                                  </span>
-                                  <Button onClick={handleRefresh}>
-                                    Refresh Data
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          )}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Pagination */}
-                <div className="p-4 flex items-center justify-end border-t border-gray-200 flex-shrink-0">
-                  <Pagination
-                    totalEntriesSize={table.getFilteredRowModel().rows.length}
-                    currentPage={pageIndex + 1}
-                    totalPages={totalPages}
-                    pageSize={pageSize}
-                    onPageChange={(p) => setPageIndex(p - 1)}
-                    onPageSizeChange={(size) => {
-                      setPageSize(size);
-                      setPageIndex(0);
+  return (
+    <>
+      <div className="p-6">
+        <div className="bg-gray-100">
+          <div className="bg-white rounded-md">
+            {/* Filters Section */}
+            <div className="p-6 border-b bg-white">
+              <h3 className="text-lg font-semibold text-gray-700 mb-4">
+                Filter By
+              </h3>
+              <div className="grid grid-cols-12 gap-4 items-end">
+                <div className="col-span-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Patient Name or Hospital No
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter name or Hospital No"
+                    value={searchTerm}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setSearchTerm(value);
+                      table.getColumn("patientName")?.setFilterValue(value);
                     }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none"
                   />
                 </div>
+                <div className="col-span-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Date
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none"
+                      placeholder="Start date"
+                    />
+                    <span className="text-sm text-gray-500 font-medium">
+                      To
+                    </span>
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none"
+                      placeholder="End date"
+                    />
+                  </div>
+                </div>
+                <div className="col-span-2"></div>
+                <div className="col-span-3 flex gap-3">
+                  <button
+                    onClick={() => {
+                      setStartDate("");
+                      setEndDate("");
+                      setSearchTerm("");
+                      table.setColumnFilters([]);
+                      loadEmergencyBills();
+                    }}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-sm hover:bg-gray-50 transition-colors font-medium"
+                  >
+                    Reset
+                  </button>
+                  <button
+                    onClick={() => {
+                      loadEmergencyBills();
+                    }}
+                    className="flex-1 px-4 py-2 bg-[#DC2626] text-white rounded-sm hover:bg-red-700 transition-colors font-medium"
+                  >
+                    Apply filter
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Header */}
+            <div className="flex flex-wrap gap-4 justify-between items-center py-6 px-6 bg-gray-50">
+              <h3 className="text-lg font-semibold text-gray-700">
+                Emergency Bills for Claim
+              </h3>
+              <Button
+                size="sm"
+                onClick={handleRefresh}
+                variant="outline"
+                className="rounded-sm"
+              >
+                Refresh
+              </Button>
+            </div>
+
+            {/* Error Messages */}
+            {error && (
+              <div className="px-6 py-3 bg-red-50 border-l-4 border-red-500 shrink-0">
+                <p className="text-red-700">{error}</p>
+                <Button
+                  onClick={handleRefresh}
+                  className="mt-2 text-red-600 rounded-sm hover:text-red-700"
+                  variant="outline"
+                >
+                  Retry
+                </Button>
               </div>
             )}
+
+            {/* Content - flows naturally with page scroll */}
+            <div>
+              {loading && !emergencyBills ? (
+                <div className="flex items-center justify-center h-full">
+                  <LoadingSpinner />
+                </div>
+              ) : !providerId ? (
+                <div className="text-center py-10">
+                  <div className="text-gray-500 mb-4">
+                    Provider ID is required to view emergency bills
+                  </div>
+                </div>
+              ) : !claimId ? (
+                <div className="text-center py-10">
+                  <div className="text-gray-500 mb-4">
+                    Claim ID is missing. Please go back and select a claim.
+                  </div>
+                  <Button onClick={handleBack} className="rounded-sm">
+                    Back to Claims
+                  </Button>
+                </div>
+              ) : tableBills.length === 0 ? (
+                <EmptyState
+                  icon={<span className="text-2xl">🏥</span>}
+                  title="No emergency bills available"
+                  description={
+                    error
+                      ? "Failed to load bills"
+                      : "No bills found for this claim."
+                  }
+                  action={
+                    <Button onClick={handleBack} className="rounded-sm">
+                      ← Back to Claims
+                    </Button>
+                  }
+                />
+              ) : (
+                <div>
+                  {/* Selected rows info */}
+                  {selectedBills.length > 0 && (
+                    <div className="px-6 py-3 bg-blue-50 border-b border-blue-100 shrink-0">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-6">
+                          <span className="text-sm text-blue-700">
+                            {selectedBills.length} bill(s) selected
+                          </span>
+                          <span className="text-sm text-blue-700">
+                            Total amount: {formatCurrency(selectedTotalAmount)}
+                          </span>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => table.resetRowSelection()}
+                            className="rounded-sm"
+                          >
+                            Clear Selection
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={handleBulkAction}
+                            className="rounded-sm"
+                          >
+                            Process Selected ({selectedBills.length})
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Table container with horizontal scroll only */}
+                  <div className="overflow-x-auto">
+                    <div className="inline-block min-w-full align-middle">
+                      <div className="overflow-x-auto">
+                        <Table className="min-w-[1200px] w-full border-collapse">
+                          <TableHeader className="bg-[#E4F7F1] hover:bg-[#E4F7F1] sticky top-0 z-10 transition-colors">
+                            {table.getHeaderGroups().map((headerGroup) => (
+                              <TableRow
+                                key={headerGroup.id}
+                                className="hover:bg-[#E4F7F1] transition-colors border-b border-[#E4F7F1]"
+                              >
+                                {headerGroup.headers.map((header) => (
+                                  <TableHead
+                                    key={header.id}
+                                    className="whitespace-nowrap px-4 py-3"
+                                  >
+                                    {header.isPlaceholder
+                                      ? null
+                                      : flexRender(
+                                          header.column.columnDef.header,
+                                          header.getContext(),
+                                        )}
+                                  </TableHead>
+                                ))}
+                              </TableRow>
+                            ))}
+                          </TableHeader>
+                          <TableBody>
+                            {table.getRowModel().rows.length ? (
+                              table.getRowModel().rows.map((row) => (
+                                <TableRow
+                                  key={row.id}
+                                  className="cursor-pointer hover:bg-[#FFFFFF] transition-colors"
+                                  onClick={() =>
+                                    handleRowClick(row.original.id)
+                                  }
+                                >
+                                  {row.getVisibleCells().map((cell) => (
+                                    <TableCell
+                                      key={cell.id}
+                                      className="whitespace-nowrap px-4 py-3"
+                                    >
+                                      {flexRender(
+                                        cell.column.columnDef.cell,
+                                        cell.getContext(),
+                                      )}
+                                    </TableCell>
+                                  ))}
+                                </TableRow>
+                              ))
+                            ) : (
+                              <TableRow>
+                                <TableCell
+                                  colSpan={columns.length}
+                                  className="h-24 text-center hover:bg-[#FFFFFF] transition-colors"
+                                >
+                                  <div className="flex flex-col items-center gap-4">
+                                    <span className="font-medium">
+                                      No bills found
+                                    </span>
+                                    <span className="text-gray-500">
+                                      Try adjusting your search criteria
+                                    </span>
+                                    <Button
+                                      onClick={handleRefresh}
+                                      className="rounded-sm"
+                                    >
+                                      Refresh Data
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Pagination */}
+                  <div className="p-4 flex items-center justify-end border-t border-gray-200 shrink-0">
+                    <Pagination
+                      totalEntriesSize={table.getFilteredRowModel().rows.length}
+                      currentPage={pageIndex + 1}
+                      totalPages={totalPages}
+                      pageSize={pageSize}
+                      onPageChange={(p) => setPageIndex(p - 1)}
+                      onPageSizeChange={(size) => {
+                        setPageSize(size);
+                        setPageIndex(0);
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
+
+        <VettingModal
+          isOpen={showVettingModal}
+          onClose={handleModalClose}
+          onApprove={handleApproveBills}
+          onReject={handleRejectBills}
+          isLoading={isProcessing}
+          bills={
+            emergencyBills?.data?.filter((b) => selectedBills.includes(b.id)) ||
+            []
+          }
+          claimId={claimId || ""}
+          billCount={selectedBills.length}
+          totalAmount={formatCurrency(selectedTotalAmount)}
+        />
       </div>
-   
-      <VettingModal
-        isOpen={showVettingModal}
-        onClose={handleModalClose}
-        onApprove={handleApproveBills}
-        onReject={handleRejectBills}
-        title={`Vet ${selectedBills.length} Selected Bill(s)`}
-        message={`You are about to process ${selectedBills.length} bill(s) with a total amount of ${formatCurrency(selectedTotalAmount)}. Do you want to approve or reject these bills?`}
-        approveText={`Approve (${selectedBills.length})`}
-        rejectText={`Reject (${selectedBills.length})`}
-        isLoading={isProcessing}
-      />
-    </div>
-  </>
-);
+    </>
+  );
 };
 
 export default MdReviewBills;

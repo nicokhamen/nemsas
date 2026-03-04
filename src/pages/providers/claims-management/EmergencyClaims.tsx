@@ -329,17 +329,20 @@ export const Claims = () => {
 
   const totalPages = table.getPageCount();
 
-    // Calculate stats
-    const totalAmount = useMemo(() => {
-      const total = tableClaims.reduce((sum, claim) => sum + (claim.submittedAmount || 0), 0);
-      if (total >= 1000000) return `${(total / 1000000).toFixed(2)}M`;
-      if (total >= 1000) return `${(total / 1000).toFixed(0)}K`;
-      return total.toString();
-    }, [tableClaims]);
-  
-    const numOfClaims = tableClaims.length;
-    
-    const billAccuracy = 75; // This would be calculated from actual data
+  // Calculate stats
+  const totalAmount = useMemo(() => {
+    const total = tableClaims.reduce(
+      (sum, claim) => sum + (claim.submittedAmount || 0),
+      0,
+    );
+    if (total >= 1000000) return `${(total / 1000000).toFixed(2)}M`;
+    if (total >= 1000) return `${(total / 1000).toFixed(0)}K`;
+    return total.toString();
+  }, [tableClaims]);
+
+  const numOfClaims = tableClaims.length;
+
+  const billAccuracy = 75; // This would be calculated from actual data
 
   // Handle form submission for provider/SSHIA IDs
   const handleSubmitIds = (e: React.FormEvent) => {
@@ -455,11 +458,11 @@ export const Claims = () => {
             {/* Header */}
             <div className="flex flex-wrap gap-4 justify-between items-center p-6">
               <div className="flex items-center gap-8">
-                 <div className="flex items-center gap-8">
-                <label className="block text-lg  text-gray-700 mb-2">
-                  All Claims
-                </label>
-              </div>
+                <div className="flex items-center gap-8">
+                  <label className="block text-lg  text-gray-700 mb-2">
+                    All Claims
+                  </label>
+                </div>
                 <input
                   type="text"
                   placeholder="Search claims by description"
@@ -479,7 +482,7 @@ export const Claims = () => {
               <div className="flex gap-4 items-center">
                 <button
                   onClick={() => exportTableToPDF(tableClaims)}
-                  className="flex items-center gap-2 border border-gray-400 px-4 py-2 rounded-md text-gray-700 hover:bg-gray-50 hover:border-gray-600 transition"
+                  className="flex items-center gap-2 border border-gray-400 px-4 py-2 rounded-sm text-gray-700 hover:bg-gray-50 hover:border-gray-600 transition"
                 >
                   <Share className="h-4 w-4" />
                   Export
