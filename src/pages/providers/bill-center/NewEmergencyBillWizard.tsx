@@ -267,8 +267,8 @@ export default function NewEmergencyBillWizard() {
   // Step 4: Services & Documents
   const [services, setServices] = useState<ProductItem[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<
-  { file: File; preview: string }[]
->([]);
+    { file: File; preview: string }[]
+  >([]);
 
   // Load required data
   useEffect(() => {
@@ -278,21 +278,21 @@ export default function NewEmergencyBillWizard() {
 
   // clean up for files
   useEffect(() => {
-  return () => {
-    uploadedFiles.forEach(f => URL.revokeObjectURL(f.preview));
-  };
-}, [uploadedFiles]);
+    return () => {
+      uploadedFiles.forEach((f) => URL.revokeObjectURL(f.preview));
+    };
+  }, [uploadedFiles]);
 
-// Clean up object URLs when component unmounts
-useEffect(() => {
-  return () => {
-    uploadedFiles.forEach(item => {
-      if (item.preview) {
-        URL.revokeObjectURL(item.preview);
-      }
-    });
-  };
-}, []);
+  // Clean up object URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      uploadedFiles.forEach((item) => {
+        if (item.preview) {
+          URL.revokeObjectURL(item.preview);
+        }
+      });
+    };
+  }, []);
 
   // Extract unique patients from emergency bills
   const availablePatients = useMemo(() => {
@@ -481,45 +481,47 @@ useEffect(() => {
     toastSuccess("Service removed");
   };
 
-// File upload functions with size restriction
-const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-  if (!event.target.files) return;
+  // File upload functions with size restriction
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files) return;
 
-  const MAX_FILE_SIZE = 300 * 1024; // 300KB in bytes
-  
-  const files = Array.from(event.target.files);
-  
-  // Filter files by size
-  const validFiles = files.filter(file => file.size <= MAX_FILE_SIZE);
-  const oversizedFiles = files.filter(file => file.size > MAX_FILE_SIZE);
-  
-  // Show warning for oversized files
-  if (oversizedFiles.length > 0) {
-    toastError(`${oversizedFiles.length} file(s) exceed the 300KB size limit and were not uploaded`);
-  }
-  
-  // Process valid files
-  const newFiles = validFiles.map(file => ({
-    file,
-    preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : ''
-  }));
+    const MAX_FILE_SIZE = 300 * 1024; // 300KB in bytes
 
-  if (newFiles.length > 0) {
-    setUploadedFiles(prev => [...prev, ...newFiles]);
-    event.target.value = "";
-    toastSuccess(`${newFiles.length} file(s) uploaded successfully`);
-  }
-};
+    const files = Array.from(event.target.files);
 
-const handleRemoveFile = (index: number) => {
-  setUploadedFiles(prev => {
-    // Clean up the preview URL for images
-    if (prev[index].preview) {
-      URL.revokeObjectURL(prev[index].preview);
+    // Filter files by size
+    const validFiles = files.filter((file) => file.size <= MAX_FILE_SIZE);
+    const oversizedFiles = files.filter((file) => file.size > MAX_FILE_SIZE);
+
+    // Show warning for oversized files
+    if (oversizedFiles.length > 0) {
+      toastError(
+        `${oversizedFiles.length} file(s) exceed the 300KB size limit and were not uploaded`,
+      );
     }
-    return prev.filter((_, i) => i !== index);
-  });
-};
+
+    // Process valid files
+    const newFiles = validFiles.map((file) => ({
+      file,
+      preview: file.type.startsWith("image/") ? URL.createObjectURL(file) : "",
+    }));
+
+    if (newFiles.length > 0) {
+      setUploadedFiles((prev) => [...prev, ...newFiles]);
+      event.target.value = "";
+      toastSuccess(`${newFiles.length} file(s) uploaded successfully`);
+    }
+  };
+
+  const handleRemoveFile = (index: number) => {
+    setUploadedFiles((prev) => {
+      // Clean up the preview URL for images
+      if (prev[index].preview) {
+        URL.revokeObjectURL(prev[index].preview);
+      }
+      return prev.filter((_, i) => i !== index);
+    });
+  };
 
   // Calculate total amount
   const totalAmount = useMemo(() => {
@@ -1280,7 +1282,10 @@ const handleRemoveFile = (index: number) => {
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                   <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-sm text-gray-600 mb-2">
-                    Drag and drop to upload a passport photo
+                    Drag and drop to upload a passport photo.
+                    <span className="block text-xs text-red-500 mt-1">
+                      Maximum file size allowed: 300KB
+                    </span>
                   </p>
                   <p className="text-xs text-gray-500 mb-4">
                     or{" "}
@@ -1304,52 +1309,56 @@ const handleRemoveFile = (index: number) => {
                   Uploaded Documents
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
-  {uploadedFiles.length === 0 ? (
-    <p className="text-sm text-gray-500">No documents uploaded</p>
-  ) : (
-    uploadedFiles.map((item, index) => {
-      const isImage = item.file.type.startsWith("image/");
-      const isPdf = item.file.type === "application/pdf";
+                  {uploadedFiles.length === 0 ? (
+                    <p className="text-sm text-gray-500">
+                      No documents uploaded
+                    </p>
+                  ) : (
+                    uploadedFiles.map((item, index) => {
+                      const isImage = item.file.type.startsWith("image/");
+                      const isPdf = item.file.type === "application/pdf";
 
-      return (
-        <div
-          key={index}
-          className="relative border rounded-lg overflow-hidden group"
-        >
-          {/* preview */}
-          {isImage ? (
-            <img
-              src={item.preview}
-              alt={item.file.name}
-              className="w-full h-40 object-cover"
-            />
-          ) : isPdf ? (
-            <div className="flex items-center justify-center h-40 bg-gray-100 text-gray-600 text-sm">
-              PDF Document
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-40 bg-gray-100 text-gray-600 text-sm">
-              File
-            </div>
-          )}
+                      return (
+                        <div
+                          key={index}
+                          className="relative border rounded-lg overflow-hidden group"
+                        >
+                          {/* preview */}
+                          {isImage ? (
+                            <img
+                              src={item.preview}
+                              alt={item.file.name}
+                              className="w-full h-40 object-cover"
+                            />
+                          ) : isPdf ? (
+                            <div className="flex items-center justify-center h-40 bg-gray-100 text-gray-600 text-sm">
+                              PDF Document
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-center h-40 bg-gray-100 text-gray-600 text-sm">
+                              File
+                            </div>
+                          )}
 
-          {/* overlay */}
-          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-            <button
-              onClick={() => handleRemoveFile(index)}
-              className="bg-white p-2 rounded-full shadow hover:bg-red-50"
-            >
-              <X className="w-5 h-5 text-red-600" />
-            </button>
-          </div>
+                          {/* overlay */}
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                            <button
+                              onClick={() => handleRemoveFile(index)}
+                              className="bg-white p-2 rounded-full shadow hover:bg-red-50"
+                            >
+                              <X className="w-5 h-5 text-red-600" />
+                            </button>
+                          </div>
 
-          {/* filename */}
-          <div className="p-2 text-xs truncate">{item.file.name}</div>
-        </div>
-      );
-    })
-  )}
-</div>
+                          {/* filename */}
+                          <div className="p-2 text-xs truncate">
+                            {item.file.name}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
               </div>
             </div>
           </div>
