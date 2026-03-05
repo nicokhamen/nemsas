@@ -37,6 +37,10 @@ const VettingModal: React.FC<VettingModalProps> = ({
   const [currentStep, setCurrentStep] = useState<FlowStep>("review");
   const [successType, setSuccessType] = useState<SuccessType | null>(null);
 
+  // track name/signature so we can hand them to the success screen when approval succeeds
+  const [approvedMdName, setApprovedMdName] = useState<string>("");
+  const [approvedSignature, setApprovedSignature] = useState<string>("");
+
   if (!isOpen) return null;
 
   const handleApproveClick = () => {
@@ -49,6 +53,10 @@ const VettingModal: React.FC<VettingModalProps> = ({
 
   const handleSignatureConfirm = async (signature: string, mdName: string) => {
     try {
+      // remember values for PDF
+      setApprovedMdName(mdName);
+      setApprovedSignature(signature);
+
       await onApprove(signature, mdName);
       setCurrentStep("success");
       setSuccessType("approved");
@@ -90,6 +98,8 @@ const VettingModal: React.FC<VettingModalProps> = ({
         bills={bills}
         claimId={claimId}
         isLoading={isLoading}
+        mdName={approvedMdName}
+        signatureDataUrl={approvedSignature}
       />
 
       {/* Step 2: Signature Modal */}
@@ -118,6 +128,9 @@ const VettingModal: React.FC<VettingModalProps> = ({
           status={successType}
           billCount={billCount}
           claimId={claimId}
+          mdName={approvedMdName}
+          signatureDataUrl={approvedSignature}
+          bills={bills}
         />
       )}
     </>

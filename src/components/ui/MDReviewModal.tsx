@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom";
 import type { ClaimEmergencyBill } from "../../types/ClaimEmergencyBills";
 import Button from "./Button";
+import { generateMdReviewPdf } from "../../utils/mdReviewPdf";
 
 interface MDReviewModalProps {
   isOpen: boolean;
@@ -11,6 +12,8 @@ interface MDReviewModalProps {
   bills: ClaimEmergencyBill[];
   claimId: string;
   isLoading?: boolean;
+  mdName?: string;
+  signatureDataUrl?: string;
 }
 
 const MDReviewModal: React.FC<MDReviewModalProps> = ({
@@ -21,8 +24,12 @@ const MDReviewModal: React.FC<MDReviewModalProps> = ({
   bills,
   claimId,
   isLoading = false,
+  mdName = "",
+  signatureDataUrl = "",
 }) => {
   if (!isOpen) return null;
+
+  const allBillsApproved = bills.length > 0 && bills.every((b) => b.status === "Approved");
 
   const formatCurrency = (amount: number): string => {
     return `₦${amount.toLocaleString("en-NG", {
@@ -113,25 +120,45 @@ const MDReviewModal: React.FC<MDReviewModalProps> = ({
                     <p className="text-sm text-gray-600">{encounter.date}</p>
                   </div>
                   <div className="flex gap-2">
-                    <Button
-                      onClick={onApprove}
-                      disabled={isLoading}
-                      color="green"
-                      size="sm"
-                      className="rounded-sm"
-                    >
-                      Approve
-                    </Button>
-                    <Button
-                      onClick={onReject}
-                      disabled={isLoading}
-                      color="red"
-                      variant="outline"
-                      size="sm"
-                      className="rounded-sm"
-                    >
-                      Reject
-                    </Button>
+                    {allBillsApproved ? (
+                      <Button
+                        onClick={() =>
+                          generateMdReviewPdf({
+                            mdName: mdName || "Medical Director",
+                            signatureDataUrl,
+                            claimId,
+                            bills,
+                          })
+                        }
+                        color="green"
+                        size="sm"
+                        className="rounded-sm"
+                      >
+                        Download PDF
+                      </Button>
+                    ) : (
+                      <>
+                        <Button
+                          onClick={onApprove}
+                          disabled={isLoading}
+                          color="green"
+                          size="sm"
+                          className="rounded-sm"
+                        >
+                          Approve
+                        </Button>
+                        <Button
+                          onClick={onReject}
+                          disabled={isLoading}
+                          color="red"
+                          variant="outline"
+                          size="sm"
+                          className="rounded-sm"
+                        >
+                          Reject
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

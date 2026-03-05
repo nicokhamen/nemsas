@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import Button from "./Button";
 
@@ -17,59 +17,21 @@ const SignatureCaptureModal: React.FC<SignatureCaptureModalProps> = ({
   onReject,
   isLoading = false,
 }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
   const [mdName, setMdName] = useState("");
-  const [hasSignature, setHasSignature] = useState(false);
+  const [uploadedSignature, setUploadedSignature] = useState<string>("");
+  const [fileError, setFileError] = useState<string>("");
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    setIsDrawing(true);
-    const rect = canvas.getBoundingClientRect();
-    const ctx = canvas.getContext("2d");
-    if (ctx) {
-      ctx.beginPath();
-      ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
-    }
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const ctx = canvas.getContext("2d");
-    if (ctx) {
-      ctx.strokeStyle = "#000";
-      ctx.lineWidth = 2;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
-      ctx.stroke();
-      setHasSignature(true);
-    }
-  };
-
-  const handleMouseUp = () => setIsDrawing(false);
-
   const clearSignature = () => {
-    const canvas = canvasRef.current;
-    if (canvas) {
-      const ctx = canvas.getContext("2d");
-      if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
-      setHasSignature(false);
-    }
+    setUploadedSignature("");
+    setFileError("");
   };
 
   const handleConfirm = () => {
-    if (!hasSignature || !mdName.trim()) return;
-    const canvas = canvasRef.current;
-    if (canvas) {
-      onConfirm(canvas.toDataURL("image/png"), mdName.trim());
-    }
+    if (!uploadedSignature || !mdName.trim()) return;
+    onConfirm(uploadedSignature, mdName.trim());
   };
 
   const modalContent = (
@@ -118,23 +80,29 @@ const SignatureCaptureModal: React.FC<SignatureCaptureModalProps> = ({
                 name
               </p>
 
-              {/* Side-by-side: canvas + name input */}
               <div className="flex gap-6 items-start mb-4">
-                {/* Signature canvas */}
+                {/* Signature upload area */}
                 <div className="flex-1">
-                  <div className="border border-gray-200 rounded-sm bg-gray-50 overflow-hidden">
-                    <canvas
-                      ref={canvasRef}
-                      width={360}
-                      height={160}
-                      className="w-full cursor-crosshair"
-                      onMouseDown={handleMouseDown}
-                      onMouseMove={handleMouseMove}
-                      onMouseUp={handleMouseUp}
-                      onMouseLeave={handleMouseUp}
-                    />
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border border-gray-200 rounded-sm bg-gray-50 overflow-hidden flex items-center justify-center h-40 cursor-pointer"
+                  >
+                    {uploadedSignature ? (
+                      <img
+                        src={uploadedSignature}
+                        alt="uploaded signature"
+                        className="max-h-full"
+                      />
+                    ) : (
+                      <span className="text-gray-400 text-sm">
+                        Attach signature
+                      </span>
+                    )}
                   </div>
-                  {hasSignature && (
+                  {fileError && (
+                    <p className="text-xs text-red-500 mt-1">{fileError}</p>
+                  )}
+                  {uploadedSignature && (
                     <button
                       type="button"
                       onClick={clearSignature}
@@ -146,8 +114,33 @@ const SignatureCaptureModal: React.FC<SignatureCaptureModalProps> = ({
                   )}
                 </div>
 
-                {/* Name input */}
-                <div className="flex-1 flex items-center h-full pt-14">
+                {/* Name input + upload control */}
+                <div className="flex-1 flex flex-col h-full pt-14">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    disabled={isLoading}
+                    className="hidden"
+                    onChange={(e) => {
+                      setFileError("");
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        if (file.size > 200 * 1024) {
+                          setFileError("Signature must be less than 200KB");
+                          return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          const result = ev.target?.result;
+                          if (typeof result === "string") {
+                            setUploadedSignature(result);
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
                   <input
                     type="text"
                     placeholder="Type your name here"
@@ -163,7 +156,7 @@ const SignatureCaptureModal: React.FC<SignatureCaptureModalProps> = ({
               <div className="flex gap-3 mt-6">
                 <Button
                   onClick={handleConfirm}
-                  disabled={isLoading || !hasSignature || !mdName.trim()}
+                  disabled={isLoading || !uploadedSignature || !mdName.trim()}
                   color="green"
                   size="sm"
                   className="rounded-sm"

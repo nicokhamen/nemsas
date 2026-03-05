@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { ArrowRight, X } from "lucide-react";
+import { ArrowRight, X, ChevronDown } from "lucide-react";
 import { useProviderContext } from "../../context/useProviderContext";
 import { registerPatient } from "../../services/thunks/patientThunk";
 import { clearPatientState } from "../../services/slices/patientSlice";
 import type { AppDispatch, RootState } from "../../services/store/store";
-import Input from "../../components/form/Input";
-import FormSelect from "../../components/form/FormSelect";
 import { insuranceTypeOptions } from "../../utils/insuranceTypeUtils";
 import { genderTypeOptions } from "../../utils/genderType";
 import PatientConfirmModal from "./PatientConfirmModal";
@@ -291,33 +289,34 @@ const handleConfirmRegistration = () => {
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Patient Information Section */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Hospital Number */}
+              <form onSubmit={handleSubmit} className="space-y-5">
+                {/* Row 1: Patient Number, First Name */}
+                <div className="grid grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Patient Number <span className="text-red-500">*</span>
                     </label>
-                    <Input
+                    <input
                       type="text"
                       value={formData.hospitalNumber}
                       onChange={(e) =>
                         handleInputChange("hospitalNumber", e.target.value)
                       }
                       onBlur={() => handleBlur("hospitalNumber")}
-                      error={getFieldError("hospitalNumber")}
                       placeholder="Enter patient number"
                       disabled={loading || showSuccess}
+                      className={`w-full px-4 py-3 border rounded-sm focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 ${getFieldError("hospitalNumber") ? "border-red-500" : "border-gray-300"}`}
                     />
+                    {getFieldError("hospitalNumber") && (
+                      <p className="mt-1 text-xs text-red-500">{getFieldError("hospitalNumber")}</p>
+                    )}
                   </div>
 
-                  {/* First Name */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       First Name <span className="text-red-500">*</span>
                     </label>
-                    <Input
+                    <input
                       type="text"
                       value={formData.firstName}
                       onChange={(e) =>
@@ -327,18 +326,23 @@ const handleConfirmRegistration = () => {
                         )
                       }
                       onBlur={() => handleBlur("firstName")}
-                      error={getFieldError("firstName")}
                       placeholder="Enter first name"
                       disabled={loading || showSuccess}
+                      className={`w-full px-4 py-3 border rounded-sm focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 ${getFieldError("firstName") ? "border-red-500" : "border-gray-300"}`}
                     />
+                    {getFieldError("firstName") && (
+                      <p className="mt-1 text-xs text-red-500">{getFieldError("firstName")}</p>
+                    )}
                   </div>
+                </div>
 
-                  {/* Last Name */}
+                {/* Row 2: Last Name, Insurance Status */}
+                <div className="grid grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Last Name <span className="text-red-500">*</span>
                     </label>
-                    <Input
+                    <input
                       type="text"
                       value={formData.lastName}
                       onChange={(e) =>
@@ -348,39 +352,48 @@ const handleConfirmRegistration = () => {
                         )
                       }
                       onBlur={() => handleBlur("lastName")}
-                      error={getFieldError("lastName")}
                       placeholder="Enter last name"
                       disabled={loading || showSuccess}
+                      className={`w-full px-4 py-3 border rounded-sm focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 ${getFieldError("lastName") ? "border-red-500" : "border-gray-300"}`}
                     />
+                    {getFieldError("lastName") && (
+                      <p className="mt-1 text-xs text-red-500">{getFieldError("lastName")}</p>
+                    )}
                   </div>
 
-                  {/* Insurance Status */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Insurance Status <span className="text-red-500">*</span>
                     </label>
-                    <FormSelect
-                      label=""
-                      value={formData.insuranceStatus}
-                      onChange={(e) =>
-                        handleInputChange("insuranceStatus", e.target.value)
-                      }
-                      onBlur={() => handleBlur("insuranceStatus")}
-                      error={getFieldError("insuranceStatus")}
-                      disabled={loading || showSuccess}
-                    >
-                      <option value="">Select Insurance Status</option>
-                      {insuranceTypeOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </FormSelect>
+                    <div className="relative">
+                      <select
+                        value={formData.insuranceStatus}
+                        onChange={(e) =>
+                          handleInputChange("insuranceStatus", e.target.value)
+                        }
+                        onBlur={() => handleBlur("insuranceStatus")}
+                        disabled={loading || showSuccess}
+                        className={`w-full px-4 py-3 border rounded-sm bg-white appearance-none focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none text-gray-500 disabled:bg-gray-50 disabled:text-gray-500 ${getFieldError("insuranceStatus") ? "border-red-500" : "border-gray-300"}`}
+                      >
+                        <option value="">Select Insurance Status</option>
+                        {insuranceTypeOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-0 bottom-0 my-auto h-5 w-5 text-gray-400 pointer-events-none" />
+                    </div>
+                    {getFieldError("insuranceStatus") && (
+                      <p className="mt-1 text-xs text-red-500">{getFieldError("insuranceStatus")}</p>
+                    )}
                   </div>
+                </div>
 
-                  {/* Date of Birth */}
+                {/* Row 3: Date of Birth, Gender */}
+                <div className="grid grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Date of Birth <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -389,70 +402,52 @@ const handleConfirmRegistration = () => {
                       onChange={(e) =>
                         handleInputChange("dateOfBirth", e.target.value)
                       }
-                      max={new Date().toISOString().split('T')[0]}
+                      max={new Date().toISOString().split("T")[0]}
                       onBlur={() => handleBlur("dateOfBirth")}
-                      className={`w-full rounded-lg border ${
-                        getFieldError("dateOfBirth")
-                          ? "border-red-300 focus:border-red-500 focus:ring-red-500"
-                          : "border-gray-300 focus:border-red-500 focus:ring-red-500"
-                      } px-3 py-2 shadow-sm focus:outline-none focus:ring-1 disabled:bg-gray-50 disabled:text-gray-500`}
                       disabled={loading || showSuccess}
+                      className={`w-full px-4 py-3 border rounded-sm focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none disabled:bg-gray-50 disabled:text-gray-500 ${getFieldError("dateOfBirth") ? "border-red-500" : "border-gray-300"}`}
                     />
                     {getFieldError("dateOfBirth") && (
-                      <p className="mt-1 text-xs text-red-600">
-                        {getFieldError("dateOfBirth")}
-                      </p>
+                      <p className="mt-1 text-xs text-red-500">{getFieldError("dateOfBirth")}</p>
                     )}
                   </div>
 
-                  {/* Gender */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Gender <span className="text-red-500">*</span>
                     </label>
-                    <FormSelect
-                      label=""
-                      value={formData.gender}
-                      onChange={(e) =>
-                        handleInputChange("gender", e.target.value)
-                      }
-                      onBlur={() => handleBlur("gender")}
-                      error={getFieldError("gender")}
-                      disabled={loading || showSuccess}
-                    >
-                      <option value="">Select Gender</option>
-                      {genderTypeOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </FormSelect>
+                    <div className="relative">
+                      <select
+                        value={formData.gender}
+                        onChange={(e) =>
+                          handleInputChange("gender", e.target.value)
+                        }
+                        onBlur={() => handleBlur("gender")}
+                        disabled={loading || showSuccess}
+                        className={`w-full px-4 py-3 border rounded-sm bg-white appearance-none focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none text-gray-500 disabled:bg-gray-50 disabled:text-gray-500 ${getFieldError("gender") ? "border-red-500" : "border-gray-300"}`}
+                      >
+                        <option value="">Select Gender</option>
+                        {genderTypeOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-0 bottom-0 my-auto h-5 w-5 text-gray-400 pointer-events-none" />
+                    </div>
+                    {getFieldError("gender") && (
+                      <p className="mt-1 text-xs text-red-500">{getFieldError("gender")}</p>
+                    )}
                   </div>
+                </div>
 
-                  {/* Address */}
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Address <span className="text-red-500">*</span>
-                    </label>
-                    <Input
-                      type="text"
-                      value={formData.address}
-                      onChange={(e) =>
-                        handleInputChange("address", e.target.value)
-                      }
-                      onBlur={() => handleBlur("address")}
-                      error={getFieldError("address")}
-                      placeholder="Enter full address"
-                      disabled={loading || showSuccess}
-                    />
-                  </div>
-
-                  {/* Email */}
+                {/* Row 4: Email, Phone Number */}
+                <div className="grid grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Email
                     </label>
-                    <Input
+                    <input
                       type="email"
                       value={formData.email}
                       onChange={(e) =>
@@ -460,43 +455,67 @@ const handleConfirmRegistration = () => {
                       }
                       placeholder="Enter email address"
                       disabled={loading || showSuccess}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-sm focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500"
                     />
                   </div>
 
-                  {/* Phone Number */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Phone Number <span className="text-red-500">*</span>
                     </label>
-                    <Input
-                      type="number"
+                    <input
+                      type="tel"
                       value={formData.phoneNumber}
                       onChange={(e) =>
                         handleInputChange("phoneNumber", e.target.value)
                       }
                       onBlur={() => handleBlur("phoneNumber")}
-                      error={getFieldError("phoneNumber")}
                       placeholder="Enter phone number"
                       disabled={loading || showSuccess}
+                      className={`w-full px-4 py-3 border rounded-sm focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 ${getFieldError("phoneNumber") ? "border-red-500" : "border-gray-300"}`}
                     />
+                    {getFieldError("phoneNumber") && (
+                      <p className="mt-1 text-xs text-red-500">{getFieldError("phoneNumber")}</p>
+                    )}
                   </div>
+                </div>
+
+                {/* Row 5: Address (full width) */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Address <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.address}
+                    onChange={(e) =>
+                      handleInputChange("address", e.target.value)
+                    }
+                    onBlur={() => handleBlur("address")}
+                    placeholder="Enter full address"
+                    disabled={loading || showSuccess}
+                    className={`w-full px-4 py-3 border rounded-sm focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 ${getFieldError("address") ? "border-red-500" : "border-gray-300"}`}
+                  />
+                  {getFieldError("address") && (
+                    <p className="mt-1 text-xs text-red-500">{getFieldError("address")}</p>
+                  )}
                 </div>
 
                 {/* Provider Selection Warning */}
                 {!selectedProviderId && (
-                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-sm">
                     <p className="text-sm text-yellow-700">
-                      ⚠ Please select a provider before registering a patient
+                      Please select a provider before registering a patient
                     </p>
                   </div>
                 )}
 
                 {/* Form Actions */}
-                <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+                <div className="flex justify-end space-x-3 pt-5 border-t border-gray-200">
                   <button
                     type="button"
                     onClick={onClose}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                    className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                     disabled={loading}
                   >
                     Cancel
@@ -504,7 +523,7 @@ const handleConfirmRegistration = () => {
                   <button
                     type="submit"
                     disabled={loading || !selectedProviderId || showSuccess}
-                    className={`inline-flex items-center px-6 py-2 text-sm font-semibold text-white rounded-md shadow-sm ${
+                    className={`inline-flex items-center px-6 py-2.5 text-sm font-semibold text-white rounded-sm shadow-sm ${
                       loading || !selectedProviderId || showSuccess
                         ? "bg-gray-400 cursor-not-allowed"
                         : "bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"

@@ -109,9 +109,10 @@ export const RejectConfirmModal: React.FC<RejectConfirmModalProps> = ({
                   <Button
                     onClick={handleCancel}
                     disabled={isLoading}
-                    className="rounded-sm border border-gray-300 text-gray-600 bg-white hover:bg-gray-50"
+                    variant="outline"
+                    className="rounded-sm bg-white"
                   >
-                    No,cancel
+                    No, cancel
                   </Button>
                   <Button
                     onClick={handleInitialReject}
@@ -192,12 +193,19 @@ export const RejectConfirmModal: React.FC<RejectConfirmModalProps> = ({
   return ReactDOM.createPortal(modalContent, document.body);
 };
 
+import { generateMdReviewPdf } from "../../utils/mdReviewPdf";
+import type { ClaimEmergencyBill } from "../../types/ClaimEmergencyBills";
+
 interface SuccessModalProps {
   isOpen: boolean;
   onClose: () => void;
   status: "approved" | "rejected";
   billCount?: number;
   claimId?: string;
+  // new props for approved case
+  mdName?: string;
+  signatureDataUrl?: string;
+  bills?: ClaimEmergencyBill[];
 }
 
 export const SuccessModal: React.FC<SuccessModalProps> = ({
@@ -206,19 +214,32 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({
   status,
   billCount = 1,
   claimId = "",
+  mdName = "",
+  signatureDataUrl = "",
+  bills = [],
 }) => {
   if (!isOpen) return null;
 
   const isApproved = status === "approved";
+
+  const handleDownloadPdf = () => {
+    if (isApproved && mdName && signatureDataUrl) {
+      generateMdReviewPdf({
+        mdName,
+        signatureDataUrl,
+        claimId,
+        bills,
+      });
+      onClose();
+    }
+  };
 
   const modalContent = (
     <div className="fixed inset-0 z-10000">
       <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
       <div className="fixed inset-0 overflow-y-auto">
         <div className="flex min-h-full items-center justify-center p-4">
-          <div
-            className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all w-full max-w-lg"
-          >
+          <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all w-full max-w-lg">
             {/* Close button */}
             <div className="absolute top-4 right-4">
               <CloseButton onClick={onClose} />
@@ -268,7 +289,23 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({
                   ? `You have successfully approved ${claimId} bill`
                   : `You have successfully rejected ${billCount} bill(s) for claim ${claimId}`}
               </p>
+              {isApproved && mdName && signatureDataUrl && (
+                <p className="text-sm text-gray-600 mt-2">Signed by {mdName}</p>
+              )}
             </div>
+            {/* Footer with download button for approved case */}
+            {isApproved && mdName && signatureDataUrl && (
+              <div className="bg-gray-50 px-6 py-4 border-t flex justify-center">
+                <Button
+                  onClick={handleDownloadPdf}
+                  color="green"
+                  size="sm"
+                  className="rounded-sm"
+                >
+                  Download PDF
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
