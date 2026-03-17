@@ -235,7 +235,7 @@ export const Claims = () => {
     //   header: "Claim Type",
     //   enableSorting: true,
     // },
-      {
+    {
       accessorKey: "claimNumber",
       header: "Claim Number",
       enableSorting: true,
@@ -293,7 +293,11 @@ export const Claims = () => {
           onClick={(e) => {
             e.stopPropagation();
 
-            navigate(`/emergency/claims/${row.original.id}`);
+            navigate(`/emergency/claims/${row.original.id}`, {
+              state: {
+                claimNumber: row.original.claimNumber,
+              },
+            });
           }}
         >
           <Eye className="h-5 w-5" />
@@ -584,11 +588,11 @@ export const Claims = () => {
                       ? "Failed to load claims"
                       : "No claims found for the provided IDs."
                   }
-                  action={
-                    <Button onClick={() => navigate("/create-claim")}>
-                      + Create New Emergency Claim
-                    </Button>
-                  }
+                  // action={
+                  //   <Button onClick={() => navigate("/create-claim")}>
+                  //     + Create New Emergency Claim
+                  //   </Button>
+                  // }
                 />
               ) : (
                 <>
@@ -621,6 +625,11 @@ export const Claims = () => {
                                 // Navigate to claim details or open modal
                                 navigate(
                                   `/emergency/claims/${row.original.id}`,
+                                  {
+                                    state: {
+                                      claimNumber: row.original.claimNumber,
+                                    },
+                                  },
                                 );
                               }}
                             >

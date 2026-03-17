@@ -36,6 +36,8 @@ import { fetchEmergencyBillPatients } from "../../../services/thunks/emergencyBi
 import { clearEmergencyBillPatients } from "../../../services/slices/emergencyBillPatientsSlice";
 import { Eye } from "lucide-react";
 
+import { useLocation } from "react-router-dom";
+
 // Status color map for insurance status
 const insuranceStatusColor: Record<string, string> = {
   NHIA: "#2196f3",
@@ -93,6 +95,9 @@ export const EmergencyClaimsDetails = () => {
   const [rowSelection, setRowSelection] = useState({});
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
+
+  const location = useLocation();
+  const claimNumber = location.state?.claimNumber;
 
   // Load emergency bill patients when claimId and providerId are available
   const loadEmergencyBillPatients = useCallback(() => {
@@ -268,10 +273,11 @@ export const EmergencyClaimsDetails = () => {
       className="flex items-center justify-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
       onClick={(e) => {
         e.stopPropagation();
-        navigate(`/emergency-bills/${row.original.id}`, {
+        navigate(`/emergency-bills/${claimId}/${row.original.id}`, {
           state: {
             patientId: row.original.id,
             claimId,
+            claimNumber,
             providerId,
             fromEmergencyClaims: true
           }
@@ -332,10 +338,11 @@ export const EmergencyClaimsDetails = () => {
   // Handle row click to view patient details
   const handleRowClick = (patientId: string) => {
   // Navigate to PatientEncounterDetails with patient data in state
-  navigate(`/emergency-bills/${patientId}`, {
+  navigate(`/emergency-bills/${claimId}/${patientId}`, {
     state: {
       patientId,
-      claimId, // Pass the current claimId
+      claimId, 
+      claimNumber,
       providerId,
       fromEmergencyClaims: true
     }
@@ -352,6 +359,7 @@ export const EmergencyClaimsDetails = () => {
   }
 
   return (
+    <>
     <div className="p-6">
       <div className="bg-gray-100 overflow-scroll h-full">
         <div className="bg-white rounded-md flex flex-col mb-36">
@@ -560,6 +568,7 @@ export const EmergencyClaimsDetails = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

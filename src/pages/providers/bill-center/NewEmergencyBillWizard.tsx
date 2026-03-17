@@ -20,9 +20,6 @@ import {
 } from "../../../services/thunks/departmentThunk";
 import { useCustomToast } from "../../../hooks/useCustomToast";
 import { buildEncounterPayload } from "../../../utils/buildEncounterPayload";
-import FormSelect from "../../../components/form/FormSelect";
-import Input from "../../../components/form/Input";
-import Button from "../../../components/ui/Button";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
 import BillSuccessModal from "../../../components/ui/BillSuccessModal";
 import {

@@ -22,38 +22,40 @@ export const ADMIN_SIDEBAR: SidebarItem[] = [
     icon: <DashboardIcon className="w-5 h-5" />,
     label: "Dashboard",
     active: false,
-    path: "/nemsas/dashboard"
+    // path: "/state/dashboard"
+  },
+  {
+  icon: <ClaimsIcon className="w-5 h-5" />,
+  label: "Claims",
+  active: false,
+  children: [
+    {
+      label: "NEMSAS",
+      children: [
+        { label: "All Providers", path: "/state/providers/all" },
+        { label: "Register Provider", path: "/state/provider/registration" },
+         { label: "Claims Vetting" },
+        { label: "Claims Tracking" }
+      ]
+    }
+  ]
+},
+ {
+    icon: <SettingsIcon className="w-5 h-5" />,
+    label: "Settlement",
+    active: false,
+
+  },
+   {
+    icon: <SettingsIcon className="w-5 h-5" />,
+    label: "Tariff",
+    active: false,
+
   },
 
-  {
-    icon: <EnrolleeIcon className="w-5 h-5" />,
-    label: "Providers",
-    active: false,
-    children: [
-      { icon: null, label: "All Providers", active: false, path: "/nemsas/providers/all" },
-      { icon: null, label: "Providers Registration", active: false, path: "/nemsas/provider/registration" }
-    ]
-  },
-  {
-    icon: <EnrolleeIcon className="w-5 h-5" />,
-    label: "Nemsas",
-    active: false,
-    children: [
-      { icon: null, label: "Emergency Claims Vetting", active: false, path: "/nemsas/vetting/claims" },
-      { icon: null, label: "Authorization", active: false, path: "/nemsas/payments/authorization" },
-      { icon: null, label: "Tracker", active: false, path: "/nemsas/payments/tracker" }
-    ]
-  },
-  {
-    icon: <EnrolleeIcon className="w-5 h-5" />,
-    label: "Reports",
-    active: false,
-    children: [
-      { icon: null, label: "Claims History", active: false, path: "/reports/claims-history" },
-      { icon: null, label: "Payments History", active: false, path: "/reports/payments-history" },
+ 
 
-    ]
-  },
+ 
   {
     icon: <SettingsIcon className="w-5 h-5" />,
     label: "Settings",
