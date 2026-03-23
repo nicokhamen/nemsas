@@ -31,6 +31,7 @@ export type CreateProviderPayload = {
   organizationId: string;
 
   providerType: "General";
+  ownership: string;
 
   contacts: ProviderContact[];
 };
