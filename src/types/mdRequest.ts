@@ -17,3 +17,16 @@ export interface ApiResponse<T = boolean> {
   message: string;
   isSuccess: boolean;
 }
+
+// Type for vetting Claim in the State section
+export type VettingClaim = {
+  emergencyClaimId: string;
+  remark: string;
+  status: "New";
+};
+
+export type VettingClaimResponse = {
+  success: boolean;
+  message: string;
+  data: VettingClaim;
+};

@@ -34,8 +34,8 @@ export const ADMIN_SIDEBAR: SidebarItem[] = [
       children: [
         { label: "All Providers", path: "/state/providers/all" },
         { label: "Register Provider", path: "/state/provider/registration" },
-         { label: "Claims Vetting" },
-        { label: "Claims Tracking" }
+         { label: "Claims Vetting", path: "/state/provider/vetting", },
+        { label: "Claims Tracking", path: "/state/provider/tracking", }
       ]
     }
   ]

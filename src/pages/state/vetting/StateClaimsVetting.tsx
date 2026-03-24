@@ -37,6 +37,11 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 import "../../../utils/pdfFont";
+import FormHeader from "../../../components/form/FormHeader";
+import VetSuccessModal from "../../../components/ui/VetSuccessModal";
+import { submitVettingClaim } from "../../../services/thunks/vettingClaimThunk";
+import VetConfirmModal from "../../../components/ui/VetSuccessModal";
+import { useCustomToast } from "../../../hooks/useCustomToast";
 
 // Status color map
 const statusColor: Record<string, string> = {
@@ -64,7 +69,7 @@ const formatDate = (dateString: string): string => {
   });
 };
 
-export const EmergencyClaims = () => {
+export const StateClaims = () => {
   const [providerId, setProviderId] = useState<string>("");
   const [sshiaId, setSshiaId] = useState<string>("");
 
@@ -79,6 +84,13 @@ export const EmergencyClaims = () => {
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
 
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [approvalLoading, setApprovalLoading] = useState(false);
+
+  const toast = useCustomToast();
+
   // Get emergency claims from Redux store
   const {
     claims: emergencyClaims,
@@ -92,6 +104,45 @@ export const EmergencyClaims = () => {
 
   // Get user data from Redux auth state
   const currentUser = useSelector((state: RootState) => state.auth.user);
+
+  const handleOpenApproveModal = () => {
+    if (!selectedRows.length) return;
+
+    setShowConfirmModal(true);
+  };
+
+  const handleApproveClaims = async () => {
+    const selectedData = selectedRows.map((row) => row.original);
+
+    setApprovalLoading(true);
+
+    try {
+      await Promise.all(
+        selectedData.map((claim) =>
+          dispatch(
+            submitVettingClaim({
+              claimId: claim.id,
+              emergencyClaimId: claim.id,
+              remark: "Approved",
+              status: "New", // or "Approved"
+            }),
+          ).unwrap(),
+        ),
+      );
+
+      setShowConfirmModal(false); // ✅ close confirm modal
+      setShowSuccessModal(true); // ✅ show success modal
+      setRowSelection({});
+      loadClaims();
+
+      toast.success("Claims approved successfully");
+    } catch (error) {
+      console.error("Approval failed:", error);
+      toast.error("Failed to approve claims");
+    } finally {
+      setApprovalLoading(false);
+    }
+  };
 
   // file export
   const exportTableToPDF = (
@@ -168,6 +219,7 @@ export const EmergencyClaims = () => {
 
     doc.save(fileName);
   };
+
   // Initialize providerId and sshiaId from current user if available
   useEffect(() => {
     if (currentUser?.providerId) {
@@ -220,10 +272,30 @@ export const EmergencyClaims = () => {
 
   // Define columns based on emergency claim schema
   const columns: ColumnDef<(typeof tableClaims)[0]>[] = [
+    // {
+    //   accessorKey: "sn",
+    //   header: "S/N",
+    //   size: 60,
+    // },
     {
-      accessorKey: "sn",
-      header: "S/N",
-      size: 60,
+      id: "select",
+      header: ({ table }) => (
+        <input
+          type="checkbox"
+          checked={table.getIsAllPageRowsSelected()}
+          onChange={table.getToggleAllPageRowsSelectedHandler()}
+        />
+      ),
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          checked={row.getIsSelected()}
+          disabled={!row.getCanSelect()}
+          onChange={row.getToggleSelectedHandler()}
+          onClick={(e) => e.stopPropagation()} // prevent row click navigation
+        />
+      ),
+      size: 40,
     },
     {
       accessorKey: "description",
@@ -317,6 +389,7 @@ export const EmergencyClaims = () => {
       columnFilters,
       pagination: { pageIndex, pageSize },
     },
+    enableRowSelection: true,
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
@@ -338,6 +411,9 @@ export const EmergencyClaims = () => {
   });
 
   const totalPages = table.getPageCount();
+
+  const selectedRows = table.getSelectedRowModel().rows;
+  const hasSelection = selectedRows.length > 0;
 
   // Calculate stats
   const totalAmount = useMemo(() => {
@@ -380,9 +456,9 @@ export const EmergencyClaims = () => {
     <>
       <div className="p-6 space-y-6">
         {/* Stat Cards */}
-        <div className="grid grid-cols-3 gap-6 bg-grey rounded-lg shadow-sm p-6">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-6 bg-grey rounded-lg shadow-sm p-6">
           {/* Total Amount Card */}
-          <div className="bg-white rounded-lg p-6 flex items-center gap-4">
+          <div className="bg-[#E4F7F0] rounded-lg p-6 flex items-center gap-4">
             <div className="w-12 h-12 bg-[#C4F2E1] rounded-lg flex items-center justify-center">
               <FileText className="h-6 w-6 text-green-600" />
             </div>
@@ -393,7 +469,7 @@ export const EmergencyClaims = () => {
           </div>
 
           {/* Total Patient Card */}
-          <div className="bg-white rounded-lg p-6 flex items-center gap-4">
+          <div className="bg-[#DB84000D] rounded-lg p-6 flex items-center gap-4">
             <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
               <Users className="h-6 w-6 text-amber-600" />
             </div>
@@ -404,10 +480,17 @@ export const EmergencyClaims = () => {
           </div>
 
           {/* Bill Accuracy Card */}
-          <div className="bg-white rounded-lg  p-6 flex items-center gap-4">
+          <div className="bg-[#EDEDFD] rounded-lg  p-6 flex items-center gap-4">
             <div>
-              <p className="text-3xl font-bold text-gray-900">70%</p>
-              <p className="text-sm text-gray-500">Bill Accuracy</p>
+              <p className="text-3xl font-bold text-gray-900">1</p>
+              <p className="text-sm text-gray-500">Total Vetted</p>
+            </div>
+          </div>
+
+          <div className="bg-[#FDEDED] rounded-lg  p-6 flex items-center gap-4">
+            <div>
+              <p className="text-3xl font-bold text-gray-900">0</p>
+              <p className="text-sm text-gray-500">Total Disputed</p>
             </div>
           </div>
         </div>
@@ -469,9 +552,7 @@ export const EmergencyClaims = () => {
             <div className="flex flex-wrap gap-4 justify-between items-center p-6">
               <div className="flex items-center gap-8">
                 <div className="flex items-center gap-8">
-                  <label className="block text-lg  text-gray-700 mb-2">
-                    All Claims
-                  </label>
+                  <FormHeader>Claims</FormHeader>
                 </div>
                 <input
                   type="text"
@@ -596,6 +677,30 @@ export const EmergencyClaims = () => {
                 />
               ) : (
                 <>
+                  {hasSelection && (
+                    <div className="flex items-center justify-between px-6 py-3 bg-green-50 border-b">
+                      <p className="text-sm text-gray-700">
+                        {selectedRows.length} item(s) selected
+                      </p>
+
+                      <div className="flex gap-3">
+                        <Button
+                          color="green"
+                          onClick={handleOpenApproveModal}
+                          className="bg-green-600 text-white hover:bg-green-700"
+                        >
+                          Approve Claims
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          onClick={() => setRowSelection({})}
+                        >
+                          Clear Selection
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                   {/* Table */}
                   <div className="flex-1 lg:px-0 lg:mt-4">
                     <Table className="min-w-[1000px]">
@@ -621,17 +726,17 @@ export const EmergencyClaims = () => {
                             <TableRow
                               key={row.id}
                               className="cursor-pointer hover:bg-gray-50 transition-colors"
-                              onClick={() => {
-                                // Navigate to claim details or open modal
-                                navigate(
-                                  `/emergency/claims/${row.original.id}`,
-                                  {
-                                    state: {
-                                      claimNumber: row.original.claimNumber,
-                                    },
-                                  },
-                                );
-                              }}
+                              // onClick={() => {
+                              //   // Navigate to claim details or open modal
+                              //   navigate(
+                              //     `/emergency/claims/${row.original.id}`,
+                              //     {
+                              //       state: {
+                              //         claimNumber: row.original.claimNumber,
+                              //       },
+                              //     },
+                              //   );
+                              // }}
                             >
                               {row.getVisibleCells().map((cell) => (
                                 <TableCell key={cell.id}>
@@ -684,6 +789,17 @@ export const EmergencyClaims = () => {
             </div>
           </div>
         </div>
+
+        <VetConfirmModal
+          isOpen={showConfirmModal}
+          onClose={() => setShowConfirmModal(false)}
+          onConfirm={handleApproveClaims}
+          title="Confirm Approval"
+          message={`Are you sure you want to approve ${selectedRows.length} claim${selectedRows.length > 1 ? "s" : ""}? This action cannot be undone.`}
+          confirmText="Yes, Approve"
+          cancelText="Cancel"
+          isLoading={approvalLoading}
+        />
       </div>
     </>
   );

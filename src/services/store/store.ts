@@ -22,6 +22,7 @@ import mdEmergencyVettingReducer from "../slices/mdRequestSlice";
 import emergencyBillPatientsReducer from "../slices/emergencyBillPatientsSlice";
 import patientEncounterReducer from "../slices/patientEncounterSlice"
 import createProviderReducer from "../slices/stateProviderSlice";
+import vettingClaimReducer from "../slices/vettingClaimSlice"
 
 export const store = configureStore({
   reducer: {
@@ -46,6 +47,7 @@ export const store = configureStore({
     emergencyBillPatients: emergencyBillPatientsReducer,
     patientEncounter: patientEncounterReducer,
     createProvider: createProviderReducer,
+    vettingClaim: vettingClaimReducer,
     [providerApiSlice.reducerPath]: providerApiSlice.reducer,
   },
   middleware: (getDefaultMiddleware) =>
