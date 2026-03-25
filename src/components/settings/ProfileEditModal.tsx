@@ -56,6 +56,8 @@ const ProfileEditModal: React.FC<Props> = ({ open, onClose }) => {
           hmoId: user.hmoId,
           isProvider: user.isProvider,
           providerId: user.providerId,
+          orgType: user.orgType,
+          
         }}));
         onClose();
       } else setError(res.message || 'Update failed');

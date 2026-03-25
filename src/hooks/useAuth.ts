@@ -32,18 +32,34 @@ export const useAuth = () => {
           return { success: false, error: msg };
         }
 
-        dispatch(loginSuccess({
-          token,
-          user: {
-            id: response.data.id,
-            fullName: response.data.fullName,
-            emailAddress: response.data.emailAddress,
-            role: response.data.role,
-            hmoId: response.data.hmoId,
-            isProvider: response.data.isProvider,
-            providerId: response.data.providerId,
-          }
-        }));
+        // dispatch(loginSuccess({
+        //   token,
+        //   user: {
+        //     id: response.data.id,
+        //     fullName: response.data.fullName,
+        //     emailAddress: response.data.emailAddress,
+        //     role: response.data.role,
+        //     hmoId: response.data.hmoId,
+        //     isProvider: response.data.isProvider,
+        //     providerId: response.data.providerId,
+        //   }
+        // }));
+       dispatch(loginSuccess({
+  token,
+  user: {
+    id: response.data.id,
+    fullName: response.data.fullName,
+    emailAddress: response.data.emailAddress,
+    role: response.data.role,
+    hmoId: response.data.hmoId,
+    isProvider: response.data.isProvider,
+    providerId: response.data.providerId,
+    organization: response.data.organization,
+
+    
+    orgType: response.data.isProvider ? 'PROVIDER' : 'SSHIA'
+  }
+}));
         return { success: true };
       }
 

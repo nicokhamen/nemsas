@@ -625,7 +625,7 @@ export const MDReview = () => {
                 description={error ? "Failed to load claims" : "No claims found for the provided IDs."}
                 action={
                   <Button onClick={routeToEmergencyBillPage}>
-                    + Create New Emergency Claim
+                    + Create New Emergency Bill
                   </Button>
                 }
               />

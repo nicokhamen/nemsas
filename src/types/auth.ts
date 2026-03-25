@@ -3,6 +3,8 @@ export interface LoginCredentials {
   password: string;
 }
 
+export type OrganizationType = "PROVIDER" | "SSHIA";
+
 export interface AuthUser {
   id: string;
   fullName: string;
@@ -12,13 +14,18 @@ export interface AuthUser {
   hmoId: string;
   isProvider: boolean;
   providerId: string;
+
+  organizationId?: string;
+  organization?: string;
+  tenantId?: string;
+
+  orgType: OrganizationType;
 }
 
 export interface LoginResponse {
-
   data: AuthUser & { token?: string; accessToken?: string };
-  token?: string; 
-  accessToken?: string; 
+  token?: string;
+  accessToken?: string;
   message: string;
   isSuccess: boolean;
 }

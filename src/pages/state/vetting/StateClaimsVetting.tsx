@@ -5,6 +5,7 @@ import EmptyState from "../../../components/ui/EmptyState";
 import Button from "../../../components/ui/Button";
 import { LoadingSpinner } from "../../../components/ui/LoadingSpinner";
 import { useAppDispatch } from "../../../hooks/redux";
+import { useProviderContext } from "../../../context/useProviderContext";
 
 // Table imports
 import {
@@ -70,8 +71,8 @@ const formatDate = (dateString: string): string => {
 };
 
 export const StateClaims = () => {
-  const [providerId, setProviderId] = useState<string>("");
-  const [sshiaId, setSshiaId] = useState<string>("");
+  // Step 2: Replace local providerId state with context
+  const { selectedProviderId } = useProviderContext();
 
   // Filter states
   const [searchTerm, setSearchTerm] = useState("");
@@ -105,8 +106,27 @@ export const StateClaims = () => {
   // Get user data from Redux auth state
   const currentUser = useSelector((state: RootState) => state.auth.user);
 
+  // Step 3: Set provider ID based on user type
+  const providerId = useMemo(() => {
+    if (!currentUser) return "";
+
+    // Provider user → always use their own providerId
+    if (currentUser.orgType === "PROVIDER") {
+      return currentUser.providerId || "";
+    }
+
+    // SSHIA user → use selected provider from dropdown
+    return selectedProviderId || "";
+  }, [currentUser, selectedProviderId]);
+
+  // Step 4: Keep SSHIA ID from user
+  const sshiaId = currentUser?.hmoId || "";
+
   const handleOpenApproveModal = () => {
-    if (!selectedRows.length) return;
+    if (selectedRows.length !== 1) {
+      toast.error("Please select exactly one claim to approve");
+      return;
+    }
 
     setShowConfirmModal(true);
   };
@@ -220,25 +240,14 @@ export const StateClaims = () => {
     doc.save(fileName);
   };
 
-  // Initialize providerId and sshiaId from current user if available
-  useEffect(() => {
-    if (currentUser?.providerId) {
-      setProviderId(currentUser.providerId);
-      // If SSHIA ID is available from user, set it too
-      if (currentUser.hmoId) {
-        setSshiaId(currentUser.hmoId);
-      }
-    }
-  }, [currentUser]);
-
-  // Load claims when providerId and sshiaId are available
+  // Step 5: Update loadClaims
   const loadClaims = useCallback(() => {
     if (providerId && sshiaId) {
       dispatch(fetchEmergencyClaims({ providerId, SSHIAId: sshiaId }));
     }
   }, [dispatch, providerId, sshiaId]);
 
-  // Load claims when component mounts or IDs change
+  // Step 6: Auto refetch when provider changes
   useEffect(() => {
     loadClaims();
   }, [loadClaims]);
@@ -279,20 +288,15 @@ export const StateClaims = () => {
     // },
     {
       id: "select",
-      header: ({ table }) => (
-        <input
-          type="checkbox"
-          checked={table.getIsAllPageRowsSelected()}
-          onChange={table.getToggleAllPageRowsSelectedHandler()}
-        />
-      ),
+      header: () => null,
       cell: ({ row }) => (
         <input
           type="checkbox"
           checked={row.getIsSelected()}
-          disabled={!row.getCanSelect()}
-          onChange={row.getToggleSelectedHandler()}
-          onClick={(e) => e.stopPropagation()} // prevent row click navigation
+          onChange={() => {
+            setRowSelection({ [row.id]: true });
+          }}
+          onClick={(e) => e.stopPropagation()}
         />
       ),
       size: 40,
@@ -392,7 +396,22 @@ export const StateClaims = () => {
     enableRowSelection: true,
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
+    onRowSelectionChange: (updater) => {
+      const newSelection =
+        typeof updater === "function"
+          ? updater(rowSelection)
+          : updater;
+
+      const selectedKeys = Object.keys(newSelection);
+
+      if (selectedKeys.length > 1) {
+        // keep only the last selected row
+        const lastSelectedKey = selectedKeys[selectedKeys.length - 1];
+        setRowSelection({ [lastSelectedKey]: true });
+      } else {
+        setRowSelection(newSelection);
+      }
+    },
     onColumnFiltersChange: setColumnFilters,
     onPaginationChange: (updater) => {
       if (typeof updater === "function") {
@@ -429,19 +448,6 @@ export const StateClaims = () => {
   const numOfClaims = tableClaims.length;
 
   const billAccuracy = 75; // This would be calculated from actual data
-
-  // Handle form submission for provider/SSHIA IDs
-  const handleSubmitIds = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (providerId && sshiaId) {
-      loadClaims();
-    }
-  };
-
-  // Navigate to create new claim
-  // const navigateToCreateClaim = () => {
-  //   navigate("/emergency/claims/create");
-  // };
 
   // Show loading while waiting for user data
   if (!currentUser) {
@@ -581,52 +587,7 @@ export const StateClaims = () => {
               </div>
             </div>
 
-            {/* Provider/SSHIA ID Input Section */}
-            {(!providerId || !sshiaId) && (
-              <div className="px-6 pb-6 border-b">
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h3 className="font-medium text-gray-800 mb-3">
-                    Enter Provider and SSHIA IDs
-                  </h3>
-                  <form
-                    onSubmit={handleSubmitIds}
-                    className="flex flex-wrap gap-4 items-end"
-                  >
-                    <div className="flex flex-col gap-1">
-                      <label className="text-sm text-gray-600">
-                        Provider ID
-                      </label>
-                      <input
-                        type="text"
-                        value={providerId}
-                        onChange={(e) => setProviderId(e.target.value)}
-                        className="p-2 border border-gray-300 rounded-md min-w-64"
-                        placeholder="Enter Provider ID"
-                        required
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <label className="text-sm text-gray-600">SSHIA ID</label>
-                      <input
-                        type="text"
-                        value={sshiaId}
-                        onChange={(e) => setSshiaId(e.target.value)}
-                        className="p-2 border border-gray-300 rounded-md min-w-64"
-                        placeholder="Enter SSHIA ID"
-                        required
-                      />
-                    </div>
-                    <Button type="submit" disabled={!providerId || !sshiaId}>
-                      Load Claims
-                    </Button>
-                  </form>
-                  <p className="text-sm text-gray-500 mt-2">
-                    These IDs are required to fetch emergency claims from the
-                    API.
-                  </p>
-                </div>
-              </div>
-            )}
+            {/* Step 7: REMOVED the manual input section */}
 
             {/* Success/Error Messages */}
             {/* {successMessage && (
@@ -654,10 +615,13 @@ export const StateClaims = () => {
                 <div className="flex items-center justify-center h-64">
                   <LoadingSpinner />
                 </div>
-              ) : !providerId || !sshiaId ? (
+              ) : // Step 8: Update empty state logic
+              !providerId ? (
                 <div className="text-center py-10">
                   <div className="text-gray-500 mb-4">
-                    Please enter Provider ID and SSHIA ID to view claims
+                    {currentUser.orgType === "PROVIDER" 
+                      ? "Provider ID not found. Please contact support."
+                      : "Please select a provider from the dropdown to view claims"}
                   </div>
                 </div>
               ) : tableClaims.length === 0 ? (
@@ -667,7 +631,7 @@ export const StateClaims = () => {
                   description={
                     error
                       ? "Failed to load claims"
-                      : "No claims found for the provided IDs."
+                      : "No claims found for the selected provider."
                   }
                   // action={
                   //   <Button onClick={() => navigate("/create-claim")}>
@@ -795,7 +759,7 @@ export const StateClaims = () => {
           onClose={() => setShowConfirmModal(false)}
           onConfirm={handleApproveClaims}
           title="Confirm Approval"
-          message={`Are you sure you want to approve ${selectedRows.length} claim${selectedRows.length > 1 ? "s" : ""}? This action cannot be undone.`}
+          message={`Are you sure you want to approve claim? This action cannot be undone.`}
           confirmText="Yes, Approve"
           cancelText="Cancel"
           isLoading={approvalLoading}

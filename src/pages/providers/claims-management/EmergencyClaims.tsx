@@ -586,7 +586,7 @@ export const EmergencyClaims = () => {
                   description={
                     error
                       ? "Failed to load claims"
-                      : "No claims found for the provided IDs."
+                      : "No claims found for this Provider."
                   }
                   // action={
                   //   <Button onClick={() => navigate("/create-claim")}>
