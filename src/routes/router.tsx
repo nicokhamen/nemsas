@@ -21,7 +21,8 @@ import PatientEncounterDetails from "../pages/providers/claims-management/Encoun
 import RegisterProvider from "../pages/state/providers/RegisterProvider";
 import { StateClaims } from "../pages/state/vetting/StateClaimsVetting";
 import ClaimsTracking from "../pages/state/tracking/ClaimsTracking";
-
+import StateBillsVetting from "../pages/state/vetting/StateBillsVetting";
+import StatePatientDetails from "../pages/state/vetting/StatePatientDetails";
 
 export interface RouteHandle {
   title?: string;
@@ -214,7 +215,28 @@ export const router = createBrowserRouter([
             ),
             handle: { title: "Emergency Claims Vetting" },
           },
-            {
+          {
+            path:"emergency/claims/:id",
+         
+            element: (
+              <Layout>
+                <StateBillsVetting />
+              </Layout>
+            ),
+            handle: { title: "Claim Bills" },
+          },
+          
+          {
+            path: "emergency-bills/:claimId/:patientId",
+         
+            element: (
+              <Layout>
+                <StatePatientDetails />
+              </Layout>
+            ),
+            handle: { title: "Patient Vetting Details" },
+          },
+          {
             path: "provider/tracking",
             element: (
               <Layout>

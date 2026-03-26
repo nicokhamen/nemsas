@@ -351,35 +351,31 @@ export const StateClaims = () => {
       header: "Created Date",
       enableSorting: true,
     },
-    // {
-    //   accessorKey: "emergencyBillCount",
-    //   header: "Bills",
-    //   cell: ({ row }) => (
-    //     <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-    //       {row.original.emergencyBillCount}
-    //     </span>
-    //   ),
-    // },
-    {
-      id: "action",
-      enableHiding: false,
-      cell: ({ row }) => (
-        <button
-          className="flex items-center justify-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
-          onClick={(e) => {
-            e.stopPropagation();
-
-            navigate(`/emergency/claims/${row.original.id}`, {
-              state: {
-                claimNumber: row.original.claimNumber,
-              },
-            });
-          }}
-        >
-          <Eye className="h-5 w-5" />
-        </button>
-      ),
-    },
+   
+ // In StateClaims component, update the action column to include the selectedProviderId
+{
+  id: "action",
+  enableHiding: false,
+  cell: ({ row }) => (
+    <button
+      className="flex items-center justify-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+      onClick={(e) => {
+        e.stopPropagation();
+        // IMPORTANT: Use the providerId that's being used to fetch claims
+        // This providerId already includes the selectedProviderId from context
+        navigate(`/state/emergency/claims/${row.original.id}`, {
+          state: {
+            claimNumber: row.original.claimNumber,
+            providerId: providerId, // This already has the selectedProviderId from context
+            claimId: row.original.id
+          }
+        });
+      }}
+    >
+      <Eye className="h-5 w-5" />
+    </button>
+  ),
+},
   ];
 
   // Initialize table

@@ -17,7 +17,7 @@ export interface SidebarItem {
 }
 
 // Admin Sidebar
-export const ADMIN_SIDEBAR: SidebarItem[] = [
+export const STATE_SIDEBAR: SidebarItem[] = [
   {
     icon: <DashboardIcon className="w-5 h-5" />,
     label: "Dashboard",

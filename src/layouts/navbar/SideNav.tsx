@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ADMIN_SIDEBAR, PROVIDER_SIDEBAR } from "../../constant/sideBarItems";
+import { STATE_SIDEBAR, PROVIDER_SIDEBAR } from "../../constant/sideBarItems";
 import SidebarDropdown from "../../components/ui/SidebarDropdown";
 import { useAuth } from "../../hooks/useAuth";
 import { useSelector } from "react-redux";
@@ -18,17 +18,17 @@ const SideNav: React.FC<SideNavProps> = () => {
   const { logout } = useAuth();
   const location = useLocation();
 
-  // ✅ Only use provider context if SSHIA
+  // Only use provider context if SSHIA
   const { providers, selectedProviderId } = useProviderContext();
 
-  // ✅ Determine org type safely
+  // Determine org type safely
   const isProvider = user?.orgType === "PROVIDER";
   const isSSHIA = user?.orgType === "SSHIA";
 
-  // ✅ Sidebar switching (CORE LOGIC)
-  const sidebarItems = isProvider ? PROVIDER_SIDEBAR : ADMIN_SIDEBAR;
+  // Sidebar switching (CORE LOGIC)
+  const sidebarItems = isProvider ? PROVIDER_SIDEBAR : STATE_SIDEBAR;
 
-  // ✅ Get selected provider (only relevant for SSHIA)
+  // Get selected provider (only relevant for SSHIA)
   const loggedProvider = providers?.find(
     (p) => p.id === selectedProviderId
   );
@@ -43,14 +43,14 @@ const SideNav: React.FC<SideNavProps> = () => {
   return (
     <aside className="w-64 bg-white text-gray-700 h-full flex flex-col font-avenir flex-shrink-0 min-w-[256px] max-w-[256px] overflow-hidden">
       
-      {/* 🔴 HEADER */}
+      {/* HEADER */}
       <div className="relative flex-shrink-0">
         <div className="flex items-center justify-center p-4 gap-2">
           <img src={nemsasImage} alt="NEMSAS Logo" className="w-8 h-8" />
           <h1 className="text-xl text-[#DC2626] leading-tight">NEMSAS</h1>
         </div>
 
-        {/* 🟢 ORG BADGE */}
+        {/* ORG BADGE */}
         <div className="absolute bottom-0 right-[20%]">
           <span
             className={`w-fit inline-flex items-center px-2 pb-0.5 rounded text-[10px] font-semibold tracking-wide uppercase shadow-sm
@@ -65,7 +65,7 @@ const SideNav: React.FC<SideNavProps> = () => {
                 : "SSHIA: review and oversee provider claims"
             }
           >
-            {/* ✅ Label logic */}
+            {/* Label logic */}
             {isProvider
               ? "Provider"
               : loggedProvider?.hospitalName || "SSHIA"}
@@ -73,7 +73,7 @@ const SideNav: React.FC<SideNavProps> = () => {
         </div>
       </div>
 
-      {/* 🔵 NAVIGATION */}
+      {/* NAVIGATION */}
       <nav className="flex-1 space-y-1 mt-2 overflow-y-auto min-h-0">
         {sidebarItems.map((item, index) => {
           if (item.children) {

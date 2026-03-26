@@ -2,7 +2,7 @@
 interface BaseEntity {
   id: string;
   isActive: boolean;
-  createdDate: string; 
+  createdDate: string;
   providerId?: string;
 }
 
@@ -11,8 +11,8 @@ interface Patient extends BaseEntity {
   hospitalNumber: string;
   firstName: string;
   lastName: string;
-  insuranceStatus: 'NHIA' | string; 
-  dateOfBirth: string; 
+  insuranceStatus: "NHIA" | string;
+  dateOfBirth: string;
   gender: string;
   address: string;
   email: string;
@@ -35,7 +35,7 @@ interface ProductService extends BaseEntity {
   description: string;
   type: string;
   code: string;
-  productCategory: 'Clinical' | string; 
+  productCategory: "Clinical" | string;
   price: number;
   nhisPercentage: number;
   nhisPrice: number;
@@ -51,21 +51,22 @@ interface ProductService extends BaseEntity {
 interface EmergencyBill extends BaseEntity {
   patientId: string;
   department: string;
-  serviceType: 'Observation' | string; 
-  encounterStartDateTime: string; 
-  dischargeStatus: 'Discharged' | string; 
-  dischargeDate: string; 
+  serviceType: "Observation" | string;
+  encounterStartDateTime: string;
+  dischargeStatus: "Discharged" | string;
+  dischargeDate: string;
   diagnoses: Diagnosis[];
   serviceCategories: string[];
   productServices: ProductService[];
   attendingPhysician: string;
-  supportingDocuments: string[]; 
+  supportingDocuments: string[];
   encounterId?: string;
   hospitalName?: string;
   emergencyClaimId?: string;
-  status: 'New' | 'Pending' | 'Approved' | 'Rejected' | string; 
-  source: 'Internal' | 'External' | string; 
+  status: "New" | "Pending" | "Approved" | "Rejected" | string;
+  source: "Internal" | "External" | string;
   patient?: Patient; // Optional nested patient object
+  totalAmount?: number;
 }
 
 // API Response interface
@@ -103,9 +104,12 @@ interface CreateEmergencyBillPayload {
   encounterStartDateTime: string;
   dischargeStatus: string;
   dischargeDate: string;
-  diagnoses: Omit<Diagnosis, keyof BaseEntity | 'emergencyBillId'>[];
+  diagnoses: Omit<Diagnosis, keyof BaseEntity | "emergencyBillId">[];
   serviceCategories: string[];
-  productServices: Omit<ProductService, keyof BaseEntity | 'emergencyBillId' | 'productId'>[];
+  productServices: Omit<
+    ProductService,
+    keyof BaseEntity | "emergencyBillId" | "productId"
+  >[];
   attendingPhysician: string;
   supportingDocuments?: string[];
   providerId?: string;
@@ -132,5 +136,5 @@ export type {
   SingleEmergencyBillApiResponse,
   EmergencyBillFilterParams,
   CreateEmergencyBillPayload,
-  EmergencyBillStatistics
+  EmergencyBillStatistics,
 };
