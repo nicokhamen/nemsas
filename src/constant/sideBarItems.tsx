@@ -1,6 +1,5 @@
 import React from "react";
 import DashboardIcon from "../assets/sidebar-icons/dashboard-icon";
-import EnrolleeIcon from "../assets/sidebar-icons/enrollee-icon";
 import SettingsIcon from "../assets/sidebar-icons/settings-icon";
 import ClaimsIcon from "../assets/sidebar-icons/claims-icon";
 import SettlementIcon from "../assets/sidebar-icons/settlement-icon";
@@ -22,7 +21,7 @@ export const STATE_SIDEBAR: SidebarItem[] = [
     icon: <DashboardIcon className="w-5 h-5" />,
     label: "Dashboard",
     active: false,
-    // path: "/state/dashboard"
+   
   },
   {
   icon: <ClaimsIcon className="w-5 h-5" />,
@@ -52,9 +51,6 @@ export const STATE_SIDEBAR: SidebarItem[] = [
     active: false,
 
   },
-
- 
-
  
   {
     icon: <SettingsIcon className="w-5 h-5" />,

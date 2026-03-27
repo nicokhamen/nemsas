@@ -67,40 +67,58 @@ export const StateBillsVetting = () => {
   const dispatch = useAppDispatch();
   const location = useLocation();
   
-  // Get the selected provider from context (this is the key addition!)
-  const { selectedProviderId } = useProviderContext();
+  // Get the selected provider from context (PRIMARY SOURCE)
+  const { selectedProviderId, setSelectedProviderId } = useProviderContext();
   
-  // Get providerId from location state (initial navigation)
+  // Get providerId from location state (UI CONVENIENCE ONLY - NOT PRIMARY)
   const providerIdFromLocation = location.state?.providerId;
   const claimNumberFromLocation = location.state?.claimNumber;
   
   // Get current user from auth
   const currentUser = useSelector((state: RootState) => state.auth.user);
   
-  // Determine the active provider ID:
-  // 1. If there's a selectedProviderId from the dropdown (user changed provider), use that
-  // 2. Otherwise, use the providerId from navigation state
-  // 3. Finally, fall back to user's providerId
+  /**
+   * RESOLUTION ORDER (Priority Chain):
+   * 1. ProviderContext.selectedProviderId (PRIMARY SOURCE - user-selected provider)
+   * 2. Redux currentUser.providerId (for provider users)
+   * 3. URL param/location.state (optional fallback)
+   * 4. EMPTY (NEVER ALLOW API CALL WITH INVALID ID)
+   */
   const activeProviderId = useMemo(() => {
-    // If the user is a provider user, always use their own providerId
+    // For PROVIDER users, they can only see their own data
     if (currentUser?.orgType === "PROVIDER") {
-      return currentUser.providerId || "";
+      const providerId = currentUser.providerId || "";
+      console.log("[Provider Resolution] Provider user detected, using:", providerId);
+      return providerId;
     }
     
-    // For SSHIA users, prioritize the selected provider from dropdown
-    // This allows the user to change providers while on this page
+    // For SSHIA users, check context first (user-selected provider from dropdown)
     if (selectedProviderId && selectedProviderId !== "00000000-0000-0000-0000-000000000000") {
+      console.log("[Provider Resolution] Using ProviderContext selection:", selectedProviderId);
       return selectedProviderId;
     }
     
-    // Fallback to providerId from navigation state
+    // Fallback to location state (initial navigation from claims list)
     if (providerIdFromLocation && providerIdFromLocation !== "00000000-0000-0000-0000-000000000000") {
+      console.log("[Provider Resolution] Using location state fallback:", providerIdFromLocation);
+      // CRITICAL: Update context with this provider to maintain consistency
+      if (!selectedProviderId) {
+        setSelectedProviderId(providerIdFromLocation);
+      }
       return providerIdFromLocation;
     }
     
-    // Final fallback to user's providerId
-    return currentUser?.providerId || "";
-  }, [currentUser, selectedProviderId, providerIdFromLocation]);
+    // Final fallback to user's providerId (for admin users)
+    const userProviderId = currentUser?.providerId || "";
+    if (userProviderId && userProviderId !== "00000000-0000-0000-0000-000000000000") {
+      console.log("[Provider Resolution] Using user provider fallback:", userProviderId);
+      return userProviderId;
+    }
+    
+    // NO VALID PROVIDER ID - BLOCK API CALLS
+    console.warn("[Provider Resolution] No valid provider ID found. API calls will be blocked.");
+    return "";
+  }, [currentUser, selectedProviderId, providerIdFromLocation, setSelectedProviderId]);
   
   // Get emergency bill patients data from Redux store
   const { 
@@ -109,18 +127,17 @@ export const StateBillsVetting = () => {
     error,
   } = useSelector((state: RootState) => state.emergencyBillPatients);
   
-  // Debug logging
+  // Debug logging for troubleshooting
   useEffect(() => {
     console.log("=== StateBillsVetting Debug ===");
     console.log("URL Params - claimId:", claimId);
-    console.log("Location State:", location.state);
-    console.log("Provider ID from location:", providerIdFromLocation);
-    console.log("Selected Provider from context:", selectedProviderId);
+    console.log("ProviderContext.selectedProviderId:", selectedProviderId);
+    console.log("Location state.providerId:", providerIdFromLocation);
     console.log("Current User Type:", currentUser?.orgType);
-    console.log("Active Provider ID:", activeProviderId);
+    console.log("Active Provider ID (resolved):", activeProviderId);
     console.log("Claim Number:", claimNumberFromLocation);
     console.log("===============================");
-  }, [claimId, location.state, providerIdFromLocation, selectedProviderId, currentUser, activeProviderId, claimNumberFromLocation]);
+  }, [claimId, selectedProviderId, providerIdFromLocation, currentUser, activeProviderId, claimNumberFromLocation]);
   
   // Local state
   const [searchTerm, setSearchTerm] = useState("");
@@ -133,18 +150,24 @@ export const StateBillsVetting = () => {
 
   // Load emergency bill patients when claimId or activeProviderId changes
   const loadEmergencyBillPatients = useCallback(() => {
-    if (claimId && activeProviderId && activeProviderId !== "00000000-0000-0000-0000-000000000000") {
-      console.log("🚀 Fetching patients with:", { 
-        providerId: activeProviderId, 
-        emergencyClaimId: claimId 
+    // BLOCK API CALL if providerId is invalid
+    if (!claimId || !activeProviderId || activeProviderId === "00000000-0000-0000-0000-000000000000") {
+      console.log("[API Block] Missing required params:", { 
+        hasClaimId: !!claimId, 
+        activeProviderId,
+        isValidProvider: activeProviderId !== "00000000-0000-0000-0000-000000000000"
       });
-      dispatch(fetchEmergencyBillPatients({ 
-        emergencyClaimId: claimId, 
-        providerId: activeProviderId 
-      }));
-    } else {
-      console.log("❌ Missing required params:", { claimId, activeProviderId });
+      return;
     }
+    
+    console.log("[API Call] Fetching patients with:", { 
+      providerId: activeProviderId, 
+      emergencyClaimId: claimId 
+    });
+    dispatch(fetchEmergencyBillPatients({ 
+      emergencyClaimId: claimId, 
+      providerId: activeProviderId 
+    }));
   }, [dispatch, claimId, activeProviderId]);
 
   // Load data when claimId or activeProviderId changes
@@ -152,7 +175,9 @@ export const StateBillsVetting = () => {
     if (claimId && activeProviderId && activeProviderId !== "00000000-0000-0000-0000-000000000000") {
       loadEmergencyBillPatients();
     } else if (activeProviderId === "00000000-0000-0000-0000-000000000000") {
-      console.warn("⚠️ Provider ID is all zeros - this will not return any data");
+      console.warn("[API Block] Provider ID is all zeros - API call prevented");
+    } else if (!claimId) {
+      console.warn("[API Block] Claim ID missing - API call prevented");
     }
     
     // Clear data when component unmounts
@@ -308,7 +333,7 @@ export const StateBillsVetting = () => {
                 patientId: row.original.id,
                 claimId: claimId,
                 claimNumber: claimNumberFromLocation,
-                providerId: activeProviderId,
+                providerId: activeProviderId, // Use resolved provider ID
                 fromEmergencyClaims: true
               }
             });
@@ -365,17 +390,17 @@ export const StateBillsVetting = () => {
   };
 
   // Handle row click to view patient details
- const handleRowClick = (patientId: string) => {
-  navigate(`/state/emergency-bills/${claimId}/${patientId}`, {
-    state: {
-      patientId: patientId,
-      claimId: claimId,
-      claimNumber: claimNumberFromLocation,
-      providerId: activeProviderId,
-      fromEmergencyClaims: true
-    }
-  });
-};
+  const handleRowClick = (patientId: string) => {
+    navigate(`/state/emergency-bills/${claimId}/${patientId}`, {
+      state: {
+        patientId: patientId,
+        claimId: claimId,
+        claimNumber: claimNumberFromLocation,
+        providerId: activeProviderId, // Use resolved provider ID
+        fromEmergencyClaims: true
+      }
+    });
+  };
 
   // Check if providerId is valid (not all zeros)
   const isValidProviderId = activeProviderId && activeProviderId !== "00000000-0000-0000-0000-000000000000";

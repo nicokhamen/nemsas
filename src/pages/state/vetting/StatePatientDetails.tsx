@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
@@ -16,6 +16,7 @@ import { LoadingSpinner } from "../../../components/ui/LoadingSpinner";
 import Button from "../../../components/ui/Button";
 import type { EmergencyBill } from "../../../types/PatientsEncounter";
 import FormHeader from "../../../components/form/FormHeader";
+import { useProviderContext } from "../../../context/useProviderContext";
 
 // Format date
 const formatDate = (dateString: string): string => {
@@ -39,16 +40,60 @@ const StatePatientDetails: React.FC = () => {
   const dispatch = useAppDispatch();
   const location = useLocation();
 
-  // Get data from location state
+  // Get data from location state (UI CONVENIENCE ONLY - NOT PRIMARY SOURCE)
   const claimNumberFromLocation = location.state?.claimNumber;
-  const providerIdFromLocation = location.state?.providerId;
   const fromEmergencyClaims = location.state?.fromEmergencyClaims;
 
   // Get current user from auth
   const currentUser = useSelector((state: RootState) => state.auth.user);
+  
+  // Get selected provider from context (PRIMARY SOURCE)
+  const { selectedProviderId, setSelectedProviderId } = useProviderContext();
 
-  // Determine the provider ID to use
-  const providerId = providerIdFromLocation || currentUser?.providerId || "";
+  /**
+   * RESOLUTION ORDER (Priority Chain):
+   * 1. ProviderContext.selectedProviderId (PRIMARY SOURCE)
+   * 2. Redux currentUser.providerId (for provider users)
+   * 3. EMPTY (NEVER ALLOW API CALL WITH INVALID ID)
+   * 
+   * REMOVED: location.state?.providerId as primary source
+   */
+  const providerId = useMemo(() => {
+    // For provider users, they can only see their own data
+    if (currentUser?.orgType === "PROVIDER") {
+      const providerIdValue = currentUser.providerId || "";
+      console.log("[PatientDetails] Provider user detected, using:", providerIdValue);
+      return providerIdValue;
+    }
+    
+    // For SSHIA users, use ProviderContext (user-selected from dropdown)
+    if (selectedProviderId && selectedProviderId !== "00000000-0000-0000-0000-000000000000") {
+      console.log("[PatientDetails] Using ProviderContext selection:", selectedProviderId);
+      return selectedProviderId;
+    }
+    
+    // Final fallback to user's providerId (for admin users)
+    const userProviderId = currentUser?.providerId || "";
+    if (userProviderId && userProviderId !== "00000000-0000-0000-0000-000000000000") {
+      console.log("[PatientDetails] Using user provider fallback:", userProviderId);
+      return userProviderId;
+    }
+    
+    // NO VALID PROVIDER ID - BLOCK API CALLS
+    console.warn("[PatientDetails] No valid provider ID found. API calls will be blocked.");
+    return "";
+  }, [currentUser, selectedProviderId]);
+
+  // SAFETY SYNC: Update context when providerId resolves
+  useEffect(() => {
+    if (providerId && providerId !== "00000000-0000-0000-0000-000000000000") {
+      // Only update if context doesn't already have this value or is different
+      if (selectedProviderId !== providerId) {
+        console.log("[PatientDetails] Syncing provider to context:", providerId);
+        setSelectedProviderId(providerId);
+      }
+    }
+  }, [providerId, selectedProviderId, setSelectedProviderId]);
 
   // Get patient encounter data from Redux store
   const {
@@ -59,24 +104,28 @@ const StatePatientDetails: React.FC = () => {
 
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
-  // Load patient encounters when component mounts or IDs change
+  // Load patient encounters with SAFE API CALL - BLOCK INVALID PROVIDER IDS
   useEffect(() => {
-    if (
-      patientId &&
-      providerId &&
-      providerId !== "00000000-0000-0000-0000-000000000000"
-    ) {
-      console.log("Fetching patient encounters with:", {
-        patientId,
-        providerId,
+    // BLOCK API CALL if required params are missing
+    if (!patientId || !providerId) {
+      console.log("[PatientDetails] API blocked - missing params:", { 
+        hasPatientId: !!patientId, 
+        hasProviderId: !!providerId 
       });
-      dispatch(fetchPatientEncounter({ patientId, providerId }));
-    } else {
-      console.log("Missing required params for patient encounter:", {
-        patientId,
-        providerId,
-      });
+      return;
     }
+
+    // BLOCK API CALL if providerId is all zeros (invalid)
+    if (providerId === "00000000-0000-0000-0000-000000000000") {
+      console.warn("[PatientDetails] API blocked - providerId is all zeros");
+      return;
+    }
+
+    console.log("[PatientDetails] Fetching patient encounters with:", {
+      patientId,
+      providerId,
+    });
+    dispatch(fetchPatientEncounter({ patientId, providerId }));
 
     // Cleanup on unmount
     return () => {
@@ -90,11 +139,11 @@ const StatePatientDetails: React.FC = () => {
 
   // Handle back navigation - go back to the bills page
   const handleBack = () => {
-    if (fromEmergencyClaims) {
+    if (fromEmergencyClaims && claimId) {
       navigate(`/state/emergency/claims/${claimId}`, {
         state: {
           claimNumber: claimNumberFromLocation,
-          providerId: providerId,
+          // Do NOT pass providerId in state - will be resolved by context
           claimId: claimId,
         },
       });
@@ -105,12 +154,15 @@ const StatePatientDetails: React.FC = () => {
 
   // Handle refresh
   const handleRefresh = () => {
-    if (patientId && providerId) {
+    if (patientId && providerId && providerId !== "00000000-0000-0000-0000-000000000000") {
       dispatch(fetchPatientEncounter({ patientId, providerId }));
     }
   };
 
-  if (!currentUser && !providerIdFromLocation) {
+  // Check if providerId is valid
+  const isValidProviderId = providerId && providerId !== "00000000-0000-0000-0000-000000000000";
+
+  if (!currentUser && !providerId) {
     return (
       <div className="flex items-center justify-center h-64">
         <LoadingSpinner />
@@ -142,20 +194,25 @@ const StatePatientDetails: React.FC = () => {
           <span className="text-sm text-gray-600 bg-gray-200 px-3 py-1 rounded">
             {claimNumberFromLocation || claimId || "N/A"}
           </span>
-          {/* {providerId && (
-            <>
-              <span className="text-sm font-medium text-red-700 ml-4">
-                Provider ID :
-              </span>
-              <span className="text-sm text-gray-600 bg-gray-200 px-3 py-1 rounded">
-                {providerId.substring(0, 8)}...
-              </span>
-            </>
-          )} */}
+          {/* Provider ID display removed - not needed for UI */}
         </div>
       </div>
 
       <hr className="pb-1 pt-2" />
+
+      {/* Warning for invalid provider ID */}
+      {!isValidProviderId && providerId && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-4">
+          <div className="flex items-center justify-between">
+            <p className="text-yellow-700">
+              ⚠️ Invalid Provider ID. Please go back and select a valid provider.
+            </p>
+            <Button onClick={handleBack} variant="outline" size="sm">
+              Go Back
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Error state */}
       {error && (
@@ -177,7 +234,7 @@ const StatePatientDetails: React.FC = () => {
       )}
 
       {/* No data state */}
-      {!loading && !error && (!encounters || encounters.length === 0) && (
+      {!loading && !error && (!encounters || encounters.length === 0) && isValidProviderId && (
         <div className="text-center py-12 bg-white rounded-lg">
           <p className="text-gray-500 mb-4">
             No encounter data available for this patient.
@@ -202,84 +259,81 @@ const StatePatientDetails: React.FC = () => {
                     <span className="text-gray-600 font-medium">
                       Patient Number
                     </span>
-                  </td>
+                   </td>
                   <td className="py-4">
                     <span className="text-gray-900 font-semibold">
                       {patientDetails.hospitalNumber || "N/A"}
                     </span>
-                  </td>
-
+                   </td>
                   <td className="py-4 pr-6 w-1/3">
                     <span className="text-gray-600 font-medium">Gender</span>
-                  </td>
+                   </td>
                   <td className="py-4">
                     <span className="text-gray-900 font-semibold">
                       {patientDetails.gender || "N/A"}
                     </span>
-                  </td>
+                   </td>
                 </tr>
                 <tr className="border-b border-gray-200">
                   <td className="py-4 pr-6">
                     <span className="text-gray-600 font-medium">
                       Phone Number
                     </span>
-                  </td>
+                   </td>
                   <td className="py-4">
                     <span className="text-gray-900 font-semibold">
                       {patientDetails.phoneNumber || "N/A"}
                     </span>
-                  </td>
+                   </td>
                   <td className="py-4 pr-6">
                     <span className="text-gray-600 font-medium">Insurance</span>
-                  </td>
+                   </td>
                   <td className="py-4">
                     <span className="text-gray-900 font-semibold">
                       {patientDetails.insuranceStatus || "N/A"}
                     </span>
-                  </td>
+                   </td>
                 </tr>
                 <tr className="border-b border-gray-200">
                   <td className="py-4 pr-6">
                     <span className="text-gray-600 font-medium">
                       Hospital Name
                     </span>
-                  </td>
+                   </td>
                   <td className="py-4">
                     <span className="text-gray-900 font-semibold">
                       {encounters?.[0]?.hospitalName || "N/A"}
                     </span>
-                  </td>
+                   </td>
                   <td className="py-4 pr-6">
                     <span className="text-gray-600 font-medium">Email</span>
-                  </td>
+                   </td>
                   <td className="py-4">
                     <span className="text-gray-900 font-semibold">
                       {patientDetails.email || "N/A"}
                     </span>
-                  </td>
+                   </td>
                 </tr>
-
                 <tr className="border-b border-gray-200">
-                 
                   <td className="py-4 pr-6 w-1/4">
                     <span className="text-gray-600 font-medium">Address</span>
-                  </td>
+                   </td>
                   <td className="py-4 w-1/4">
                     <span className="text-gray-900 font-semibold">
                       {patientDetails.address || "N/A"}
                     </span>
-                  </td>
-                   <td className="py-4 pr-6 w-1/4">
+                   </td>
+                  <td className="py-4 pr-6 w-1/4">
                     <span className="text-gray-600 font-medium">
                       Patient Name
                     </span>
-                  </td>
+                   </td>
                   <td className="py-4 w-1/4">
                     <span className="text-gray-900 font-semibold">
                       {`${patientDetails.firstName || ""} ${patientDetails.lastName || ""}`.trim() ||
                         "N/A"}
                     </span>
-                  </td>
+                   </td>
                 </tr>
               </tbody>
             </table>
@@ -460,16 +514,16 @@ const StatePatientDetails: React.FC = () => {
                                 >
                                   <td className="px-4 py-3 text-sm">
                                     {item.name}
-                                  </td>
+                                   </td>
                                   <td className="px-4 py-3 text-sm">
                                     {item.quantity}
-                                  </td>
+                                   </td>
                                   <td className="px-4 py-3 text-sm">
                                     ₦{item.price?.toLocaleString()}
-                                  </td>
+                                   </td>
                                   <td className="px-4 py-3 text-sm font-medium">
                                     ₦{item.netAmount?.toLocaleString()}
-                                  </td>
+                                   </td>
                                 </tr>
                               ),
                             )}
@@ -482,11 +536,11 @@ const StatePatientDetails: React.FC = () => {
                                   className="px-4 py-3 text-right font-medium"
                                 >
                                   Total:
-                                </td>
+                                 </td>
                                 <td className="px-4 py-3 text-sm font-bold text-green-600">
                                   ₦
                                   {encounter.totalAmount.toLocaleString()}
-                                </td>
+                                 </td>
                               </tr>
                             </tfoot>
                           )}
