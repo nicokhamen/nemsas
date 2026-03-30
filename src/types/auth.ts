@@ -3,7 +3,7 @@ export interface LoginCredentials {
   password: string;
 }
 
-export type OrganizationType = "PROVIDER" | "SSHIA" | "Adminstrative";
+export type OrganizationType = "PROVIDER" | "SSHIA" | "Administrative" | "Individual";
 
 export interface AuthUser {
   id: string;

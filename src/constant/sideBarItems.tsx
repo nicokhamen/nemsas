@@ -82,3 +82,11 @@ export const PROVIDER_SIDEBAR: SidebarItem[] = [
   { icon: <TariffIcon className="w-5 h-5" />, label: "Tariff", active: false, path: "/tariff" },
   { icon: <SettingsIcon className="w-5 h-5" />, label: "Settings", active: false, path: "/settings" },
 ];
+
+export const ADMIN_SIDEBAR: SidebarItem[] = [
+  {
+    icon: <DashboardIcon className="w-5 h-5" />,
+    label: "Dashboard",
+    path: "/dashboard",
+  },
+];

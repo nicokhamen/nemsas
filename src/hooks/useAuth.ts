@@ -9,11 +9,24 @@ import {
   togglePasswordVisibility,
 } from "../services/slices/authSlice";
 import { authAPI } from "../services/api/authApi";
+import type { OrganizationType } from "../types/auth";
 
 interface LoginCredentials {
   email: string;
   password: string;
 }
+
+const deriveOrgType = (data: any): OrganizationType => {
+  if (data.isProvider) return "PROVIDER";
+
+  if (data.organization === "SSHIA") return "SSHIA";
+
+  if (data.role?.toLowerCase().includes("admin")) {
+    return "Administrative";
+  }
+
+  return "Individual";
+};
 
 export const useAuth = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -22,8 +35,10 @@ export const useAuth = () => {
   const login = async (credentials: LoginCredentials) => {
     dispatch(loginStart());
 
+    
     try {
       const response = await authAPI.login(credentials);
+      console.log("RAW ORG TYPE:", response.data.orgType);
 
       if (response.isSuccess && response.data) {
         // Robust token extraction supporting multiple backend shapes
@@ -54,7 +69,9 @@ export const useAuth = () => {
               providerId: response.data.providerId,
               organization: response.data.organization,
 
-              orgType: response.data.isProvider ? "PROVIDER" : "SSHIA",
+              // orgType: response.data.isProvider ? "PROVIDER" : "SSHIA",
+              orgType: deriveOrgType(response.data),
+            
             },
           }),
         );
@@ -83,6 +100,8 @@ export const useAuth = () => {
   const togglePasswordVisible = () => {
     dispatch(togglePasswordVisibility());
   };
+
+  
 
   return {
     ...authState,

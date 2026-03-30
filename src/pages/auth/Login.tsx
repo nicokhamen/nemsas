@@ -9,6 +9,7 @@ import { useSelector } from "react-redux";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import nemsasImage from "../../assets/nemsas.jpg";
 import { LogIn } from "lucide-react";
+import { normalizeOrgType } from "../../utils/normalizerOrg";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -27,15 +28,33 @@ const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   //  Determine redirect route BASED ON ROLE
+  // const getRedirectPath = () => {
+  //   if (!reduxUser) return "/login";
+
+  //   if (reduxUser.orgType === "PROVIDER") {
+  //     return "/emergency/bills";
+  //   }
+
+  //   return "/state/providers/all"; 
+  // };
   const getRedirectPath = () => {
-    if (!reduxUser) return "/login";
+  if (!reduxUser) return "/login";
+  const orgType = normalizeOrgType(reduxUser.orgType);
 
-    if (reduxUser.orgType === "PROVIDER") {
+  switch (orgType) {
+    case "PROVIDER":
       return "/emergency/bills";
-    }
 
-    return "/state/providers/all"; // SSHIA default
-  };
+    case "SSHIA":
+      return "/state/providers/all";
+
+    case "ADMINISTRATIVE":
+      return "/dashboard";
+
+    default:
+      return "/login";
+  }
+};
 
   useEffect(() => {
     clearError();

@@ -129,131 +129,134 @@ export const ICDSearch: React.FC<{
   };
 
   return (
-    <div className="w-full flex items-start gap-4">
-      <div className="relative w-50">
-        <select
-          className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 appearance-none focus:border-blue-500"
-          value={system}
-          onChange={handleSystemChange}
-        >
-          <option value="">Select ICD Version</option>
-          <option value="ICD-10">ICD-10</option>
-          <option value="ICD-11">ICD-11</option>
-        </select>
-        <ChevronDown
-          size={20}
-          className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500"
-        />
-      </div>
-      {system && (
-        <div
-          className="w-full space-y-3 animate-fadeIn relative"
-          ref={dropdownRef}
-        >
-          {/* Search input with icon */}
-          <div className="relative">
-            <input
-              type="text"
-              className="w-full p-2 pl-10 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder={`Search ${system} ... (Type 3+ letters)`}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={handleKeyDown}
-              disabled={loading}
-            />
-            <div className="absolute left-0 top-0 h-full flex items-center pl-3 pointer-events-none">
-              <button
-                onClick={handleSearch}
-                disabled={loading || !query.trim()}
-                className="text-gray-500 hover:text-gray-700 focus:outline-none disabled:opacity-50 pointer-events-auto"
-                aria-label="Search"
-              >
-                {loading ? (
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
-                ) : (
-                  <Search size={20} />
-                )}
-              </button>
-            </div>
-          </div>
+    <>
+      <div className="w-full flex items-start gap-4">
+        <div className="relative w-50">
+          <select
+            className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 appearance-none focus:border-blue-500"
+            value={system}
+            onChange={handleSystemChange}
+          >
+            <option value="">Select ICD Version</option>
+            <option value="ICD-10">ICD-10</option>
+            <option value="ICD-11">ICD-11</option>
+          </select>
+          <ChevronDown
+            size={20}
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500"
+          />
+        </div>
+        {system && (
+          <div
+            className="w-full space-y-3 animate-fadeIn relative"
+            ref={dropdownRef}
+          >
+            {/* Search input with icon */}
+            <div className="relative">
+              <input
+                type="text"
+                className="w-full p-2 pl-10 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder={`Search ${system} ... (Type 3+ letters)`}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={loading}
+              />
 
-          {/* Info message */}
-          {query.length > 0 && query.length < 3 && (
-            <p className="text-sm text-gray-500">
-              Type {3 - query.length} more character
-              {3 - query.length > 1 ? "s" : ""} to search...
-            </p>
-          )}
-
-          {/* Loading indicator */}
-          {isTyping && query.length >= 3 && (
-            <p className="text-sm text-blue-500">Typing...</p>
-          )}
-
-          {/* Error message */}
-          {error && (
-            <div className="p-2 bg-red-50 border border-red-200 rounded">
-              <p className="text-sm text-red-600">{error}</p>
-            </div>
-          )}
-
-          {/* Dropdown for filtered results */}
-          {showDropdown && icdData.length > 0 && !loading && !isTyping && (
-            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
-              <div className="py-1">
-                <div className="px-3 py-2 bg-gray-50 border-b">
-                  <p className="text-xs font-medium text-gray-500">
-                    Found {icdData.length} result
-                    {icdData.length !== 1 ? "s" : ""} for "{query}"
-                  </p>
-                </div>
-                <ul>
-                  {icdData.map((item, index) => (
-                    <li
-                      key={`${item.code}-${index}`}
-                      className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors duration-150"
-                      onClick={() => handleItemClick(item)}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <div className="flex items-center mb-1">
-                            <span className="font-mono text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded mr-2">
-                              {item.code}
-                            </span>
-                            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                              {formatDisplayType(getCodeTypeForAPI(system))}
-                            </span>
-                          </div>
-                          <p className="text-gray-800">{item.name}</p>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-xs text-gray-400">
-                            Click to select
-                          </span>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                <button
+                  onClick={handleSearch}
+                  disabled={loading || !query.trim()}
+                  className="text-gray-500 hover:text-gray-700 focus:outline-none disabled:opacity-50 pointer-events-auto"
+                  aria-label="Search"
+                >
+                  {loading ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+                  ) : (
+                    <Search size={20} />
+                  )}
+                </button>
               </div>
             </div>
-          )}
 
-          {/* No results message */}
-          {showDropdown &&
-            icdData.length === 0 &&
-            query.length >= 3 &&
-            !loading &&
-            !isTyping &&
-            !error && (
-              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
-                <p className="text-sm text-yellow-700">
-                  No ICD codes found for "{query}" in {system}
-                </p>
+            {/* Info message */}
+            {query.length > 0 && query.length < 3 && (
+              <p className="text-sm text-gray-500">
+                Type {3 - query.length} more character
+                {3 - query.length > 1 ? "s" : ""} to search...
+              </p>
+            )}
+
+            {/* Loading indicator */}
+            {isTyping && query.length >= 3 && (
+              <p className="text-sm text-blue-500">Typing...</p>
+            )}
+
+            {/* Error message */}
+            {error && (
+              <div className="p-2 bg-red-50 border border-red-200 rounded">
+                <p className="text-sm text-red-600">{error}</p>
               </div>
             )}
-        </div>
-      )}
-    </div>
+
+            {/* Dropdown for filtered results */}
+            {showDropdown && icdData.length > 0 && !loading && !isTyping && (
+              <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                <div className="py-1">
+                  <div className="px-3 py-2 bg-gray-50 border-b">
+                    <p className="text-xs font-medium text-gray-500">
+                      Found {icdData.length} result
+                      {icdData.length !== 1 ? "s" : ""} for "{query}"
+                    </p>
+                  </div>
+                  <ul>
+                    {icdData.map((item, index) => (
+                      <li
+                        key={`${item.code}-${index}`}
+                        className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors duration-150"
+                        onClick={() => handleItemClick(item)}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="flex items-center mb-1">
+                              <span className="font-mono text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded mr-2">
+                                {item.code}
+                              </span>
+                              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                {formatDisplayType(getCodeTypeForAPI(system))}
+                              </span>
+                            </div>
+                            <p className="text-gray-800">{item.name}</p>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-xs text-gray-400">
+                              Click to select
+                            </span>
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+
+            {/* No results message */}
+            {showDropdown &&
+              icdData.length === 0 &&
+              query.length >= 3 &&
+              !loading &&
+              !isTyping &&
+              !error && (
+                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
+                  <p className="text-sm text-yellow-700">
+                    No ICD codes found for "{query}" in {system}
+                  </p>
+                </div>
+              )}
+          </div>
+        )}
+      </div>
+    </>
   );
 };

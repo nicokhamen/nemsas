@@ -319,25 +319,27 @@ export const StateBillsVetting = () => {
       },
       enableSorting: true,
     },
+
+    // onClick={() => handleRowClick(row.original.id)} /state/emergency-bills/${claimId}/${patientId}
     {
       id: "action",
       header: "Action",
       enableHiding: false,
-      cell: ({ row }) => (
+      cell: ({  }) => (
         <button
           className="flex items-center justify-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
-          onClick={(e) => {
-            e.stopPropagation();
-            navigate(`/emergency-bills/${claimId}/${row.original.id}`, {
-              state: {
-                patientId: row.original.id,
-                claimId: claimId,
-                claimNumber: claimNumberFromLocation,
-                providerId: activeProviderId, // Use resolved provider ID
-                fromEmergencyClaims: true
-              }
-            });
-          }}
+          // onClick={(e) => {
+          //   e.stopPropagation();
+          //   navigate(`/state/emergency-bills/${claimId}/${patientId}`, {
+          //     state: {
+          //       patientId: row.original.id,
+          //       claimId: claimId,
+          //       claimNumber: claimNumberFromLocation,
+          //       providerId: activeProviderId, // Use resolved provider ID
+          //       fromEmergencyClaims: true
+          //     }
+          //   });
+          // }}
           title="View Patient Encounters"
         >
           <Eye className="h-5 w-5" />
@@ -441,7 +443,7 @@ export const StateBillsVetting = () => {
                   ← Back
                 </Button>
                 <FormHeader>
-                  Emergency Bill Patients
+                  Emergency Bills for Patients
                   {claimNumberFromLocation && (
                     <span className="text-sm text-gray-500 ml-2">
                       (Claim: {claimNumberFromLocation})
