@@ -22,7 +22,8 @@ import RegisterProvider from "../pages/state/providers/RegisterProvider";
 import { StateClaims } from "../pages/state/vetting/StateClaimsVetting";
 import ClaimsTracking from "../pages/state/tracking/ClaimsTracking";
 import StateBillsVetting from "../pages/state/vetting/StateBillsVetting";
-import StatePatientDetails from "../pages/state/vetting/StatePatientDetails";
+// import StatePatientDetails from "../pages/state/vetting/StatePatientDetails";
+import StatePatientVetting from "../pages/state/vetting/StatePatientVetting";
 
 export interface RouteHandle {
   title?: string;
@@ -231,7 +232,7 @@ export const router = createBrowserRouter([
          
             element: (
               <Layout>
-                <StatePatientDetails />
+                <StatePatientVetting />
               </Layout>
             ),
             handle: { title: "Patient Vetting Details" },

@@ -77,7 +77,7 @@ export const PROVIDER_SIDEBAR: SidebarItem[] = [
     }
   ]
 },
-  { icon: <ClaimsIcon className="w-5 h-5" />, label: "MD Review & Endorsement", active: false, path: "/md-review" },
+  // { icon: <ClaimsIcon className="w-5 h-5" />, label: "MD Review & Endorsement", active: false, path: "/md-review" },
   { icon: <SettlementIcon className="w-5 h-5" />, label: "Settlement", active: false },
   { icon: <TariffIcon className="w-5 h-5" />, label: "Tariff", active: false, path: "/tariff" },
   { icon: <SettingsIcon className="w-5 h-5" />, label: "Settings", active: false, path: "/settings" },
@@ -89,4 +89,9 @@ export const ADMIN_SIDEBAR: SidebarItem[] = [
     label: "Dashboard",
     path: "/dashboard",
   },
+];
+
+export const MD_SIDEBAR: SidebarItem[] = [
+  { icon: <DashboardIcon className="w-5 h-5" />, label: "Dashboard", path: "/dashboard" },
+  { icon: <ClaimsIcon className="w-5 h-5" />, label: "MD Review & Endorsement", path: "/md-review" },
 ];

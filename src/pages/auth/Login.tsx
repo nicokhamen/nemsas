@@ -37,23 +37,40 @@ const Login: React.FC = () => {
 
   //   return "/state/providers/all"; 
   // };
-  const getRedirectPath = () => {
+//   const getRedirectPath = () => {
+//   if (!reduxUser) return "/login";
+//   const orgType = normalizeOrgType(reduxUser.orgType);
+
+//   switch (orgType) {
+//     case "PROVIDER":
+//       return "/emergency/bills";
+
+//     case "SSHIA":
+//       return "/state/providers/all";
+
+//     case "ADMINISTRATIVE":
+//       return "/dashboard";
+
+//     default:
+//       return "/login";
+//   }
+// };
+const getRedirectPath = () => {
   if (!reduxUser) return "/login";
+
   const orgType = normalizeOrgType(reduxUser.orgType);
+  const role = reduxUser.role;
 
-  switch (orgType) {
-    case "PROVIDER":
-      return "/emergency/bills";
-
-    case "SSHIA":
-      return "/state/providers/all";
-
-    case "ADMINISTRATIVE":
-      return "/dashboard";
-
-    default:
-      return "/login";
+  if (orgType === "PROVIDER") {
+    if (role === "MD") return "/md-review"; 
+    return "/emergency/bills";
   }
+
+  if (orgType === "SSHIA") return "/state/providers/all";
+
+  if (orgType === "ADMINISTRATIVE") return "/dashboard";
+
+  return "/login";
 };
 
   useEffect(() => {

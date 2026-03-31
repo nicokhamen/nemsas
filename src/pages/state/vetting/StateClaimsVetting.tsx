@@ -150,8 +150,8 @@ export const StateClaims = () => {
         ),
       );
 
-      setShowConfirmModal(false); // ✅ close confirm modal
-      setShowSuccessModal(true); // ✅ show success modal
+      setShowConfirmModal(false); //  close confirm modal
+      setShowSuccessModal(true); //  show success modal
       setRowSelection({});
       loadClaims();
 

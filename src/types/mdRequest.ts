@@ -22,11 +22,29 @@ export interface ApiResponse<T = boolean> {
 export type VettingClaim = {
   emergencyClaimId: string;
   remark: string;
-  status: "New";
+  status: string;
 };
 
 export type VettingClaimResponse = {
   success: boolean;
   message: string;
   data: VettingClaim;
+};
+
+//  For Rejecting and Disputing Bills
+export type SubmitVettingBillPayload = {
+  emergencyBillId: string;
+  remark?: string;
+  status: "New" | "Rejected" | "Disputed";
+};
+export type VettingBill = {
+  emergencybillId: string;
+  remark: string;
+  status: string;
+};
+
+export type VettingBillResponse = {
+  success: boolean;
+  message: string;
+  data: VettingBill;
 };

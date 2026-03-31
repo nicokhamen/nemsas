@@ -89,7 +89,6 @@ const multiFieldFilter = (row: any, _columnId: string, filterValue: string) => {
   const email = (row.getValue("email") || "").toLowerCase();
   const location = (row.getValue("location") || "").toLowerCase();
   const licenseNumber = (row.getValue("licenseNumber") || "").toLowerCase();
-  
 
   return (
     hospitalName.includes(searchTerm) ||
@@ -193,7 +192,8 @@ export const AllProviders = () => {
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(
     null,
   );
-
+  // states for Inactive and active fields
+  const [statusFilter, setStatusFilter] = useState("Active");
   // Get providers state from Redux
   const providersState = useAppSelector((state: any) => state.createProvider);
   // const providers = providersState?.data || [];
@@ -284,9 +284,32 @@ export const AllProviders = () => {
       enableSorting: true,
       filterFn: multiFieldFilter,
     },
+    // {
+    //   accessorKey: "isActive",
+    //   header: "Status",
+    //   cell: ({ row }) => {
+    //     const isActive = row.getValue("isActive");
+
+    //     return (
+    //       <span
+    //         className={`px-2 py-1 text-xs font-medium rounded-full ${
+    //           isActive
+    //             ? "bg-green-100 text-green-700"
+    //             : "bg-red-100 text-red-700"
+    //         }`}
+    //       >
+    //         {isActive ? "Active" : "Inactive"}
+    //       </span>
+    //     );
+    //   },
+    // },
     {
       accessorKey: "isActive",
       header: "Status",
+      filterFn: (row, columnId, value) => {
+        if (value === undefined) return true;
+        return row.getValue(columnId) === value;
+      },
       cell: ({ row }) => {
         const isActive = row.getValue("isActive");
 
@@ -361,6 +384,15 @@ export const AllProviders = () => {
 
   const totalPages = table.getPageCount();
 
+  // For status change
+  useEffect(() => {
+    if (statusFilter === "All") {
+      table.getColumn("isActive")?.setFilterValue(undefined);
+    } else {
+      table.getColumn("isActive")?.setFilterValue(statusFilter === "Active");
+    }
+  }, [statusFilter, table]);
+
   // Show loading while waiting for user data
   if (!currentUser) {
     return (
@@ -384,13 +416,13 @@ export const AllProviders = () => {
                 {/* Name/Provider ID Filter */}
                 <div className="col-span-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Name/Provider ID
+                    Name/Provider
                   </label>
 
                   <div className="relative">
                     <input
                       type="text"
-                      placeholder="Search name or provider ID..."
+                      placeholder="Search name or provider ..."
                       value={searchTerm}
                       onChange={(e) => {
                         const value = e.target.value;
@@ -412,8 +444,9 @@ export const AllProviders = () => {
                     Status
                   </label>
                   <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
                     className="w-full px-3 pr-8 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none bg-white"
-                    defaultValue="Active"
                   >
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
@@ -427,8 +460,14 @@ export const AllProviders = () => {
                 {/* Action Buttons */}
                 <div className="col-span-3 flex gap-3">
                   <button
+                    // onClick={() => {
+                    //   setSearchTerm("");
+                    //   table.setColumnFilters([]);
+                    //   loadProviders();
+                    // }}
                     onClick={() => {
                       setSearchTerm("");
+                      setStatusFilter("Active"); // reset dropdown
                       table.setColumnFilters([]);
                       loadProviders();
                     }}

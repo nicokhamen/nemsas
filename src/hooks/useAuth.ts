@@ -28,6 +28,17 @@ const deriveOrgType = (data: any): OrganizationType => {
   return "Individual";
 };
 
+const normalizeRole = (role?: string) => {
+  if (!role) return "";
+
+  const r = role.toLowerCase();
+
+  if (r.includes("md")) return "MD";
+  if (r.includes("admin")) return "ADMINISTRATOR";
+
+  return role.toUpperCase();
+};
+
 export const useAuth = () => {
   const dispatch = useDispatch<AppDispatch>();
   const authState = useSelector((state: RootState) => state.auth);
@@ -63,12 +74,12 @@ export const useAuth = () => {
               id: response.data.id,
               fullName: response.data.fullName,
               emailAddress: response.data.emailAddress,
-              role: response.data.role,
+              // role: response.data.role,
               hmoId: response.data.hmoId,
               isProvider: response.data.isProvider,
               providerId: response.data.providerId,
               organization: response.data.organization,
-
+              role: normalizeRole(response.data.role),
               // orgType: response.data.isProvider ? "PROVIDER" : "SSHIA",
               orgType: deriveOrgType(response.data),
             

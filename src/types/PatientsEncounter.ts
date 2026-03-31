@@ -49,6 +49,7 @@ interface ProductService extends BaseEntity {
 
 // Main Emergency Bill interface
 interface EmergencyBill extends BaseEntity {
+  // emergencyBillId: string;
   patientId: string;
   department: string;
   serviceType: "Observation" | string;

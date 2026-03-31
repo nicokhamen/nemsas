@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { 
   STATE_SIDEBAR, 
   PROVIDER_SIDEBAR, 
-  ADMIN_SIDEBAR,
+  ADMIN_SIDEBAR, MD_SIDEBAR,
   type SidebarItem  // Import the existing type
 } from "../../constant/sideBarItems";
 import SidebarDropdown from "../../components/ui/SidebarDropdown";
@@ -66,7 +66,31 @@ const SideNav: React.FC<SideNavProps> = () => {
   ADMINISTRATIVE: ADMIN_SIDEBAR,
 };
 
-const sidebarItems = SIDEBAR_MAP[orgType] || [];
+// const sidebarItems = SIDEBAR_MAP[orgType] || [];
+
+const role = user?.role;
+
+const getSidebarItems = (): SidebarItem[] => {
+  switch (orgType) {
+    case "PROVIDER":
+      if (role === "MD") {
+        return MD_SIDEBAR; // ✅ MD ONLY
+      }
+
+      return PROVIDER_SIDEBAR; // ✅ ADMIN PROVIDER
+
+    case "SSHIA":
+      return STATE_SIDEBAR;
+
+    case "ADMINISTRATIVE":
+      return ADMIN_SIDEBAR;
+
+    default:
+      return [];
+  }
+};
+
+const sidebarItems = getSidebarItems();
 
   // Get selected provider (only relevant for SSHIA)
   const loggedProvider = providers?.find(

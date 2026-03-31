@@ -5,6 +5,7 @@ import type { VettingClaim, VettingClaimResponse } from "../../types/mdRequest";
 
 export interface SubmitVettingClaimPayload extends VettingClaim {
   claimId: string;  
+ 
 }
 
 export const submitVettingClaim = createAsyncThunk<
@@ -31,3 +32,4 @@ export const submitVettingClaim = createAsyncThunk<
     }
   }
 );
+
