@@ -1,6 +1,6 @@
-import ButtonG from "../../../components/form/ButtonG";
-import ButtonT from "../../../components/form/ButttonT";
-import FormHeader from "../../../components/form/FormHeader";
+import ButtonG from "../../components/form/ButtonG";
+import ButtonT from "../../components/form/ButttonT";
+import FormHeader from "../../components/form/FormHeader";
 
 export default function EndorsementReview() {
   return (

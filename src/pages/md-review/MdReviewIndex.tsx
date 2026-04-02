@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
-import type { RootState } from "../../../services/store/store";
-import EmptyState from "../../../components/ui/EmptyState";
-import Button from "../../../components/ui/Button";
-import { LoadingSpinner } from "../../../components/ui/LoadingSpinner";
-import { useAppDispatch } from "../../../hooks/redux";
-import { clearError } from "../../../services/slices/emergencyClaimSlice";
-import { fetchEmergencyClaims } from "../../../services/thunks/emergencyClaimThunk";
+import type { RootState } from "../../services/store/store";
+import EmptyState from "../../components/ui/EmptyState";
+import Button from "../../components/ui/Button";
+import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
+import { useAppDispatch } from "../../hooks/redux";
+import { clearError } from "../../services/slices/emergencyClaimSlice";
+import { fetchEmergencyClaims } from "../../services/thunks/emergencyClaimThunk";
 import { Search, Filter, Upload, Eye, FileText, Users, PieChart } from "lucide-react";
 
 // Table imports
@@ -29,8 +29,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../../../components/table";
-import { Pagination } from "../../../components/pagination";
+} from "../../components/table";
+import { Pagination } from "../../components/pagination";
 import { useNavigate } from "react-router-dom";
 // Files export
 import jsPDF from "jspdf";

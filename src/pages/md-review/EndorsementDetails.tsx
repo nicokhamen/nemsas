@@ -1,18 +1,18 @@
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import type { RootState, AppDispatch } from "../../../services/store/store";
+import type { RootState, AppDispatch } from "../../services/store/store";
 // import { fetchEmergencyClaimDetail, clearEmergencyClaimDetail } from "../../features/emergencyClaimDetail/emergencyClaimDetailThunks";
 // import { clearError } from "../../features/emergencyClaimDetail/emergencyClaimDetailSlice";
-import ButtonG from "../../../components/form/ButtonG";
-import ButtonT from "../../../components/form/ButttonT";
-import FormHeader from "../../../components/form/FormHeader";
-import { LoadingSpinner } from "../../../components/ui/LoadingSpinner";
+import ButtonG from "../../components/form/ButtonG";
+import ButtonT from "../../components/form/ButttonT";
+import FormHeader from "../../components/form/FormHeader";
+import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 import { format } from "date-fns";
-import { fetchEmergencyClaimDetail } from "../../../services/thunks/emergencyClaimDetailThunk";
-import { clearEmergencyClaimDetail } from "../../../services/slices/emergencyClaimDetailSlice";
-import { clearError } from "../../../services/slices/claimDetailSlice";
-import { formatDate } from "../../../utils/dateFormatter";
+import { fetchEmergencyClaimDetail } from "../../services/thunks/emergencyClaimDetailThunk";
+import { clearEmergencyClaimDetail } from "../../services/slices/emergencyClaimDetailSlice";
+import { clearError } from "../../services/slices/claimDetailSlice";
+import { formatDate } from "../../utils/dateFormatter";
 
 export default function EndorsementReview() {
   const { id } = useParams<{ id: string }>();

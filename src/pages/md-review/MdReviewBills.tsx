@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import type { RootState } from "../../../services/store/store";
-import { LoadingSpinner } from "../../../components/ui/LoadingSpinner";
-import EmptyState from "../../../components/ui/EmptyState";
-import Button from "../../../components/ui/Button";
-import { useAppDispatch } from "../../../hooks/redux";
-import { useCustomToast } from "../../../hooks/useCustomToast";
+import type { RootState } from "../../services/store/store";
+import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
+import EmptyState from "../../components/ui/EmptyState";
+import Button from "../../components/ui/Button";
+import { useAppDispatch } from "../../hooks/redux";
+import { useCustomToast } from "../../hooks/useCustomToast";
 
 // Table imports
 import {
@@ -28,15 +28,15 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../../../components/table";
-import { Pagination } from "../../../components/pagination";
+} from "../../components/table";
+import { Pagination } from "../../components/pagination";
 
 // Thunk and actions
-import { fetchClaimsEmergencyBills } from "../../../services/thunks/claimEmergencyThunk";
-import { clearCurrentEmergencyBills } from "../../../services/slices/claimEmergencyBillsSlice";
-import VettingModal from "../../../components/ui/VettingModal";
-import { mdVetEmergencyClaim } from "../../../services/thunks/mdRequestThunk";
-import type { ClaimEmergencyBill } from "../../../types/ClaimEmergencyBills";
+import { fetchClaimsEmergencyBills } from "../../services/thunks/claimEmergencyThunk";
+import { clearCurrentEmergencyBills } from "../../services/slices/claimEmergencyBillsSlice";
+import VettingModal from "../../components/ui/VettingModal";
+import { mdVetEmergencyClaim } from "../../services/thunks/mdRequestThunk";
+import type { ClaimEmergencyBill } from "../../types/ClaimEmergencyBills";
 
 // Status color map for discharge status
 const statusColor: Record<string, string> = {
