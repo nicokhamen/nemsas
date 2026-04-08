@@ -300,25 +300,25 @@ export const StateBillsVetting = () => {
         </span>
       ),
     },
-    {
-      accessorKey: "isActive",
-      header: "Status",
-      cell: ({ row }) => {
-        const isActive = row.original.isActive;
-        return (
-          <span
-            className="px-2 py-1 rounded-full text-xs font-medium"
-            style={{
-              backgroundColor: isActive ? '#4caf5020' : '#f4433620',
-              color: isActive ? '#4caf50' : '#f44336',
-            }}
-          >
-            {isActive ? 'Active' : 'Inactive'}
-          </span>
-        );
-      },
-      enableSorting: true,
-    },
+    // {
+    //   accessorKey: "isActive",
+    //   header: "Status",
+    //   cell: ({ row }) => {
+    //     const isActive = row.original.isActive;
+    //     return (
+    //       <span
+    //         className="px-2 py-1 rounded-full text-xs font-medium"
+    //         style={{
+    //           backgroundColor: isActive ? '#4caf5020' : '#f4433620',
+    //           color: isActive ? '#4caf50' : '#f44336',
+    //         }}
+    //       >
+    //         {isActive ? 'Active' : 'Inactive'}
+    //       </span>
+    //     );
+    //   },
+    //   enableSorting: true,
+    // },
 
     // onClick={() => handleRowClick(row.original.id)} /state/emergency-bills/${claimId}/${patientId}
     {

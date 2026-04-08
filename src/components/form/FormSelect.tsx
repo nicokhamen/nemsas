@@ -32,7 +32,7 @@ const FormSelect: React.FC<SelectProps> = ({
           setFocused(e.target.value !== "");
           props.onBlur?.(e);
         }}
-        className={`peer w-full border rounded-md px-3 pr-10 pt-5 pb-2 bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-[#DC2626] 
+        className={`peer w-full border rounded-md px-3 pr-10 py-3 bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-[#DC2626] 
           ${isDisabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}
           ${error ? 'border-red-500' : 'border-gray-300'}
           `}

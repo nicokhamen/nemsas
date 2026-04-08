@@ -26,6 +26,7 @@ import vettingClaimReducer from "../slices/vettingClaimSlice"
 import providerManagementReducer from "../slices/updateProviderStatusSlice"
 import vettingBillReducer from "../slices/vettingBillSlice"
 import StatesReducer from "../slices/statesSlice"
+import ClaimTrackingReducer from "../slices/claimTrackingSlice"
 
 export const store = configureStore({
   reducer: {
@@ -54,6 +55,7 @@ export const store = configureStore({
     vettingBill: vettingBillReducer,
     providerManagement: providerManagementReducer,
     allStates: StatesReducer,
+    claimTracking: ClaimTrackingReducer,
     [providerApiSlice.reducerPath]: providerApiSlice.reducer,
   },
   middleware: (getDefaultMiddleware) =>

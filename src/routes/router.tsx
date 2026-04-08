@@ -20,7 +20,7 @@ import EditEmergencyBill from "../pages/providers/bill-center/EditEmergencyBill"
 import PatientEncounterDetails from "../pages/providers/claims-management/EncounterDetails";
 import RegisterProvider from "../pages/state/providers/RegisterProvider";
 import { StateClaims } from "../pages/state/vetting/StateClaimsVetting";
-import ClaimsTracking from "../pages/state/tracking/ClaimsTracking";
+import {ClaimsTracking} from "../pages/state/tracking/ClaimsTracking";
 import StateBillsVetting from "../pages/state/vetting/StateBillsVetting";
 // import StatePatientDetails from "../pages/state/vetting/StatePatientDetails";
 import StatePatientVetting from "../pages/state/vetting/StatePatientVetting";
@@ -244,7 +244,7 @@ export const router = createBrowserRouter([
                 <ClaimsTracking />
               </Layout>
             ),
-            handle: { title: "Claims Tracking" },
+            handle: { title: "Claim Tracking" },
           },
         ],
       },

@@ -19,7 +19,7 @@ export const submitVettingClaim = createAsyncThunk<
       const { claimId, ...vettingData } = payload;
       
       // Use the claimId in the URL
-      const response = await axiosInstance.post(
+      const response = await axiosInstance.put(
         `/emergency-claim/vetting/${claimId}`, 
         vettingData
       );

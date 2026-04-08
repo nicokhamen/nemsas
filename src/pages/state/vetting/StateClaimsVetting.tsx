@@ -143,6 +143,7 @@ export const StateClaims = () => {
             submitVettingClaim({
               claimId: claim.id,
               emergencyClaimId: claim.id,
+              
               remark: "Approved",
               status: "New", // or "Approved"
             }),
@@ -351,31 +352,31 @@ export const StateClaims = () => {
       header: "Created Date",
       enableSorting: true,
     },
-   
- // In StateClaims component, update the action column to include the selectedProviderId
-{
-  id: "action",
-  enableHiding: false,
-  cell: ({ row }) => (
-    <button
-      className="flex items-center justify-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
-      onClick={(e) => {
-        e.stopPropagation();
-        // IMPORTANT: Use the providerId that's being used to fetch claims
-        // This providerId already includes the selectedProviderId from context
-        navigate(`/state/emergency/claims/${row.original.id}`, {
-          state: {
-            claimNumber: row.original.claimNumber,
-            providerId: providerId, // This already has the selectedProviderId from context
-            claimId: row.original.id
-          }
-        });
-      }}
-    >
-      <Eye className="h-5 w-5" />
-    </button>
-  ),
-},
+
+    // In StateClaims component, update the action column to include the selectedProviderId
+    {
+      id: "action",
+      enableHiding: false,
+      cell: ({ row }) => (
+        <button
+          className="flex items-center justify-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+          onClick={(e) => {
+            e.stopPropagation();
+            // IMPORTANT: Use the providerId that's being used to fetch claims
+            // This providerId already includes the selectedProviderId from context
+            navigate(`/state/emergency/claims/${row.original.id}`, {
+              state: {
+                claimNumber: row.original.claimNumber,
+                providerId: providerId, // This already has the selectedProviderId from context
+                claimId: row.original.id,
+              },
+            });
+          }}
+        >
+          <Eye className="h-5 w-5" />
+        </button>
+      ),
+    },
   ];
 
   // Initialize table
@@ -394,9 +395,7 @@ export const StateClaims = () => {
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: (updater) => {
       const newSelection =
-        typeof updater === "function"
-          ? updater(rowSelection)
-          : updater;
+        typeof updater === "function" ? updater(rowSelection) : updater;
 
       const selectedKeys = Object.keys(newSelection);
 
@@ -615,7 +614,7 @@ export const StateClaims = () => {
               !providerId ? (
                 <div className="text-center py-10">
                   <div className="text-gray-500 mb-4">
-                    {currentUser.orgType === "PROVIDER" 
+                    {currentUser.orgType === "PROVIDER"
                       ? "Provider ID not found. Please contact support."
                       : "Please select a provider from the dropdown to view claims"}
                   </div>

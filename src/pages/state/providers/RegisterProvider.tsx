@@ -10,12 +10,14 @@ import { useAppDispatch, useAppSelector } from "../../../hooks/redux";
 import type { CreateProviderPayload } from "../../../types/stateProvider";
 import { createProvider } from "../../../services/thunks/stateProviderThunk";
 import { fetchStates } from "../../../services/thunks/fetchStatesThunk";
+import { accountTypeOptions } from "../../../utils/accountTypeUtils";
 
 interface FormErrors {
   [key: string]: string;
 }
 
 const RegisterProvider: React.FC = () => {
+  const { user } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
   const { loading, error } = useAppSelector((state) => state.createProvider);
   const { data: states, loading: statesLoading } = useAppSelector(
@@ -25,6 +27,16 @@ const RegisterProvider: React.FC = () => {
   useEffect(() => {
     dispatch(fetchStates());
   }, [dispatch]);
+
+  useEffect(() => {
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        hmoId: user.hmoId || "",
+        organizationId: user.organizationId || "",
+      }));
+    }
+  }, [user]);
 
   // Form state
   const [formData, setFormData] = useState<CreateProviderPayload>({
@@ -43,8 +55,8 @@ const RegisterProvider: React.FC = () => {
     licenseExpiryDate: "",
     geoLocation: "",
     stateId: "",
-    hmoId: "",
-    organizationId: "",
+    hmoId: user?.hmoId || "",
+    organizationId:"e53bf4dc-162f-41e0-8528-6a0553dad5e3",
     ownership: "",
     providerType: "General",
     contacts: [
@@ -150,9 +162,9 @@ const RegisterProvider: React.FC = () => {
       newErrors.licenseExpiryDate = "License expiry date is required";
     if (!formData.geoLocation) newErrors.geoLocation = "Location is required";
     if (!formData.stateId) newErrors.stateId = "State ID is required";
-    if (!formData.hmoId) newErrors.hmoId = "HMO ID is required";
-    if (!formData.organizationId)
-      newErrors.organizationId = "Organization ID is required";
+    // if (!formData.hmoId) newErrors.hmoId = "HMO ID is required";
+    // if (!formData.organizationId)
+    //   newErrors.organizationId = "Organization ID is required";
 
     // Validate contacts
     formData.contacts.forEach((contact, index) => {
@@ -330,7 +342,7 @@ const RegisterProvider: React.FC = () => {
               />
 
               <Input
-                type="tel"
+                type="number"
                 name="phoneNumber"
                 placeholder="Phone Number"
                 value={formData.phoneNumber}
@@ -363,7 +375,7 @@ const RegisterProvider: React.FC = () => {
               />
 
               <Input
-                type="text"
+                type="number"
                 name="accountNumber"
                 placeholder="Account Number"
                 value={formData.accountNumber}
@@ -384,19 +396,21 @@ const RegisterProvider: React.FC = () => {
                 required
               />
 
-              <Input
-                type="text"
+              <FormSelect
+                label="Account Type"
                 name="accountType"
-                placeholder="Account Type"
                 value={formData.accountType}
                 onChange={handleInputChange}
-                error={errors.accountType}
-                className="input"
-                required
-              />
+              >
+                {accountTypeOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </FormSelect>
 
               <Input
-                type="text"
+                type="number"
                 name="bankVeririfationNumber"
                 placeholder="Bank Verification Number"
                 value={formData.bankVeririfationNumber}
@@ -435,7 +449,7 @@ const RegisterProvider: React.FC = () => {
                 ))}
               </FormSelect>
 
-              <Input
+              {/* <Input
                 type="text"
                 name="hmoId"
                 placeholder="HMO ID"
@@ -443,9 +457,9 @@ const RegisterProvider: React.FC = () => {
                 onChange={handleInputChange}
                 error={errors.hmoId}
                 className="input"
-              />
+              /> */}
 
-              <Input
+              {/* <Input
                 type="text"
                 name="organizationId"
                 placeholder="Organization ID"
@@ -453,7 +467,7 @@ const RegisterProvider: React.FC = () => {
                 onChange={handleInputChange}
                 error={errors.organizationId}
                 className="input"
-              />
+              /> */}
             </div>
 
             {/* Contact Details */}
