@@ -20,7 +20,7 @@ import EditEmergencyBill from "../pages/providers/bill-center/EditEmergencyBill"
 import PatientEncounterDetails from "../pages/providers/claims-management/EncounterDetails";
 import RegisterProvider from "../pages/state/providers/RegisterProvider";
 import { StateClaims } from "../pages/state/vetting/StateClaimsVetting";
-import {ClaimsTracking} from "../pages/state/tracking/ClaimsTracking";
+import { ClaimsTracking } from "../pages/state/tracking/ClaimsTracking";
 import StateBillsVetting from "../pages/state/vetting/StateBillsVetting";
 // import StatePatientDetails from "../pages/state/vetting/StatePatientDetails";
 import StatePatientVetting from "../pages/state/vetting/StatePatientVetting";
@@ -30,6 +30,10 @@ export interface RouteHandle {
 }
 
 export const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <Navigate to="/login" replace />,
+  },
   {
     path: "/login",
     element: <Login />,
@@ -217,8 +221,8 @@ export const router = createBrowserRouter([
             handle: { title: "Emergency Claims Vetting" },
           },
           {
-            path:"emergency/claims/:id",
-         
+            path: "emergency/claims/:id",
+
             element: (
               <Layout>
                 <StateBillsVetting />
@@ -226,10 +230,10 @@ export const router = createBrowserRouter([
             ),
             handle: { title: "Claim Bills" },
           },
-          
+
           {
             path: "emergency-bills/:claimId/:patientId",
-         
+
             element: (
               <Layout>
                 <StatePatientVetting />
@@ -247,10 +251,6 @@ export const router = createBrowserRouter([
             handle: { title: "Claim Tracking" },
           },
         ],
-      },
-      {
-        path: "*",
-        element: <Navigate to="/login" replace />,
       },
     ],
   },

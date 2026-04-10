@@ -142,10 +142,10 @@ export const StateClaims = () => {
           dispatch(
             submitVettingClaim({
               claimId: claim.id,
+              providerId: providerId,
               emergencyClaimId: claim.id,
-              
-              remark: "Approved",
-              status: "New", // or "Approved"
+              remark: "This Claim has been vetted",
+              status: "Vetted",
             }),
           ).unwrap(),
         ),

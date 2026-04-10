@@ -20,13 +20,14 @@ import emergencyBillsReducer from "../slices/emergencyBillSlice";
 import claimsEmergencyBillsReducer from "../slices/claimEmergencyBillsSlice";
 import mdEmergencyVettingReducer from "../slices/mdRequestSlice";
 import emergencyBillPatientsReducer from "../slices/emergencyBillPatientsSlice";
-import patientEncounterReducer from "../slices/patientEncounterSlice"
+import patientEncounterReducer from "../slices/patientEncounterSlice";
 import createProviderReducer from "../slices/stateProviderSlice";
-import vettingClaimReducer from "../slices/vettingClaimSlice"
-import providerManagementReducer from "../slices/updateProviderStatusSlice"
-import vettingBillReducer from "../slices/vettingBillSlice"
-import StatesReducer from "../slices/statesSlice"
-import ClaimTrackingReducer from "../slices/claimTrackingSlice"
+import vettingClaimReducer from "../slices/vettingClaimSlice";
+import providerManagementReducer from "../slices/updateProviderStatusSlice";
+import vettingBillReducer from "../slices/vettingBillSlice";
+import StatesReducer from "../slices/statesSlice";
+import ClaimTrackingReducer from "../slices/claimTrackingSlice";
+import bankReducer from "../slices/bankSlice";
 
 export const store = configureStore({
   reducer: {
@@ -56,6 +57,7 @@ export const store = configureStore({
     providerManagement: providerManagementReducer,
     allStates: StatesReducer,
     claimTracking: ClaimTrackingReducer,
+    banks: bankReducer,
     [providerApiSlice.reducerPath]: providerApiSlice.reducer,
   },
   middleware: (getDefaultMiddleware) =>

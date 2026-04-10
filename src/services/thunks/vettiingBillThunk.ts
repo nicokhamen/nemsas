@@ -3,19 +3,21 @@ import type { SubmitVettingBillPayload, VettingBillResponse } from "../../types/
 import axiosInstance from "../../config/axiosInstance";
 
 export const disputeRejectBill = createAsyncThunk<
-  VettingBillResponse,              // return type
-  SubmitVettingBillPayload,         // argument type
+  VettingBillResponse,
+  SubmitVettingBillPayload,
   { rejectValue: string }
 >(
   "vettingClaim/submit",
   async (payload, { rejectWithValue }) => {
     try {
-      const { emergencyBillId, ...vettingData } = payload;
-      
-      // Use the billId in the URL
+      const { emergencyBillId, providerId, ...vettingData } = payload;
+
       const response = await axiosInstance.put(
-        `/emergency-bill/vetting/${emergencyBillId}`, 
-        vettingData
+        `/emergency-bill/vetting/${emergencyBillId}/${providerId}`,
+        {
+          emergencyBillId, 
+          ...vettingData,
+        }
       );
 
       return response.data;

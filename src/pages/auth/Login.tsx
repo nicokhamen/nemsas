@@ -28,33 +28,7 @@ const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   //  Determine redirect route BASED ON ROLE
-  // const getRedirectPath = () => {
-  //   if (!reduxUser) return "/login";
 
-  //   if (reduxUser.orgType === "PROVIDER") {
-  //     return "/emergency/bills";
-  //   }
-
-  //   return "/state/providers/all"; 
-  // };
-//   const getRedirectPath = () => {
-//   if (!reduxUser) return "/login";
-//   const orgType = normalizeOrgType(reduxUser.orgType);
-
-//   switch (orgType) {
-//     case "PROVIDER":
-//       return "/emergency/bills";
-
-//     case "SSHIA":
-//       return "/state/providers/all";
-
-//     case "ADMINISTRATIVE":
-//       return "/dashboard";
-
-//     default:
-//       return "/login";
-//   }
-// };
 const getRedirectPath = () => {
   if (!reduxUser) return "/login";
 
@@ -94,10 +68,9 @@ const getRedirectPath = () => {
     }
   };
 
-  if (isAuthenticated) {
-    return null;
-  }
-
+//   if (isAuthenticated && reduxUser) {
+//   return null;
+// }
   return (
     <>
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">

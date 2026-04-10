@@ -9,13 +9,15 @@ import { store } from './services/store/store.ts'
 
 import 'react-toastify/dist/ReactToastify.css'
 import CustomToast from './components/ui/CustomToast.tsx'
+import { AuthBootstrap } from './config/AuthBootstrap.tsx'
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
+ <StrictMode>
     <Provider store={store}>
-
-    <App />
-     <CustomToast />
+      <AuthBootstrap>
+        <App />
+      </AuthBootstrap>
+      <CustomToast />
     </Provider>
-  </StrictMode>,
+  </StrictMode>
 )

@@ -224,7 +224,7 @@ export const AllProviders = () => {
 
   // Route to create provider page
   const routeToCreateProvider = () => {
-    navigate("/providers/create"); // Update with your actual route
+    navigate("/state/provider/registration"); 
   };
 
   // Load providers

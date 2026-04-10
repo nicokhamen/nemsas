@@ -1,15 +1,14 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import type { AuthUser } from "../../types/auth";
 
-
 interface AuthState {
   token: string | null;
   user: AuthUser | null;
   isAuthenticated: boolean;
   loading: boolean;
-   error: string | null;
+  error: string | null;
   isPasswordVisible: boolean;
- rememberMe: boolean;
+  rememberMe: boolean;
 }
 
 const initialState: AuthState = {
@@ -20,7 +19,7 @@ const initialState: AuthState = {
   isAuthenticated: !!localStorage.getItem("token"),
   loading: false,
   error: null,
-   isPasswordVisible: false,
+  isPasswordVisible: false,
   rememberMe: false,
 };
 
@@ -34,7 +33,7 @@ const authSlice = createSlice({
     },
     loginSuccess: (
       state,
-      action: PayloadAction<{ token: string; user: AuthUser }>
+      action: PayloadAction<{ token: string; user: AuthUser }>,
     ) => {
       state.loading = false;
       state.token = action.payload.token;
@@ -60,15 +59,17 @@ const authSlice = createSlice({
       state.token = null;
       state.user = null;
       state.isAuthenticated = false;
-      // Remove token and user from localStorage
-      localStorage.removeItem("user");
+
       localStorage.removeItem("token");
-        // success('Logout successfully');
+      localStorage.removeItem("user"); //
+      localStorage.removeItem("providersCache");
+      localStorage.removeItem("selectedProviderId");
     },
+
     clearError: (state) => {
       state.error = null;
     },
-        togglePasswordVisibility: (state) => {
+    togglePasswordVisibility: (state) => {
       state.isPasswordVisible = !state.isPasswordVisible;
     },
     setRememberMe: (state, action: PayloadAction<boolean>) => {
@@ -77,7 +78,13 @@ const authSlice = createSlice({
   },
 });
 
-export const { loginStart, loginSuccess, loginFailure, logout, clearError,   togglePasswordVisibility,
-  setRememberMe } =
-  authSlice.actions;
+export const {
+  loginStart,
+  loginSuccess,
+  loginFailure,
+  logout,
+  clearError,
+  togglePasswordVisibility,
+  setRememberMe,
+} = authSlice.actions;
 export default authSlice.reducer;

@@ -33,6 +33,7 @@ export type VettingClaimResponse = {
 
 //  For Rejecting and Disputing Bills
 export type SubmitVettingBillPayload = {
+  providerId: string;
   emergencyBillId: string;
   remark?: string;
   status: "New" | "Rejected" | "Disputed";

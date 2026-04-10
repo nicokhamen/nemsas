@@ -170,38 +170,41 @@ const StatePatientVetting: React.FC = () => {
   // Reject and dispute bills
 
   const handleRejectBill = async () => {
-  if (!selectedEncounter?.id) return;
+    if (!selectedEncounter?.id) return;
 
-  try {
-    await dispatch(
-      disputeRejectBill({
-        emergencyBillId: selectedEncounter.id, 
-        remark: "Invalid bill",
-        status: "New",
-      })
-    ).unwrap();
+    try {
+      await dispatch(
+        disputeRejectBill({
+          emergencyBillId: selectedEncounter.id,
+          providerId: providerId,
+          remark: "Invalid bill",
+          status: "Rejected",
+        }),
+      ).unwrap();
 
-    toast.error("Bill rejected");
-    setIsRejectModalOpen(false);
-  } catch (error) {}
-};
-const handleDisputeBill = async (reason: string) => {
-  console.log(selectedEncounter);
-  if (!selectedEncounter?.id) return;
+      toast.error("Bill rejected");
+      setIsRejectModalOpen(false);
+    } catch (error) {}
+  };
 
-  try {
-    await dispatch(
-      disputeRejectBill({
-        emergencyBillId: selectedEncounter.id, 
-        remark: reason,
-        status: "New",
-      })
-    ).unwrap();
+  const handleDisputeBill = async (reason: string) => {
+    console.log(selectedEncounter);
+    if (!selectedEncounter?.id) return;
 
-    toast.info("Bill has been activated for dispute");
-    setIsDisputeModalOpen(false);
-  } catch (error) {}
-};
+    try {
+      await dispatch(
+        disputeRejectBill({
+          emergencyBillId: selectedEncounter.id,
+          providerId: providerId,
+          remark: reason,
+          status: "Disputed",
+        }),
+      ).unwrap();
+
+      toast.info("Bill has been activated for dispute");
+      setIsDisputeModalOpen(false);
+    } catch (error) {}
+  };
   // ------------------------------------------------------
 
   // Check if providerId is valid
@@ -309,83 +312,83 @@ const handleDisputeBill = async (reason: string) => {
                       <span className="text-gray-600 font-medium">
                         Patient Number
                       </span>
-                     </td>
+                    </td>
                     <td className="py-4">
                       <span className="text-gray-900 font-semibold">
                         {patientDetails.hospitalNumber || "N/A"}
                       </span>
-                     </td>
+                    </td>
                     <td className="py-4 pr-6 w-1/3">
                       <span className="text-gray-600 font-medium">Gender</span>
-                     </td>
+                    </td>
                     <td className="py-4">
                       <span className="text-gray-900 font-semibold">
                         {patientDetails.gender || "N/A"}
                       </span>
-                     </td>
+                    </td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="py-4 pr-6">
                       <span className="text-gray-600 font-medium">
                         Phone Number
                       </span>
-                     </td>
+                    </td>
                     <td className="py-4">
                       <span className="text-gray-900 font-semibold">
                         {patientDetails.phoneNumber || "N/A"}
                       </span>
-                     </td>
+                    </td>
                     <td className="py-4 pr-6">
                       <span className="text-gray-600 font-medium">
                         Insurance
                       </span>
-                     </td>
+                    </td>
                     <td className="py-4">
                       <span className="text-gray-900 font-semibold">
                         {patientDetails.insuranceStatus || "N/A"}
                       </span>
-                     </td>
+                    </td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="py-4 pr-6">
                       <span className="text-gray-600 font-medium">
                         Hospital Name
                       </span>
-                     </td>
+                    </td>
                     <td className="py-4">
                       <span className="text-gray-900 font-semibold">
                         {encounters?.[0]?.hospitalName || "N/A"}
                       </span>
-                     </td>
+                    </td>
                     <td className="py-4 pr-6">
                       <span className="text-gray-600 font-medium">Email</span>
-                     </td>
+                    </td>
                     <td className="py-4">
                       <span className="text-gray-900 font-semibold">
                         {patientDetails.email || "N/A"}
                       </span>
-                     </td>
+                    </td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="py-4 pr-6 w-1/4">
                       <span className="text-gray-600 font-medium">Address</span>
-                     </td>
+                    </td>
                     <td className="py-4 w-1/4">
                       <span className="text-gray-900 font-semibold">
                         {patientDetails.address || "N/A"}
                       </span>
-                     </td>
+                    </td>
                     <td className="py-4 pr-6 w-1/4">
                       <span className="text-gray-600 font-medium">
                         Patient Name
                       </span>
-                     </td>
+                    </td>
                     <td className="py-4 w-1/4">
                       <span className="text-gray-900 font-semibold">
                         {`${patientDetails.firstName || ""} ${patientDetails.lastName || ""}`.trim() ||
                           "N/A"}
                       </span>
-                     </td>
+                    </td>
                   </tr>
                 </tbody>
               </table>

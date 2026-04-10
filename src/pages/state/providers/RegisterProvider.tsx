@@ -1,6 +1,4 @@
 import React, { useEffect, useState } from "react";
-// import { useAppDispatch, useAppSelector } from "../../../hooks/reduxHooks";
-// import { createProvider, CreateProviderPayload, ProviderContact } from "../store/providersSlice";
 import Input from "../../../components/form/Input";
 import FormSelect from "../../../components/form/FormSelect";
 import { providerTypeOptions } from "../../../utils/providerType";
@@ -11,6 +9,10 @@ import type { CreateProviderPayload } from "../../../types/stateProvider";
 import { createProvider } from "../../../services/thunks/stateProviderThunk";
 import { fetchStates } from "../../../services/thunks/fetchStatesThunk";
 import { accountTypeOptions } from "../../../utils/accountTypeUtils";
+import ProviderConfirmModal from "../../../components/ui/ProviderConfirmModal";
+import { useNavigate } from "react-router-dom";
+import BankSelect from "../../../components/ui/BankSelect";
+import { enforceDigits } from "../../../utils/enforceDigits";
 
 interface FormErrors {
   [key: string]: string;
@@ -19,7 +21,9 @@ interface FormErrors {
 const RegisterProvider: React.FC = () => {
   const { user } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const { loading, error } = useAppSelector((state) => state.createProvider);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const { data: states, loading: statesLoading } = useAppSelector(
     (state) => state.allStates,
   );
@@ -33,7 +37,7 @@ const RegisterProvider: React.FC = () => {
       setFormData((prev) => ({
         ...prev,
         hmoId: user.hmoId || "",
-        organizationId: user.organizationId || "",
+        // organizationId: user.organizationId || "",
       }));
     }
   }, [user]);
@@ -56,7 +60,7 @@ const RegisterProvider: React.FC = () => {
     geoLocation: "",
     stateId: "",
     hmoId: user?.hmoId || "",
-    organizationId:"e53bf4dc-162f-41e0-8528-6a0553dad5e3",
+    organizationId: "e53bf4dc-162f-41e0-8528-6a0553dad5e3",
     ownership: "",
     providerType: "General",
     contacts: [
@@ -76,11 +80,24 @@ const RegisterProvider: React.FC = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
+
+    let newValue = value;
+
+    // 🔥 Apply rules
+    if (name === "phoneNumber" || name === "bankVeririfationNumber") {
+      newValue = enforceDigits(value, 11);
+    }
+
+    if (name === "accountNumber") {
+      newValue = enforceDigits(value, 10);
+    }
+
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: newValue,
     }));
-    // Clear error for this field
+
+    // Clear error
     if (errors[name]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -144,18 +161,29 @@ const RegisterProvider: React.FC = () => {
     if (!formData.email) newErrors.email = "Email is required";
     if (!formData.hospitalAdress)
       newErrors.hospitalAdress = "Hospital address is required";
-    if (!formData.phoneNumber)
-      newErrors.phoneNumber = "Phone number is required";
+    // Phone number (11 digits check)
+    if (formData.phoneNumber && formData.phoneNumber.length !== 11) {
+      newErrors.phoneNumber = "Phone number must be exactly 11 digits";
+    }
     if (!formData.bankName) newErrors.bankName = "Bank name is required";
-    if (!formData.accountNumber)
-      newErrors.accountNumber = "Account number is required";
+    // Account number (10 digits)
+    if (formData.accountNumber && formData.accountNumber.length !== 10) {
+      newErrors.accountNumber = "Account number must be exactly 10 digits";
+    }
     if (!formData.bankCode) newErrors.bankCode = "Bank code is required";
     if (!formData.accountName)
       newErrors.accountName = "Account name is required";
     if (!formData.accountType)
       newErrors.accountType = "Account type is required";
-    if (!formData.bankVeririfationNumber)
-      newErrors.bankVeririfationNumber = "BVN is required";
+
+    // BVN (11 digits)
+    if (
+      formData.bankVeririfationNumber &&
+      formData.bankVeririfationNumber.length !== 11
+    ) {
+      newErrors.bankVeririfationNumber = "BVN must be exactly 11 digits";
+    }
+
     if (!formData.stateLicenseNumber)
       newErrors.stateLicenseNumber = "License number is required";
     if (!formData.licenseExpiryDate)
@@ -196,9 +224,18 @@ const RegisterProvider: React.FC = () => {
       return;
     }
 
+    // Show confirmation modal instead of submitting immediately
+    setShowConfirmModal(true);
+  };
+
+  // Add this new function to handle the actual submission after confirmation
+  const handleConfirmSubmit = async () => {
+    setShowConfirmModal(false);
+
     try {
       const result = await dispatch(createProvider(formData)).unwrap();
       toast.success("Provider registered successfully!");
+      navigate("/state/providers/all");
 
       // Reset form on success
       setFormData({
@@ -218,7 +255,7 @@ const RegisterProvider: React.FC = () => {
         geoLocation: "",
         stateId: "",
         hmoId: "",
-        organizationId: "",
+        organizationId: "e53bf4dc-162f-41e0-8528-6a0553dad5e3",
         ownership: "",
         providerType: "General",
         contacts: [
@@ -342,7 +379,8 @@ const RegisterProvider: React.FC = () => {
               />
 
               <Input
-                type="number"
+                inputMode="numeric"
+                maxLength={11}
                 name="phoneNumber"
                 placeholder="Phone Number"
                 value={formData.phoneNumber}
@@ -352,7 +390,7 @@ const RegisterProvider: React.FC = () => {
                 required
               />
 
-              <Input
+              {/* <Input
                 type="text"
                 name="bankName"
                 placeholder="Bank Name"
@@ -361,8 +399,38 @@ const RegisterProvider: React.FC = () => {
                 error={errors.bankName}
                 className="input"
                 required
+              /> */}
+              <BankSelect
+                value={formData.bankName}
+                error={errors.bankName}
+                onChange={(bank) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    bankName: bank.name,
+                    bankCode: bank.code,
+                  }));
+
+                  // clear errors
+                  setErrors((prev) => {
+                    const newErrors = { ...prev };
+                    delete newErrors.bankName;
+                    delete newErrors.bankCode;
+                    return newErrors;
+                  });
+                }}
               />
 
+              <Input
+                type="text"
+                name="bankCode"
+                placeholder="Bank Code"
+                value={formData.bankCode}
+                onChange={handleInputChange}
+                error={errors.bankCode}
+                className="input"
+                required
+                readOnly
+              />
               <Input
                 type="text"
                 name="accountName"
@@ -375,23 +443,13 @@ const RegisterProvider: React.FC = () => {
               />
 
               <Input
-                type="number"
+                inputMode="numeric"
+                maxLength={10}
                 name="accountNumber"
                 placeholder="Account Number"
                 value={formData.accountNumber}
                 onChange={handleInputChange}
                 error={errors.accountNumber}
-                className="input"
-                required
-              />
-
-              <Input
-                type="text"
-                name="bankCode"
-                placeholder="Bank Code"
-                value={formData.bankCode}
-                onChange={handleInputChange}
-                error={errors.bankCode}
                 className="input"
                 required
               />
@@ -410,7 +468,8 @@ const RegisterProvider: React.FC = () => {
               </FormSelect>
 
               <Input
-                type="number"
+                inputMode="numeric"
+                maxLength={11}
                 name="bankVeririfationNumber"
                 placeholder="Bank Verification Number"
                 value={formData.bankVeririfationNumber}
@@ -513,7 +572,8 @@ const RegisterProvider: React.FC = () => {
                   />
 
                   <Input
-                    type="tel"
+                    inputMode="numeric"
+                    maxLength={11}
                     name="phoneNumber"
                     placeholder="Phone Number"
                     value={contact.phoneNumber}
@@ -567,6 +627,18 @@ const RegisterProvider: React.FC = () => {
           </div>
         </div>
       </form>
+      <ProviderConfirmModal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={handleConfirmSubmit}
+        providerData={{
+          hospitalName: formData.hospitalName,
+          email: formData.email,
+          providerType: formData.providerType,
+          phoneNumber: formData.phoneNumber,
+        }}
+        isLoading={loading}
+      />
     </>
   );
 };
