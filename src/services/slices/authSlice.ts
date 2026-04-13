@@ -1,5 +1,5 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import type { AuthUser } from "../../types/auth";
+import type { AuthUser } from "../../types/roles";
 
 interface AuthState {
   token: string | null;
@@ -44,8 +44,6 @@ const authSlice = createSlice({
       // Save to localStorage
       localStorage.setItem("token", action.payload.token);
       localStorage.setItem("user", JSON.stringify(action.payload.user));
-
-      // success('Authenticated successfully');
     },
     loginFailure: (state, action: PayloadAction<string>) => {
       state.loading = false;
@@ -53,7 +51,6 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.token = null;
       state.user = null;
-      //  error(action.payload);
     },
     logout: (state) => {
       state.token = null;
@@ -61,11 +58,10 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
 
       localStorage.removeItem("token");
-      localStorage.removeItem("user"); //
+      localStorage.removeItem("user");
       localStorage.removeItem("providersCache");
       localStorage.removeItem("selectedProviderId");
     },
-
     clearError: (state) => {
       state.error = null;
     },
