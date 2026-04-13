@@ -72,7 +72,7 @@ const StatePatientVetting: React.FC = () => {
    */
   const providerId = useMemo(() => {
     // For provider users, they can only see their own data
-    if (currentUser?.orgType === "PROVIDER") {
+    if (currentUser?.orgType === "Provider") {
       const providerIdValue = currentUser.providerId || "";
       return providerIdValue;
     }

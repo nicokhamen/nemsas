@@ -3,11 +3,11 @@ import type { Role } from "../types/roles";
 export const isRole = (value: string): value is Role => {
   const validRoles: Role[] = [
     "MD",
-    "ADMINISTRATOR", 
-    "INDIVIDUAL",
-    "CORPORATE",
+    "Administrator", 
+    "Individual",
+    "Corporate",
     "SSHIA",
-    "PROVIDER",
+    "Provider",
     "HMO",
     "NHIA"
   ];
@@ -15,36 +15,38 @@ export const isRole = (value: string): value is Role => {
 };
 
 export const normalizeRole = (role?: string): Role => {
-  if (!role) return "INDIVIDUAL";
+  if (!role) return "Individual";
   
   const r = role.toLowerCase();
   
   if (r.includes("md")) return "MD";
-  if (r.includes("provider")) return "PROVIDER";
-  if (r.includes("admin")) return "ADMINISTRATOR";
+  if (r.includes("provider")) return "Provider";
+  if (r.includes("admin")) return "Administrator";
   if (r.includes("sshia")) return "SSHIA";
   if (r.includes("nhia")) return "NHIA";
   if (r.includes("hmo")) return "HMO";
-  if (r.includes("corporate")) return "CORPORATE";
-  if (r.includes("individual")) return "INDIVIDUAL";
+  if (r.includes("corporate")) return "Corporate";
+  if (r.includes("individual")) return "Individual";
   
-  return "INDIVIDUAL";
+  return "Individual";
 };
 
 export const getDashboardPath = (role: Role): string => {
   switch (role) {
-    case "ADMINISTRATOR":
+    case "SuperAdmin":
+      return "/admin/dashboard";
+    case "Administrator":
       return "/admin/dashboard";
     case "SSHIA":
     case "NHIA":
       return "/state/dashboard";
-    case "PROVIDER":
+    case "Provider":
     case "MD":
       return "/provider/dashboard";
     case "HMO":
       return "/hmo/dashboard";
-    case "INDIVIDUAL":
-    case "CORPORATE":
+    case "Individual":
+    case "Corporate":
       return "/enrollee/dashboard";
     default:
       return "/dashboard";

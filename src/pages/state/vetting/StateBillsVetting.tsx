@@ -86,7 +86,7 @@ export const StateBillsVetting = () => {
    */
   const activeProviderId = useMemo(() => {
     // For PROVIDER users, they can only see their own data
-    if (currentUser?.orgType === "PROVIDER") {
+    if (currentUser?.orgType === "Provider") {
       const providerId = currentUser.providerId || "";
       console.log("[Provider Resolution] Provider user detected, using:", providerId);
       return providerId;
