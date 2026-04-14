@@ -5,11 +5,8 @@ import EmptyState from "../../components/ui/EmptyState";
 import Button from "../../components/ui/Button";
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 import { useAppDispatch } from "../../hooks/redux";
-import { clearError } from "../../services/slices/emergencyClaimSlice";
-import { fetchEmergencyClaims } from "../../services/thunks/emergencyClaimThunk";
-import { Search, Filter, Upload, Eye, FileText, Users, PieChart } from "lucide-react";
+import { useProviderContext } from "../../context/useProviderContext";
 
-// Table imports
 import {
   useReactTable,
   getCoreRowModel,
@@ -32,15 +29,22 @@ import {
 } from "../../components/table";
 import { Pagination } from "../../components/pagination";
 import { useNavigate } from "react-router-dom";
-// Files export
+import { fetchEmergencyClaims } from "../../services/thunks/emergencyClaimThunk";
+import { clearError } from "../../services/slices/emergencyClaimSlice";
+import { Share, FileText, Users, Eye } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-// Status color map
+import "../../utils/pdfFont";
+import FormHeader from "../../components/form/FormHeader";
+import VetConfirmModal from "../../components/ui/VetSuccessModal";
+import { submitVettingClaim } from "../../services/thunks/vettingClaimThunk";
+import { useCustomToast } from "../../hooks/useCustomToast";
+
+const ZERO_GUID = "00000000-0000-0000-0000-000000000000";
+
 const statusColor: Record<string, string> = {
-  "Awaiting Review": "#D97706",
-  "Pending PIU Review": "#D97706",
-  Pending: "#D97706",
+  Pending: "#ff9800",
   Processing: "#1976d2",
   Rejected: "#d32f2f",
   Approved: "#2e7d32",
@@ -48,71 +52,13 @@ const statusColor: Record<string, string> = {
   Paid: "#6b6f80",
 };
 
-// Circular Progress Component
-const CircularProgress = ({ 
-  percentage, 
-  pathColor = "#DC2626", 
-  textColor = "#374151", 
-  bgColor = "#FEE2E2" 
-}: { 
-  percentage: number; 
-  pathColor?: string; 
-  textColor?: string; 
-  bgColor?: string; 
-}) => {
-  const radius = 20;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (percentage / 100) * circumference;
-  const size = 56;
-  const center = size / 2;
-  
-  return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <svg 
-        width={size} 
-        height={size} 
-        viewBox={`0 0 ${size} ${size}`}
-        className="transform -rotate-90"
-      >
-        <circle
-          cx={center}
-          cy={center}
-          r={radius}
-          stroke={bgColor}
-          strokeWidth="5"
-          fill="none"
-        />
-        <circle
-          cx={center}
-          cy={center}
-          r={radius}
-          stroke={pathColor}
-          strokeWidth="5"
-          fill="none"
-          strokeDasharray={circumference}
-          strokeDashoffset={strokeDashoffset}
-          strokeLinecap="round"
-        />
-      </svg>
-      <span 
-        className="absolute inset-0 flex items-center justify-center text-sm font-semibold"
-        style={{ color: textColor }}
-      >
-        {percentage}%
-      </span>
-    </div>
-  );
-};
-
-// Format currency
 const formatCurrency = (amount: number): string => {
-  return `₦${amount.toLocaleString("en-NG", {
+  return `\u20a6${amount.toLocaleString("en-NG", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
 };
 
-// Format date
 const formatDate = (dateString: string): string => {
   return new Date(dateString).toLocaleDateString("en-NG", {
     year: "numeric",
@@ -122,132 +68,233 @@ const formatDate = (dateString: string): string => {
 };
 
 export const MDReview = () => {
-  const [providerId, setProviderId] = useState<string>("");
-  const [sshiaId, setSshiaId] = useState<string>("");
+  const { selectedProviderId } = useProviderContext();
 
-  // Filter states
   const [searchTerm, setSearchTerm] = useState("");
-
-  // Table states
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [approvalLoading, setApprovalLoading] = useState(false);
 
-  // Get emergency claims from Redux store
-  const { 
-    claims: emergencyClaims, 
-    loading, 
-    error,
-  } = useSelector((state: RootState) => state.emergencyClaim);
-  
+  const toast = useCustomToast();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  // Get user data from Redux auth state
+  const {
+    claims: emergencyClaims,
+    loading,
+    error,
+  } = useSelector((state: RootState) => state.emergencyClaim);
+
   const currentUser = useSelector((state: RootState) => state.auth.user);
 
-  // Initialize providerId and sshiaId from current user if available
-  useEffect(() => {
-    if (currentUser?.providerId) {
-      setProviderId(currentUser.providerId);
-      // If SSHIA ID is available from user, set it too
-      if (currentUser.hmoId) {
-        setSshiaId(currentUser.hmoId);
-      }
-    }
-  }, [currentUser]);
+  const providerId = useMemo(() => {
+    if (!currentUser) return "";
 
-  // Load claims when providerId and sshiaId are available
+    if (currentUser.orgType === "PROVIDER") {
+      return currentUser.providerId || "";
+    }
+
+    if (selectedProviderId && selectedProviderId !== ZERO_GUID) {
+      return selectedProviderId;
+    }
+
+    return currentUser.providerId || "";
+  }, [currentUser, selectedProviderId]);
+
+  const sshiaId = currentUser?.hmoId || "";
+
   const loadClaims = useCallback(() => {
     if (providerId && sshiaId) {
       dispatch(fetchEmergencyClaims({ providerId, SSHIAId: sshiaId }));
     }
   }, [dispatch, providerId, sshiaId]);
 
-  // Load claims when component mounts or IDs change
   useEffect(() => {
     loadClaims();
   }, [loadClaims]);
 
-  // Clear errors on unmount
   useEffect(() => {
     return () => {
       dispatch(clearError());
     };
   }, [dispatch]);
 
-  // Calculate processing delay
-  const calculateProcessingDelay = (createdDate: string): string => {
-    const created = new Date(createdDate);
-    const now = new Date();
-    const diffMs = now.getTime() - created.getTime();
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-    
-    if (diffDays > 0) {
-      return `${diffDays}days ${diffHours}hr ${diffMins}min`;
-    } else if (diffHours > 0) {
-      return `${diffHours}hr ${diffMins}min`;
-    }
-    return `${diffMins}min`;
-  };
-
-  // Map emergency claims to table format
   const tableClaims = useMemo(() => {
     return (emergencyClaims || []).map((claim, index) => ({
       id: claim.id,
       sn: index + 1,
-      claimId: `FCT/ETC/${String(index + 2).padStart(3, '0')}`,
       description: claim.description,
-      claimType: claim.claimType || "ETC",
+      claimType: claim.claimType,
+      claimNumber: claim.claimNumber,
       date: formatDate(claim.date),
       rawDate: claim.date,
       submittedAmount: claim.submittedAmount,
       formattedAmount: formatCurrency(claim.submittedAmount),
       vettedAmount: claim.vettedAmount,
       formattedVettedAmount: formatCurrency(claim.vettedAmount),
-      vettedDate: formatDate(claim.createdDate),
       status: claim.status,
-      processingDelay: calculateProcessingDelay(claim.createdDate),
+      createdDate: formatDate(claim.createdDate),
       emergencyBillCount: claim.emergencyBillIds?.length || 0,
     }));
   }, [emergencyClaims]);
 
-  const routeToEmergencyBillPage = () => {
-    navigate("/emergency/bill-capture");
+  const routeToClaimDetails = (claim: (typeof tableClaims)[0]) => {
+    navigate(
+      `/md-review/${claim.id}?ClaimNumber=${encodeURIComponent(
+        claim.claimNumber || "",
+      )}`,
+      {
+        state: {
+          claimNumber: claim.claimNumber,
+          description: claim.description,
+          providerId,
+          claimId: claim.id,
+        },
+      },
+    );
   };
 
-  // Handle navigation to MdReviewBills page when a claim is clicked
-  const handleClaimClick = (claimId: string) => {
-    navigate(`/md-review/${claimId}`);
+  const handleOpenApproveModal = () => {
+    if (selectedRows.length !== 1) {
+      toast.error("Please select exactly one claim to approve");
+      return;
+    }
+
+    setShowConfirmModal(true);
   };
 
-  // Define columns based on design
+  const handleApproveClaims = async () => {
+    const selectedData = selectedRows.map((row) => row.original);
+
+    setApprovalLoading(true);
+
+    try {
+      await Promise.all(
+        selectedData.map((claim) =>
+          dispatch(
+            submitVettingClaim({
+              claimId: claim.id,
+              providerId,
+              emergencyClaimId: claim.id,
+              remark: "This Claim has been vetted",
+              status: "Vetted",
+            }),
+          ).unwrap(),
+        ),
+      );
+
+      setShowConfirmModal(false);
+      setRowSelection({});
+      loadClaims();
+
+      toast.success("Claims approved successfully");
+    } catch (error) {
+      console.error("Approval failed:", error);
+      toast.error("Failed to approve claims");
+    } finally {
+      setApprovalLoading(false);
+    }
+  };
+
+  const exportTableToPDF = (
+    tableData: typeof tableClaims,
+    fileName = "emergencyclaims.pdf",
+  ) => {
+    const doc = new jsPDF({
+      orientation: "landscape",
+      unit: "mm",
+      format: "a4",
+    });
+
+    doc.setFont("Roboto", "normal");
+    doc.setFontSize(16);
+    doc.text("Emergency Claims Report", 14, 12);
+
+    doc.setFontSize(10);
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 18);
+
+    const rows = tableData.map((claim, i) => [
+      i + 1,
+      claim.description,
+      claim.claimNumber || "N/A",
+      claim.date,
+      claim.formattedAmount.replace("\u20a6", "NGN "),
+      claim.formattedVettedAmount.replace("\u20a6", "NGN "),
+      claim.status,
+      claim.createdDate,
+    ]);
+
+    autoTable(doc, {
+      startY: 24,
+      head: [
+        [
+          "S/N",
+          "Description",
+          "Claim Type",
+          "Claim Date",
+          "Submitted",
+          "Vetted",
+          "Status",
+          "Created",
+        ],
+      ],
+      body: rows,
+      styles: {
+        font: "Roboto",
+        fontSize: 9,
+        cellPadding: 3,
+        overflow: "linebreak",
+      },
+      columnStyles: {
+        0: { cellWidth: 15 },
+        1: { cellWidth: "auto" },
+        2: { cellWidth: 35 },
+        3: { cellWidth: 35 },
+        4: { cellWidth: 40 },
+        5: { cellWidth: 40 },
+        6: { cellWidth: 35 },
+        7: { cellWidth: 35 },
+      },
+      theme: "grid",
+      headStyles: {
+        fillColor: [220, 38, 38],
+        textColor: 255,
+      },
+    });
+
+    doc.save(fileName);
+  };
+
   const columns: ColumnDef<(typeof tableClaims)[0]>[] = [
     {
-      accessorKey: "sn",
-      header: "S/N",
-      size: 60,
-    },
-    {
-      accessorKey: "claimId",
-      header: "Claim ID",
-      enableSorting: true,
+      id: "select",
+      header: () => null,
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          checked={row.getIsSelected()}
+          onChange={() => {
+            setRowSelection({ [row.id]: true });
+          }}
+          onClick={(e) => e.stopPropagation()}
+        />
+      ),
+      size: 40,
     },
     {
       accessorKey: "description",
-      header: "Claim Description",
+      header: "Description",
       enableSorting: true,
     },
     {
       accessorKey: "claimType",
       header: "Claim Type",
       enableSorting: true,
-      size: 80,
     },
     {
       accessorKey: "date",
@@ -265,18 +312,13 @@ export const MDReview = () => {
       enableSorting: true,
     },
     {
-      accessorKey: "vettedDate",
-      header: "Vetted Date",
-      enableSorting: true,
-    },
-    {
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => (
         <span
           style={{
-            color: statusColor[row.original.status] || "#D97706",
-            fontWeight: 500,
+            color: statusColor[row.original.status] || "#000",
+            fontWeight: 600,
           }}
         >
           {row.original.status}
@@ -285,20 +327,15 @@ export const MDReview = () => {
       enableSorting: true,
     },
     {
-      accessorKey: "processingDelay",
-      header: "Processing Delay",
-      enableSorting: true,
-    },
-    {
       id: "action",
       header: "Action",
       enableHiding: false,
       cell: ({ row }) => (
         <button
-          className="flex items-center justify-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
+          className="flex items-center justify-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
           onClick={(e) => {
             e.stopPropagation();
-            navigate(`/md-review/${row.original.id}`);
+            routeToClaimDetails(row.original);
           }}
           title="View Details"
         >
@@ -308,7 +345,6 @@ export const MDReview = () => {
     },
   ];
 
-  // Initialize table
   const table = useReactTable({
     data: tableClaims,
     columns,
@@ -319,9 +355,22 @@ export const MDReview = () => {
       columnFilters,
       pagination: { pageIndex, pageSize },
     },
+    enableRowSelection: true,
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
+    onRowSelectionChange: (updater) => {
+      const newSelection =
+        typeof updater === "function" ? updater(rowSelection) : updater;
+
+      const selectedKeys = Object.keys(newSelection);
+
+      if (selectedKeys.length > 1) {
+        const lastSelectedKey = selectedKeys[selectedKeys.length - 1];
+        setRowSelection({ [lastSelectedKey]: true });
+      } else {
+        setRowSelection(newSelection);
+      }
+    },
     onColumnFiltersChange: setColumnFilters,
     onPaginationChange: (updater) => {
       if (typeof updater === "function") {
@@ -340,114 +389,27 @@ export const MDReview = () => {
   });
 
   const totalPages = table.getPageCount();
+  const selectedRows = table.getSelectedRowModel().rows;
+  const hasSelection = selectedRows.length > 0;
 
-   const exportTableToPDF = (
-  tableData: any[],
-  fileName = "emergencyclaims.pdf",
-) => {
-  const doc = new jsPDF({
-    orientation: "landscape",
-    unit: "mm",
-    format: "a4",
-  });
+  const totalAmount = useMemo(() => {
+    const total = tableClaims.reduce(
+      (sum, claim) => sum + (claim.submittedAmount || 0),
+      0,
+    );
+    if (total >= 1000000) return `${(total / 1000000).toFixed(2)}M`;
+    if (total >= 1000) return `${(total / 1000).toFixed(0)}K`;
+    return total.toString();
+  }, [tableClaims]);
 
-  // set unicode font
-  doc.setFont("Roboto", "normal");
+  const numOfClaims = tableClaims.length;
+  const totalVetted = tableClaims.filter(
+    (claim) => String(claim.status) === "Vetted",
+  ).length;
+  const totalDisputed = tableClaims.filter(
+    (claim) => String(claim.status) === "Rejected",
+  ).length;
 
-  doc.setFontSize(16);
-  doc.text("Emergency Claims Report", 14, 12);
-
-  doc.setFontSize(10);
-  doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 18);
-
-  // Map table data to match the columns displayed in the UI
-  const rows = tableData.map((claim, i) => [
-    i + 1, // S/N
-    claim.claimId || `FCT/ETC/${String(i + 2).padStart(3, '0')}`, // Claim ID
-    claim.description || "N/A", // Claim Description
-    claim.claimType || "ETC", // Claim Type
-    claim.date || "N/A", // Date
-    claim.formattedAmount?.replace("₦", "NGN ") || "NGN 0.00", // Submitted Amount
-    claim.formattedVettedAmount?.replace("₦", "NGN ") || "NGN 0.00", // Vetted Amount
-    claim.vettedDate || "N/A", // Vetted Date
-    claim.status || "N/A", // Status
-    claim.processingDelay || "0min", // Processing Delay
-  ]);
-
-  autoTable(doc, {
-    startY: 24,
-    head: [
-      [
-        "S/N",
-        "Claim ID",
-        "Description",
-        "Claim Type",
-        "Claim Date",
-        "Submitted Amount",
-        "Vetted Amount",
-        "Vetted Date",
-        "Status",
-        "Processing Delay",
-      ],
-    ],
-    body: rows,
-
-    styles: {
-      font: "Roboto",
-      fontSize: 8,
-      cellPadding: 2,
-      overflow: "linebreak",
-    },
-
-    columnStyles: {
-      0: { cellWidth: 10 }, // S/N
-      1: { cellWidth: 25 }, // Claim ID
-      2: { cellWidth: 35 }, // Description
-      3: { cellWidth: 20 }, // Claim Type
-      4: { cellWidth: 20 }, // Claim Date
-      5: { cellWidth: 25 }, // Submitted Amount
-      6: { cellWidth: 25 }, // Vetted Amount
-      7: { cellWidth: 20 }, // Vetted Date
-      8: { cellWidth: 20 }, // Status
-      9: { cellWidth: 20 }, // Processing Delay
-    },
-
-    theme: "grid",
-    headStyles: {
-      fillColor: [220, 38, 38],
-      textColor: 255,
-      fontSize: 8,
-      fontStyle: "bold",
-    },
-    
-    // Add alternating row colors for better readability
-    bodyStyles: {
-      textColor: 50,
-    },
-    alternateRowStyles: {
-      fillColor: [245, 245, 245],
-    },
-    
-    // Handle long text wrapping
-    // didDrawCell: (data) => {
-    
-    // },
-  });
-
-  
-
-  doc.save(fileName);
-};
-
-  // Handle form submission for provider/SSHIA IDs
-  const handleSubmitIds = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (providerId && sshiaId) {
-      loadClaims();
-    }
-  };
-
-  // Show loading while waiting for user data
   if (!currentUser) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -456,23 +418,10 @@ export const MDReview = () => {
     );
   }
 
-  // Calculate stats
-  const totalAmount = useMemo(() => {
-    const total = tableClaims.reduce((sum, claim) => sum + (claim.submittedAmount || 0), 0);
-    if (total >= 1000000) return `${(total / 1000000).toFixed(2)}M`;
-    if (total >= 1000) return `${(total / 1000).toFixed(0)}K`;
-    return total.toString();
-  }, [tableClaims]);
-
-  const numOfClaims = tableClaims.length;
-  const billAccuracy = 75; // This would be calculated from actual data
-
   return (
     <>
       <div className="p-6 space-y-6">
-        {/* Stat Cards */}
-        <div className="grid grid-cols-3 gap-6 bg-white rounded-lg shadow-sm p-6">
-          {/* Total Amount Card */}
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-6 bg-grey rounded-lg shadow-sm p-6">
           <div className="bg-[#E4F7F0] rounded-lg p-6 flex items-center gap-4">
             <div className="w-12 h-12 bg-[#C4F2E1] rounded-lg flex items-center justify-center">
               <FileText className="h-6 w-6 text-green-600" />
@@ -483,7 +432,6 @@ export const MDReview = () => {
             </div>
           </div>
 
-          {/* Total Patient Card */}
           <div className="bg-[#DB84000D] rounded-lg p-6 flex items-center gap-4">
             <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
               <Users className="h-6 w-6 text-amber-600" />
@@ -494,225 +442,255 @@ export const MDReview = () => {
             </div>
           </div>
 
-          {/* Bill Accuracy Card */}
-          <div className="bg-[#FDEDED] rounded-lg  p-6 flex items-center gap-4">
-            <CircularProgress percentage={billAccuracy} 
-            pathColor="#DC2626"
-            textColor="#DC2626"
-            bgColor="#FFFFFF"
-            />
+          <div className="bg-[#EDEDFD] rounded-lg p-6 flex items-center gap-4">
             <div>
-              <p className="text-3xl font-bold text-gray-900">{billAccuracy}%</p>
-              <p className="text-sm text-gray-500">Bill Accuracy</p>
+              <p className="text-3xl font-bold text-gray-900">{totalVetted}</p>
+              <p className="text-sm text-gray-500">Total Vetted</p>
+            </div>
+          </div>
+
+          <div className="bg-[#FDEDED] rounded-lg p-6 flex items-center gap-4">
+            <div>
+              <p className="text-3xl font-bold text-gray-900">{totalDisputed}</p>
+              <p className="text-sm text-gray-500">Total Disputed</p>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Main Content Card */}
-        <div className="bg-white rounded-lg shadow-sm">
-          {/* Search and Actions */}
-          <div className="p-6 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4 flex-1">
-              <input
-                type="text"
-                placeholder="Search claim description..."
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  table.setColumnFilters([
-                    {
-                      id: "description",
-                      value: e.target.value,
-                    },
-                  ]);
-                }}
-                className="flex-1 max-w-md px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none"
-              />
-              <button
-                onClick={() => loadClaims()}
-                className="flex w-50 items-center justify-center gap-2 min-w-[120px] px-6 py-2.5 bg-[#DC2626] text-white rounded-sm hover:bg-red-700 transition-colors font-medium"
-              >
-                <Search className="h-4 w-4" />
-                Search
-              </button>
-              <button
-                onClick={() => {/* Filter functionality */}}
-                className="flex w-50 items-center justify-center gap-2 min-w-[100px] px-4 py-2.5 border border-gray-300 text-gray-700 rounded-sm hover:bg-gray-50 transition-colors font-medium"
-              >
-                <Filter className="h-4 w-4" />
-                Filter
-              </button>
-            </div>
-            <button
-              onClick={() => exportTableToPDF(tableClaims)}
-              className="flex items-center gap-2 px-5 py-2.5 border border-gray-300 text-gray-700 rounded-sm hover:bg-gray-50 transition-colors font-medium"
-            >
-              <Upload className="h-4 w-4" />
-              Export
-            </button>
-          </div>
+      <div className="p-6">
+        <div className="bg-gray-100 overflow-x-auto h-full">
+          <div className="bg-white rounded-md flex flex-col mb-36 min-w-0">
+            <div className="p-6 space-y-4">
+              <h3 className="text-lg font-semibold text-gray-700">Filter By</h3>
 
-          {/* Provider/SSHIA ID Input Section */}
-          {(!providerId || !sshiaId) && (
-            <div className="px-6 pb-6 border-b">
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h3 className="font-medium text-gray-800 mb-3">
-                  Enter Provider and SSHIA IDs
-                </h3>
-                <form onSubmit={handleSubmitIds} className="flex flex-wrap gap-4 items-end">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-sm text-gray-600">Provider ID</label>
+              <div className="flex flex-wrap gap-4 justify-between items-end">
+                <div className="flex-1 max-w-4xl">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Date Range
+                  </label>
+                  <div className="flex items-center gap-3">
                     <input
-                      type="text"
-                      value={providerId}
-                      onChange={(e) => setProviderId(e.target.value)}
-                      className="p-2 border border-gray-300 rounded-md min-w-64"
-                      placeholder="Enter Provider ID"
-                      required
+                      type="date"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none"
+                      placeholder="Start date"
+                    />
+                    <span className="text-sm text-gray-500 font-medium">To</span>
+                    <input
+                      type="date"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none"
+                      placeholder="End date"
                     />
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-sm text-gray-600">SSHIA ID</label>
-                    <input
-                      type="text"
-                      value={sshiaId}
-                      onChange={(e) => setSshiaId(e.target.value)}
-                      className="p-2 border border-gray-300 rounded-md min-w-64"
-                      placeholder="Enter SSHIA ID"
-                      required
-                    />
-                  </div>
-                  <Button type="submit" disabled={!providerId || !sshiaId}>
-                    Load Claims
-                  </Button>
-                </form>
-                <p className="text-sm text-gray-500 mt-2">
-                  These IDs are required to fetch emergency claims from the API.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {error && (
-            <div className="px-6 py-3 bg-red-50 border-l-4 border-red-500">
-              <p className="text-red-700">{error}</p>
-              <Button 
-                onClick={loadClaims} 
-                className="mt-2 text-red-600 hover:text-red-700"
-                variant="outline"
-              >
-                Retry
-              </Button>
-            </div>
-          )}
-
-          {/* Content */}
-          <div>
-            {loading ? (
-              <div className="flex items-center justify-center h-64">
-                <LoadingSpinner />
-              </div>
-            ) : !providerId || !sshiaId ? (
-              <div className="text-center py-10">
-                <div className="text-gray-500 mb-4">
-                  Please enter Provider ID and SSHIA ID to view claims
-                </div>
-              </div>
-            ) : tableClaims.length === 0 ? (
-              <EmptyState
-                icon={<span className="text-2xl">📄</span>}
-                title="No emergency claims available"
-                description={error ? "Failed to load claims" : "No claims found for the provided IDs."}
-                action={
-                  <Button onClick={routeToEmergencyBillPage}>
-                    + Create New Emergency Bill
-                  </Button>
-                }
-              />
-            ) : (
-              <>
-                {/* Table */}
-                <div className="flex-1">
-                  <Table className="min-w-[1200px]">
-                    <TableHeader className="bg-[#E9F7F3]">
-                      {table.getHeaderGroups().map((headerGroup) => (
-                        <TableRow key={headerGroup.id} className="hover:bg-transparent">
-                          {headerGroup.headers.map((header) => (
-                            <TableHead key={header.id} className="text-gray-700 font-medium">
-                              {header.isPlaceholder
-                                ? null
-                                : flexRender(
-                                    header.column.columnDef.header,
-                                    header.getContext()
-                                  )}
-                            </TableHead>
-                          ))}
-                        </TableRow>
-                      ))}
-                    </TableHeader>
-                    <TableBody>
-                      {table.getRowModel().rows.length ? (
-                        table.getRowModel().rows.map((row) => (
-                          <TableRow
-                            key={row.id}
-                            className="cursor-pointer hover:bg-[#FFFFFF] transition-colors border-b border-gray-100"
-                            onClick={() => handleClaimClick(row.original.id)}
-                          >
-                            {row.getVisibleCells().map((cell) => (
-                              <TableCell key={cell.id} className="py-4">
-                                {flexRender(
-                                  cell.column.columnDef.cell,
-                                  cell.getContext()
-                                )}
-                              </TableCell>
-                            ))}
-                          </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell
-                            colSpan={columns.length}
-                            className="h-24 text-center"
-                          >
-                            <div className="flex flex-col items-center gap-4">
-                              <span className="font-medium">
-                                No claims found
-                              </span>
-                              <span className="text-gray-500">
-                                Try adjusting your search criteria
-                              </span>
-                              <Button onClick={routeToEmergencyBillPage}>
-                                + Create new claim
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
                 </div>
 
-                {/* Footer */}
-                <div className="px-6 py-4 flex items-center justify-between text-sm text-gray-500">
-                  {/* <span>
-                    Showing all {table.getFilteredRowModel().rows.length} settlements
-                  </span> */}
-                  <Pagination
-                    totalEntriesSize={table.getFilteredRowModel().rows.length}
-                    currentPage={pageIndex + 1}
-                    totalPages={totalPages}
-                    pageSize={pageSize}
-                    onPageChange={(p) => setPageIndex(p - 1)}
-                    onPageSizeChange={(size) => {
-                      setPageSize(size);
-                      setPageIndex(0);
+                <div className="flex gap-3 min-w-[240px]">
+                  <button
+                    onClick={() => {
+                      setSearchTerm("");
+                      table.setColumnFilters([]);
                     }}
-                  />
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-sm hover:bg-gray-50 transition-colors font-medium"
+                  >
+                    Reset
+                  </button>
+                  <button
+                    onClick={loadClaims}
+                    className="flex-1 px-4 py-2 bg-[#DC2626] text-white rounded-sm hover:bg-red-700 transition-colors font-medium"
+                  >
+                    Apply filter
+                  </button>
                 </div>
-              </>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-4 justify-between items-center p-6">
+              <div className="flex items-center gap-8">
+                <FormHeader>Claims</FormHeader>
+                <input
+                  type="text"
+                  placeholder="Search claims by description"
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    table.setColumnFilters([
+                      {
+                        id: "description",
+                        value: e.target.value,
+                      },
+                    ]);
+                  }}
+                  className="border rounded-lg hidden lg:block px-4 py-2 lg:w-96 lg:max-w-2xl focus:outline-none"
+                />
+              </div>
+              <div className="flex gap-4 items-center">
+                <button
+                  onClick={() => exportTableToPDF(tableClaims)}
+                  className="flex items-center gap-2 border border-gray-400 px-4 py-2 rounded-sm text-gray-700 hover:bg-gray-50 hover:border-gray-600 transition"
+                >
+                  <Share className="h-4 w-4" />
+                  Export
+                </button>
+              </div>
+            </div>
+
+            {error && (
+              <div className="px-6 py-3 bg-red-50 border-l-4 border-red-500">
+                <p className="text-red-700">{error}</p>
+                <Button
+                  onClick={loadClaims}
+                  className="mt-2 text-red-600 hover:text-red-700"
+                  variant="outline"
+                >
+                  Retry
+                </Button>
+              </div>
             )}
+
+            <div>
+              {loading ? (
+                <div className="flex items-center justify-center h-64">
+                  <LoadingSpinner />
+                </div>
+              ) : !providerId ? (
+                <div className="text-center py-10">
+                  <div className="text-gray-500 mb-4">
+                    {currentUser.orgType === "PROVIDER"
+                      ? "Provider ID not found. Please contact support."
+                      : "Please select a provider from the dropdown to view claims"}
+                  </div>
+                </div>
+              ) : tableClaims.length === 0 ? (
+                <EmptyState
+                  icon={<span className="text-2xl">PDF</span>}
+                  title="No emergency claims available"
+                  description={
+                    error
+                      ? "Failed to load claims"
+                      : "No claims found for the selected provider."
+                  }
+                />
+              ) : (
+                <>
+                  {hasSelection && (
+                    <div className="flex items-center justify-between px-6 py-3 bg-green-50 border-b">
+                      <p className="text-sm text-gray-700">
+                        {selectedRows.length} item(s) selected
+                      </p>
+
+                      <div className="flex gap-3">
+                        <Button
+                          color="green"
+                          onClick={handleOpenApproveModal}
+                          className="bg-green-600 text-white hover:bg-green-700"
+                        >
+                          Approve Claims
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          onClick={() => setRowSelection({})}
+                        >
+                          Clear Selection
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex-1 lg:px-0 lg:mt-4 min-w-0">
+                    <div className="w-full overflow-x-auto">
+                      <Table className="min-w-[1000px] w-full">
+                        <TableHeader className="border-y border-gray-200">
+                          {table.getHeaderGroups().map((headerGroup) => (
+                            <TableRow key={headerGroup.id}>
+                              {headerGroup.headers.map((header) => (
+                                <TableHead
+                                  key={header.id}
+                                  className="whitespace-nowrap"
+                                >
+                                  {header.isPlaceholder
+                                    ? null
+                                    : flexRender(
+                                        header.column.columnDef.header,
+                                        header.getContext(),
+                                      )}
+                                </TableHead>
+                              ))}
+                            </TableRow>
+                          ))}
+                        </TableHeader>
+                        <TableBody>
+                          {table.getRowModel().rows.length ? (
+                            table.getRowModel().rows.map((row) => (
+                              <TableRow
+                                key={row.id}
+                                className="cursor-pointer hover:bg-gray-50 transition-colors"
+                                onClick={() => routeToClaimDetails(row.original)}
+                              >
+                                {row.getVisibleCells().map((cell) => (
+                                  <TableCell
+                                    key={cell.id}
+                                    className="whitespace-nowrap"
+                                  >
+                                    {flexRender(
+                                      cell.column.columnDef.cell,
+                                      cell.getContext(),
+                                    )}
+                                  </TableCell>
+                                ))}
+                              </TableRow>
+                            ))
+                          ) : (
+                            <TableRow>
+                              <TableCell
+                                colSpan={columns.length}
+                                className="h-24 text-center"
+                              >
+                                <div className="flex flex-col items-center gap-4">
+                                  <span className="font-medium">
+                                    No claims found
+                                  </span>
+                                  <span className="text-gray-500">
+                                    Try adjusting your search criteria
+                                  </span>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+
+                  <div className="p-4 flex items-center justify-end">
+                    <Pagination
+                      totalEntriesSize={table.getFilteredRowModel().rows.length}
+                      currentPage={pageIndex + 1}
+                      totalPages={totalPages}
+                      pageSize={pageSize}
+                      onPageChange={(p) => setPageIndex(p - 1)}
+                      onPageSizeChange={(size) => {
+                        setPageSize(size);
+                        setPageIndex(0);
+                      }}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
+
+        <VetConfirmModal
+          isOpen={showConfirmModal}
+          onClose={() => setShowConfirmModal(false)}
+          onConfirm={handleApproveClaims}
+          title="Confirm Approval"
+          message="Are you sure you want to approve claim? This action cannot be undone."
+          confirmText="Yes, Approve"
+          cancelText="Cancel"
+          isLoading={approvalLoading}
+        />
       </div>
     </>
   );

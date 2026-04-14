@@ -6,14 +6,32 @@ import type { EncounterApiResponse } from '../../types/PatientsEncounter';
 interface FetchPatientEncounterParams {
   patientId: string;
   providerId: string;
+  emergencyClaimId?: string;
+  hospitalNumber?: string;
 }
 
 export const fetchPatientEncounter = createAsyncThunk(
   'patientEncounter/fetch',
-  async ({ patientId, providerId }: FetchPatientEncounterParams, { rejectWithValue }) => {
+  async (
+    {
+      patientId,
+      providerId,
+      emergencyClaimId,
+      hospitalNumber,
+    }: FetchPatientEncounterParams,
+    { rejectWithValue },
+  ) => {
     try {
       const response = await axiosInstance.get<EncounterApiResponse>(
-        `/emergency-bill?PatientId=${patientId}&ProviderId=${providerId}`
+        '/emergency-bill',
+        {
+          params: {
+            PatientId: patientId,
+            ProviderId: providerId,
+            EmergencyClaimId: emergencyClaimId,
+            HospitalNumber: hospitalNumber,
+          },
+        },
       );
       
       if (response.data.isSuccess) {

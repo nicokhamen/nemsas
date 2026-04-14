@@ -1,34 +1,51 @@
-// pages/EmergencyClaims/PatientEncounterDetails.tsx
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
-import {
-  ChevronDown,
-  ChevronUp,
-  CheckCircle2,
-  AlertCircle,
-  ArrowLeft,
-} from "lucide-react";
+import { CheckCircle2, ChevronDown, ChevronUp, XCircle } from "lucide-react";
 import { useAppDispatch } from "../../../hooks/redux";
 import type { RootState } from "../../../services/store/store";
 import { fetchPatientEncounter } from "../../../services/thunks/patientEncounterThunk";
 import { clearPatientEncounter } from "../../../services/slices/patientEncounterSlice";
+import { disputeRejectBill } from "../../../services/thunks/vettiingBillThunk";
 import { LoadingSpinner } from "../../../components/ui/LoadingSpinner";
 import Button from "../../../components/ui/Button";
 import type { EmergencyBill } from "../../../types/PatientsEncounter";
+import { useProviderContext } from "../../../context/useProviderContext";
+import { useCustomToast } from "../../../hooks/useCustomToast";
+import DisputeVettingModal from "../../../components/ui/DisputeVettingModal";
+import RejectVettingModal from "../../../components/ui/RejectVettingModal";
 
-import { useLocation } from "react-router-dom";
-import FormHeader from "../../../components/form/FormHeader";
+const ZERO_GUID = "00000000-0000-0000-0000-000000000000";
 
-// Format date
-const formatDate = (dateString: string): string => {
+const formatDate = (dateString?: string): string => {
+  if (!dateString) return "N/A";
+
   return new Date(dateString).toLocaleDateString("en-NG", {
     year: "numeric",
     month: "short",
     day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
   });
+};
+
+const formatCurrency = (amount?: number): string => {
+  if (amount === undefined || amount === null) return "-";
+
+  return `\u20a6${amount.toLocaleString("en-NG", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+};
+
+const getFileName = (path: string): string => path.split("/").pop() || path;
+
+const statusClass = (status?: string): string => {
+  const normalized = status?.toLowerCase();
+
+  if (normalized === "approved") return "bg-green-100 text-green-700";
+  if (normalized === "rejected") return "bg-red-100 text-red-700";
+  if (normalized === "disputed") return "bg-amber-100 text-amber-700";
+
+  return "bg-orange-50 text-orange-500";
 };
 
 const PatientEncounterDetails: React.FC = () => {
@@ -39,13 +56,37 @@ const PatientEncounterDetails: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const location = useLocation();
+  const { selectedProviderId } = useProviderContext();
+  const toast = useCustomToast();
+
   const claimNumber = location.state?.claimNumber;
+  const billId = location.state?.billId;
+  const hospitalNumberFromLocation = location.state?.hospitalNumber;
+  const descriptionFromLocation = location.state?.description;
+  const providerIdFromLocation = location.state?.providerId;
+  const fromMdReview = location.state?.fromMdReview;
+  const isMdReviewDetail =
+    Boolean(fromMdReview) ||
+    location.pathname.includes("/md-review/") ||
+    location.pathname.includes("/md/review/");
 
-  // Get providerId from auth context
   const currentUser = useSelector((state: RootState) => state.auth.user);
-  const providerId = currentUser?.providerId || "";
+  const providerId = useMemo(() => {
+    if (currentUser?.orgType === "PROVIDER") {
+      return currentUser.providerId || "";
+    }
 
-  // Get patient encounter data from Redux store
+    if (selectedProviderId && selectedProviderId !== ZERO_GUID) {
+      return selectedProviderId;
+    }
+
+    if (providerIdFromLocation && providerIdFromLocation !== ZERO_GUID) {
+      return providerIdFromLocation;
+    }
+
+    return currentUser?.providerId || "";
+  }, [currentUser, selectedProviderId, providerIdFromLocation]);
+
   const {
     data: encounters,
     loading,
@@ -53,82 +94,216 @@ const PatientEncounterDetails: React.FC = () => {
   } = useSelector((state: RootState) => state.patientEncounter);
 
   const [openIndex, setOpenIndex] = useState<number | null>(0);
+  const [selectedActionBillId, setSelectedActionBillId] = useState("");
+  const [isDisputeModalOpen, setIsDisputeModalOpen] = useState(false);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [isActionLoading, setIsActionLoading] = useState(false);
 
-  // Load patient encounters when component mounts
   useEffect(() => {
     if (patientId && providerId) {
-      dispatch(fetchPatientEncounter({ patientId, providerId }));
+      dispatch(
+        fetchPatientEncounter({
+          patientId,
+          providerId,
+          emergencyClaimId: claimId,
+          hospitalNumber: hospitalNumberFromLocation,
+        }),
+      );
     }
 
-    // Cleanup on unmount
     return () => {
       dispatch(clearPatientEncounter());
     };
-  }, [dispatch, patientId, providerId]);
+  }, [dispatch, patientId, providerId, claimId, hospitalNumberFromLocation]);
 
-  // Get the patient details from the first encounter (if available)
-  const patientDetails =
-    encounters && encounters.length > 0 ? encounters[0].patient : null;
+  useEffect(() => {
+    if (!billId || !encounters?.length) return;
 
-  // Handle back navigation
+    const selectedIndex = encounters.findIndex(
+      (encounter) => encounter.id === billId,
+    );
+
+    if (selectedIndex >= 0) {
+      setOpenIndex(selectedIndex);
+    }
+  }, [billId, encounters]);
+
+  const patientDetails = encounters?.[0]?.patient || null;
+
+  const selectedEncounter = useMemo(() => {
+    if (!encounters?.length) return null;
+
+    if (openIndex !== null && encounters[openIndex]) {
+      return encounters[openIndex];
+    }
+
+    return encounters[0];
+  }, [encounters, openIndex]);
+
+  const diagnosis = selectedEncounter?.diagnoses?.[0];
+
   const handleBack = () => {
+    if (fromMdReview && claimId) {
+      navigate(`/md-review/${claimId}`, {
+        state: {
+          claimNumber,
+          description: descriptionFromLocation,
+          claimId,
+          providerId,
+          fromMdReview: true,
+        },
+      });
+      return;
+    }
+
     navigate(-1);
   };
 
-  // Handle refresh
   const handleRefresh = () => {
     if (patientId && providerId) {
-      dispatch(fetchPatientEncounter({ patientId, providerId }));
+      dispatch(
+        fetchPatientEncounter({
+          patientId,
+          providerId,
+          emergencyClaimId: claimId,
+          hospitalNumber: hospitalNumberFromLocation,
+        }),
+      );
+    }
+  };
+
+  const requestBillDispute = (emergencyBillId?: string) => {
+    if (!emergencyBillId) {
+      toast.error("Unable to identify the bill for dispute.");
+      return;
+    }
+
+    setSelectedActionBillId(emergencyBillId);
+    setIsDisputeModalOpen(true);
+  };
+
+  const requestBillReject = (emergencyBillId?: string) => {
+    if (!emergencyBillId) {
+      toast.error("Unable to identify the bill for rejection.");
+      return;
+    }
+
+    setSelectedActionBillId(emergencyBillId);
+    setIsRejectModalOpen(true);
+  };
+
+  const resetBillAction = () => {
+    if (isActionLoading) return;
+
+    setSelectedActionBillId("");
+    setIsDisputeModalOpen(false);
+    setIsRejectModalOpen(false);
+  };
+
+  const handleRejectBill = async () => {
+    if (!selectedActionBillId || !providerId) {
+      toast.error("Unable to identify the bill for this action.");
+      return;
+    }
+
+    try {
+      setIsActionLoading(true);
+
+      await dispatch(
+        disputeRejectBill({
+          emergencyBillId: selectedActionBillId,
+          providerId,
+          remark: "Invalid bill",
+          status: "Rejected",
+        }),
+      ).unwrap();
+
+      toast.error("Bill rejected");
+      setSelectedActionBillId("");
+      setIsRejectModalOpen(false);
+      handleRefresh();
+    } catch (error) {
+      toast.error(
+        typeof error === "string" ? error : "Unable to reject bill",
+      );
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleDisputeBill = async (reason: string) => {
+    if (!selectedActionBillId || !providerId) {
+      toast.error("Unable to identify the bill for this action.");
+      return;
+    }
+
+    try {
+      setIsActionLoading(true);
+
+      await dispatch(
+        disputeRejectBill({
+          emergencyBillId: selectedActionBillId,
+          providerId,
+          remark: reason,
+          status: "Disputed",
+        }),
+      ).unwrap();
+
+      toast.info("Bill has been activated for dispute");
+      setSelectedActionBillId("");
+      setIsDisputeModalOpen(false);
+      handleRefresh();
+    } catch (error) {
+      toast.error(
+        typeof error === "string" ? error : "Unable to dispute bill",
+      );
+    } finally {
+      setIsActionLoading(false);
     }
   };
 
   if (!currentUser) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex h-64 items-center justify-center">
         <LoadingSpinner />
       </div>
     );
   }
 
   return (
-    <>
-      <div className="p-6 space-y-8 bg-gray-50 min-h-screen">
-        {/* Header with back button */}
-        <div className="mb-4">
-          {/* Top row */}
-          <div className="flex items-center gap-4">
-            <Button
-              variant="outline"
-              onClick={handleBack}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" /> Back
-            </Button>
-
-            <h2 className="text-lg font-semibold text-gray-500">
-              Bill - Details
-            </h2>
-          </div>
-
-          {/* Bottom row */}
-          {claimNumber && (
-            <div className="mt-2 flex items-center gap-2">
-              <span className="text-sm font-medium text-red-700">
-                Claim ID :
-              </span>
-
-              <h2 className="text-sm text-gray-600 bg-gray-200 px-3 py-1 rounded">
-                {claimNumber}
-              </h2>
-            </div>
-          )}
+    <div className="min-h-screen bg-gray-100 p-6">
+      <div className="mx-auto max-w-6xl bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-gray-300 px-8 py-4">
+          <h1 className="text-2xl font-semibold text-gray-600">Bill Details</h1>
+          <button
+            onClick={handleBack}
+            className="rounded-full text-[#0B4972] transition hover:bg-gray-100"
+            title="Close"
+          >
+            <XCircle className="h-9 w-9" />
+          </button>
         </div>
 
-        <hr className="pb-1 pt-2" />
+        <div className="px-8 py-6">
+          <div className="flex flex-wrap items-center gap-4">
+            <h2 className="text-3xl font-bold text-gray-900">
+              {claimNumber || claimId || "N/A"}
+            </h2>
+            <span
+              className={`rounded-full px-5 py-1 text-sm font-medium ${statusClass(
+                selectedEncounter?.status,
+              )}`}
+            >
+              {selectedEncounter?.status || "Awaiting Review"}
+            </span>
+          </div>
+          <p className="mt-2 text-base text-gray-800">
+            {formatDate(selectedEncounter?.encounterStartDateTime)}
+          </p>
+        </div>
 
-        {/* Error state */}
         {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+          <div className="mx-8 mb-6 border-l-4 border-red-500 bg-red-50 p-4">
             <div className="flex items-center justify-between">
               <p className="text-red-700">{error}</p>
               <Button onClick={handleRefresh} variant="outline" size="sm">
@@ -138,270 +313,347 @@ const PatientEncounterDetails: React.FC = () => {
           </div>
         )}
 
-        {/* Loading state */}
         {loading && (
-          <div className="flex items-center justify-center h-64">
+          <div className="flex h-64 items-center justify-center">
             <LoadingSpinner />
           </div>
         )}
 
-        {/* No data state */}
-        {!loading && !error && (!encounters || encounters.length === 0) && (
-          <div className="text-center py-12 bg-white rounded-lg">
-            <p className="text-gray-500 mb-4">
+        {!loading && !error && !encounters?.length && (
+          <div className="mx-8 mb-8 bg-gray-50 py-12 text-center">
+            <p className="mb-4 text-gray-500">
               No encounter data available for this patient.
             </p>
             <Button onClick={handleBack}>Back to Claims</Button>
           </div>
         )}
 
-        {/* Patient Details Section */}
-        {patientDetails && (
-          <div className="bg-gray-100 p-6 rounded-md">
-            <h2 className="text-red-600 font-semibold text-lg mb-4">
-              Patient Details
-            </h2>
-            <hr className="pb-4 pt-2" />
-
-            <div className="grid grid-cols-2 gap-x-20 gap-y-6 text-sm">
-              {/* Left Column */}
-              <div className="space-y-6">
-                <DetailRow
-                  label="Patient Number"
-                  value={patientDetails.hospitalNumber || "N/A"}
-                />
-                <DetailRow
-                  label="Phone number"
-                  value={patientDetails.phoneNumber || "N/A"}
-                />
-                <DetailRow
-                  label="Hospital Name"
-                  value={encounters?.[0]?.hospitalName || "N/A"}
-                />
-                <DetailRow
-                  label="Address"
-                  value={patientDetails.address || "N/A"}
-                />
-              </div>
-
-              {/* Right Column */}
-              <div className="space-y-6">
-                <DetailRow
-                  label="Gender"
-                  value={patientDetails.gender || "N/A"}
-                />
-                <DetailRow
-                  label="Insurance"
-                  value={patientDetails.insuranceStatus || "N/A"}
-                />
-                <DetailRow
-                  label="Email"
-                  value={patientDetails.email || "N/A"}
-                />
-                <DetailRow
-                  label="Patient Name"
-                  value={
-                    `${patientDetails.firstName || ""} ${patientDetails.lastName || ""}`.trim() ||
-                    "N/A"
-                  }
-                />
-              </div>
+        {!loading && patientDetails && selectedEncounter && (
+          <div className="space-y-8 px-8 pb-10">
+            <SectionTitle>Patient Details</SectionTitle>
+            <div className="grid gap-x-24 gap-y-7 md:grid-cols-2">
+              <DetailRow
+                label="Patient Number"
+                value={patientDetails.hospitalNumber || "N/A"}
+              />
+              <DetailRow label="Gender" value={patientDetails.gender || "N/A"} />
+              <DetailRow
+                label="Phone number"
+                value={patientDetails.phoneNumber || "N/A"}
+              />
+              <DetailRow
+                label="Insurance"
+                value={patientDetails.insuranceStatus || "N/A"}
+              />
+              <DetailRow
+                label="Hospital Name"
+                value={selectedEncounter.hospitalName || "N/A"}
+              />
+              <DetailRow label="Email" value={patientDetails.email || "N/A"} />
+              <DetailRow
+                label="Address"
+                value={patientDetails.address || "N/A"}
+              />
+              <DetailRow
+                label="Patient Name"
+                value={
+                  `${patientDetails.firstName || ""} ${patientDetails.lastName || ""}`.trim() ||
+                  "N/A"
+                }
+              />
             </div>
-          </div>
-        )}
 
-        {/* Encounters Section */}
-        {encounters && encounters.length > 0 && (
-          <div>
-            <h2 className="text-red-600 font-semibold mb-4">Encounters</h2>
-
+            <SectionTitle>Encounters</SectionTitle>
             <div className="space-y-4">
-              {encounters.map((encounter: EmergencyBill, index: number) => {
+              {encounters?.map((encounter: EmergencyBill, index: number) => {
                 const isOpen = openIndex === index;
 
                 return (
                   <div
                     key={encounter.id || index}
-                    className="bg-white rounded-lg shadow-sm border"
+                    className="overflow-hidden rounded-md border border-gray-200 bg-white"
                   >
-                    {/* Header */}
                     <div
                       onClick={() => setOpenIndex(isOpen ? null : index)}
-                      className="flex justify-between items-center p-4 cursor-pointer hover:bg-gray-50"
+                      className="flex cursor-pointer items-center justify-between px-8 py-6 hover:bg-gray-50"
                     >
                       <div className="flex items-center gap-3">
-                        {encounter.status?.toLowerCase() === "closed" ? (
-                          <CheckCircle2 className="text-green-500 w-5 h-5" />
-                        ) : (
-                          <AlertCircle className="text-orange-500 w-5 h-5" />
-                        )}
-
-                        <span className="font-medium text-gray-700">
-                          {encounter.encounterId || `Encounter ${index + 1}`}
+                        <CheckCircle2 className="h-5 w-5 text-green-500" />
+                        <span className="font-medium text-gray-900">
+                          EncounterID {encounter.encounterId || `00${index + 1}`}
                         </span>
                       </div>
+                      <div className="flex items-center gap-3">
+                        {isMdReviewDetail && (
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                requestBillDispute(encounter.id);
+                              }}
+                              className="rounded border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-600 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+                              disabled={isActionLoading}
+                            >
+                              Dispute
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                requestBillReject(encounter.id);
+                              }}
+                              className="rounded border border-red-400 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                              disabled={isActionLoading}
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        )}
 
-                      {isOpen ? (
-                        <ChevronUp className="w-5 h-5 text-gray-500" />
-                      ) : (
-                        <ChevronDown className="w-5 h-5 text-gray-500" />
-                      )}
+                        {isOpen ? (
+                          <ChevronUp className="h-5 w-5 text-gray-900" />
+                        ) : (
+                          <ChevronDown className="h-5 w-5 text-gray-900" />
+                        )}
+                      </div>
                     </div>
 
-                    {/* Content */}
                     {isOpen && (
-                      <div className="border-t px-6 py-4 text-sm text-gray-600">
-                        {/* Encounter Details */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                          <div>
-                            <p>
-                              <span className="font-medium">
-                                Encounter Date:
-                              </span>{" "}
-                              {formatDate(encounter.encounterStartDateTime)}
-                            </p>
-                            <p>
-                              <span className="font-medium">Department:</span>{" "}
-                              {encounter.department || "N/A"}
-                            </p>
-                            <p>
-                              <span className="font-medium">Ward/Unit:</span>{" "}
-                              {encounter.serviceCategories?.join(", ") || "N/A"}
-                            </p>
-                          </div>
-
-                          <div>
-                            <p>
-                              <span className="font-medium">Service Type:</span>{" "}
-                              {encounter.serviceType || "N/A"}
-                            </p>
-                            <p>
-                              <span className="font-medium">
-                                Discharge Status:
-                              </span>{" "}
-                              {encounter.dischargeStatus || "N/A"}
-                            </p>
-                            <p>
-                              <span className="font-medium">
-                                Attending Physician:
-                              </span>{" "}
-                              {encounter.attendingPhysician || "N/A"}
-                            </p>
-                          </div>
+                      <div className="border-t border-gray-200 px-8 py-7">
+                        <div className="grid grid-cols-1 gap-x-16 gap-y-3 md:grid-cols-2">
+                          <DetailRow
+                            label="Encounter Date:"
+                            value={formatDate(encounter.encounterStartDateTime)}
+                          />
+                          <DetailRow
+                            label="Emergency Type:"
+                            value={encounter.serviceType || "N/A"}
+                          />
+                          <DetailRow
+                            label="Ward/Unit:"
+                            value={
+                              encounter.serviceCategories?.join(", ") ||
+                              encounter.department ||
+                              "N/A"
+                            }
+                          />
+                          <DetailRow
+                            label="Comment:"
+                            value={encounter.attendingPhysician || "..."}
+                          />
+                          <span
+                            className={`mt-4 w-fit rounded-full px-4 py-1 text-sm font-medium ${statusClass(
+                              encounter.status,
+                            )}`}
+                          >
+                            {encounter.status || "Awaiting Review"}
+                          </span>
                         </div>
-
-                        {/* Diagnoses Section */}
-                        {encounter.diagnoses &&
-                          encounter.diagnoses.length > 0 && (
-                            <div className="mt-4">
-                              <h3 className="font-medium text-gray-700 mb-2">
-                                Diagnoses
-                              </h3>
-                              <div className="space-y-2">
-                                {encounter.diagnoses.map((diagnosis, idx) => (
-                                  <div
-                                    key={diagnosis.id || idx}
-                                    className="bg-gray-50 p-3 rounded"
-                                  >
-                                    <p>
-                                      <span className="font-medium">
-                                        Diagnosis:
-                                      </span>{" "}
-                                      {diagnosis.diagnosis}
-                                    </p>
-                                    <p>
-                                      <span className="font-medium">Code:</span>{" "}
-                                      {diagnosis.code}
-                                    </p>
-                                    {diagnosis.note && (
-                                      <p>
-                                        <span className="font-medium">
-                                          Note:
-                                        </span>{" "}
-                                        {diagnosis.note}
-                                      </p>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                        {/* Products/Services Section */}
-                        {encounter.productServices &&
-                          encounter.productServices.length > 0 && (
-                            <div className="mt-4">
-                              <h3 className="font-medium text-gray-700 mb-2">
-                                Services/Products
-                              </h3>
-                              <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                  <thead className="bg-gray-50">
-                                    <tr>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Item
-                                      </th>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Quantity
-                                      </th>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Price
-                                      </th>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Net Amount
-                                      </th>
-                                    </tr>
-                                  </thead>
-                                  <tbody className="bg-white divide-y divide-gray-200">
-                                    {encounter.productServices.map(
-                                      (item, idx) => (
-                                        <tr key={item.id || idx}>
-                                          <td className="px-4 py-2 text-sm">
-                                            {item.name}
-                                          </td>
-                                          <td className="px-4 py-2 text-sm">
-                                            {item.quantity}
-                                          </td>
-                                          <td className="px-4 py-2 text-sm">
-                                            ₦{item.price?.toLocaleString()}
-                                          </td>
-                                          <td className="px-4 py-2 text-sm font-medium">
-                                            ₦{item.netAmount?.toLocaleString()}
-                                          </td>
-                                        </tr>
-                                      ),
-                                    )}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </div>
-                          )}
                       </div>
                     )}
                   </div>
                 );
               })}
             </div>
+
+            <SectionTitle>Diagnosis</SectionTitle>
+            <div className="grid gap-x-24 gap-y-7 md:grid-cols-2">
+              <DetailRow
+                label="Diagnosis"
+                value={diagnosis?.diagnosis || "N/A"}
+              />
+              <DetailRow label="Type" value={diagnosis?.type || "N/A"} />
+              <DetailRow label="Code" value={diagnosis?.code || "N/A"} />
+              <DetailRow label="Note" value={diagnosis?.note || "No comment..."} />
+            </div>
+
+            <SectionTitle>Emergency History</SectionTitle>
+            <div className="grid gap-x-24 gap-y-5 md:grid-cols-2">
+              {[
+                "Road traffic accidents",
+                "Obstetric & gynecologic emergencies",
+                "Trauma and Injuries",
+                "Pediatric emergency",
+                "Medical emergencies",
+                "Assault Cases",
+                "Other",
+              ].map((label) => (
+                <CheckboxLine
+                  key={label}
+                  label={label}
+                  checked={
+                    selectedEncounter.serviceCategories?.some((category) =>
+                      category.toLowerCase().includes(label.toLowerCase()),
+                    ) ||
+                    selectedEncounter.serviceType
+                      ?.toLowerCase()
+                      .includes(label.toLowerCase()) ||
+                    false
+                  }
+                />
+              ))}
+            </div>
+
+            <SectionTitle>Uploaded Documents</SectionTitle>
+            {selectedEncounter.supportingDocuments?.length ? (
+              <div className="grid gap-x-20 md:grid-cols-2">
+                {selectedEncounter.supportingDocuments.map((documentUrl, idx) => (
+                  <a
+                    key={`${documentUrl}-${idx}`}
+                    href={documentUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="border-b border-gray-100 py-4 text-gray-600 hover:text-red-600"
+                  >
+                    {getFileName(documentUrl)}
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <p className="py-4 text-gray-500">No uploaded documents available.</p>
+            )}
+
+            <SectionTitle>Product/Service</SectionTitle>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead className="bg-[#F1FAF7] text-gray-500">
+                  <tr>
+                    <th className="px-6 py-4 font-semibold">Name</th>
+                    <th className="px-6 py-4 font-semibold">
+                      Service Description
+                    </th>
+                    <th className="px-6 py-4 font-semibold">Qty</th>
+                    <th className="px-6 py-4 font-semibold">Unit Price</th>
+                    <th className="px-6 py-4 font-semibold">NHIS Price</th>
+                    <th className="px-6 py-4 font-semibold">NHIS (%)</th>
+                    <th className="px-6 py-4 font-semibold">Total</th>
+                    {isMdReviewDetail && (
+                      <th className="px-6 py-4 font-semibold">Action</th>
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedEncounter.productServices?.length ? (
+                    selectedEncounter.productServices.map((item, idx) => (
+                      <tr key={item.id || idx} className="border-b border-gray-100">
+                        <td className="px-6 py-4 text-gray-600">
+                          <CheckboxLine label={item.name || "N/A"} />
+                        </td>
+                        <td className="px-6 py-4 text-gray-600">
+                          {item.description || item.code || "N/A"}
+                        </td>
+                        <td className="px-6 py-4 text-gray-600">
+                          {item.quantity || 0}
+                        </td>
+                        <td className="px-6 py-4 text-gray-600">
+                          {formatCurrency(item.price)}
+                        </td>
+                        <td className="px-6 py-4 text-gray-600">
+                          {formatCurrency(item.nhisPrice)}
+                        </td>
+                        <td className="px-6 py-4 text-gray-600">
+                          {item.nhisPercentage ?? "-"}
+                        </td>
+                        <td className="px-6 py-4 font-semibold text-gray-700">
+                          {formatCurrency(item.netAmount)}
+                        </td>
+                        {isMdReviewDetail && (
+                          <td className="px-6 py-4">
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  requestBillDispute(
+                                    item.emergencyBillId || selectedEncounter.id,
+                                  )
+                                }
+                                className="rounded border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-600 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                disabled={isActionLoading}
+                              >
+                                Dispute
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  requestBillReject(
+                                    item.emergencyBillId || selectedEncounter.id,
+                                  )
+                                }
+                                className="rounded border border-red-400 bg-red-50 px-3 py-1 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                disabled={isActionLoading}
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan={isMdReviewDetail ? 8 : 7}
+                        className="px-6 py-8 text-center text-gray-500"
+                      >
+                        No product or service items available.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
-    </>
+      <RejectVettingModal
+        isOpen={isRejectModalOpen}
+        onClose={resetBillAction}
+        onConfirm={handleRejectBill}
+        isLoading={isActionLoading}
+      />
+      <DisputeVettingModal
+        isOpen={isDisputeModalOpen}
+        onClose={resetBillAction}
+        onSubmit={handleDisputeBill}
+        isLoading={isActionLoading}
+      />
+    </div>
   );
 };
 
-/* ================= Reusable Detail Item ================= */
 interface DetailRowProps {
   label: string;
   value: string;
 }
 
 const DetailRow: React.FC<DetailRowProps> = ({ label, value }) => (
-  <div className="flex justify-between items-start">
-    <span className="text-gray-500">{label}</span>
-    <span className="font-semibold text-gray-700 text-right max-w-[60%] break-words">
+  <div className="grid grid-cols-[minmax(120px,1fr)_minmax(140px,1.25fr)] items-start gap-6">
+    <span className="text-base text-gray-500">{label}</span>
+    <span className="break-words text-base font-semibold text-gray-700">
       {value}
     </span>
   </div>
+);
+
+const SectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="border-b border-gray-300 pb-3">
+    <h2 className="text-xl font-semibold text-red-600">{children}</h2>
+  </div>
+);
+
+const CheckboxLine: React.FC<{ label: string; checked?: boolean }> = ({
+  label,
+  checked = false,
+}) => (
+  <span className="flex items-center gap-3 text-gray-800">
+    <span
+      className={`h-4 w-4 shrink-0 border border-emerald-800 ${
+        checked ? "bg-emerald-700" : "bg-white"
+      }`}
+    />
+    <span>{label}</span>
+  </span>
 );
 
 export default PatientEncounterDetails;

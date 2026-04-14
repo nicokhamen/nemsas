@@ -30,8 +30,8 @@ export interface ClaimDiagnosis {
 
 export interface ClaimProductService {
   id: string;
-  emergencyBillId: string;
-  productId: string;
+  emergencyBillId?: string;
+  productId?: string;
   providerId: string;
   name: string;
   description: string;
@@ -44,8 +44,8 @@ export interface ClaimProductService {
   isCovered: boolean;
   quantity: number;
   netAmount: number;
-  flag: string;
-  isActive: boolean;
+  flag?: string;
+  isActive?: boolean;
   createdDate: string;
 }
 
@@ -68,11 +68,12 @@ export interface ClaimPatient {
 
 export interface ClaimEmergencyBill {
   id: string;
+  claimId?: string;
   patientId: string;
   providerId: string;
   encounterId: string;
-  hospitalName: string;
-  emergencyClaimId: string;
+  hospitalName?: string;
+  emergencyClaimId?: string;
   department: string;
   serviceType: ServiceType;
   encounterStartDateTime: string;
@@ -84,13 +85,35 @@ export interface ClaimEmergencyBill {
   productServices: ClaimProductService[];
   attendingPhysician: string;
   supportingDocuments: string[];
-  isActive: boolean;
+  source?: string;
+  isActive?: boolean;
   createdDate: string;
   patient: ClaimPatient;
 }
 
 export interface ClaimEmergencyBills {
   data: ClaimEmergencyBill[];
+  message: string;
+  isSuccess: boolean;
+  claimDetails?: EmergencyClaimBillsDetails;
+}
+
+export interface EmergencyClaimBillsDetails {
+  bills: ClaimEmergencyBill[];
+  id: string;
+  providerId: string;
+  sshiaId: string;
+  status: ClaimStatus;
+  claimNumber: string;
+  createdDate: string;
+  claimDate: string;
+  description: string;
+  claimType: string;
+  submittedAmount: number;
+}
+
+export interface EmergencyClaimBillsResponse {
+  data: EmergencyClaimBillsDetails;
   message: string;
   isSuccess: boolean;
 }

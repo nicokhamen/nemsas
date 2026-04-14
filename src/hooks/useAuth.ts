@@ -29,7 +29,6 @@ const deriveOrgType = (data: any): OrganizationType => {
   if (data.role?.toLowerCase().includes("admin")) {
     return "Administrative";
   }
-  
   return "Individual";
 };
 
@@ -100,7 +99,6 @@ export const useAuth = () => {
         
         console.log("Normalized Role:", normalizedRole);
         console.log("Derived Org Type:", orgType);
-
         const user = {
           id: response.data.id,
           fullName: response.data.fullName,
@@ -109,12 +107,10 @@ export const useAuth = () => {
           isProvider: response.data.isProvider,
           providerId: response.data.providerId,
           organization: response.data.organization,
-          role: normalizedRole,
-          orgType: orgType,
+
+          role: normalizeRole(response.data.role),
+          orgType: deriveOrgType(response.data),
         };
-
-        console.log("Final User Object:", user);
-
         dispatch(loginSuccess({ token, user }));
         return { success: true };
       }

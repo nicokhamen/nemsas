@@ -1,5 +1,8 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import { fetchClaimsEmergencyBills } from '../thunks/claimEmergencyThunk';
+import {
+  fetchClaimsEmergencyBills,
+  fetchEmergencyClaimBillsByClaimNumber,
+} from '../thunks/claimEmergencyThunk';
 import type { ClaimEmergencyBills } from '../../types/ClaimEmergencyBills';
 
 interface ClaimsEmergencyBillsState {
@@ -54,6 +57,23 @@ const claimsEmergencyBillsSlice = createSlice({
       .addCase(fetchClaimsEmergencyBills.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || 'Failed to fetch emergency bills';
+        state.data = null;
+      })
+      .addCase(fetchEmergencyClaimBillsByClaimNumber.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(
+        fetchEmergencyClaimBillsByClaimNumber.fulfilled,
+        (state, action: PayloadAction<ClaimEmergencyBills>) => {
+          state.loading = false;
+          state.data = action.payload;
+          state.error = null;
+        },
+      )
+      .addCase(fetchEmergencyClaimBillsByClaimNumber.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || 'Failed to fetch claim bills';
         state.data = null;
       });
   },
