@@ -17,8 +17,15 @@ interface LoginCredentials {
 }
 
 const deriveOrgType = (data: any): OrganizationType => {
-  if (data.isProvider) return "PROVIDER";
+  // Check for Provider first since isProvider is true
+  if (data.isProvider) return "Provider";
+  
+  // Check organization field
   if (data.organization === "SSHIA") return "SSHIA";
+  if (data.organization === "Provider") return "Provider";
+  if (data.organization === "HMO") return "Provider"; // or whatever makes sense
+  
+  // Check role for admin
   if (data.role?.toLowerCase().includes("admin")) {
     return "Administrative";
   }
@@ -26,26 +33,34 @@ const deriveOrgType = (data: any): OrganizationType => {
 };
 
 const normalizeRole = (role?: string): Role => {
-  if (!role) return "INDIVIDUAL";
+  if (!role) return "Individual";
+  
+  // Handle SuperAdmin first
+  if (role === "SuperAdmin" || role.toLowerCase() === "superadmin") {
+    return "SuperAdmin";
+  }
+  
+  // Exact match for Administrator
+  if (role === "Administrator") return "Administrator";
   
   const r = role.toLowerCase();
   
   // Provider roles
   if (r.includes("md")) return "MD";
-  if (r.includes("provider")) return "PROVIDER";
+  if (r.includes("provider")) return "Provider";
   
-  // Administrative
-  if (r.includes("admin")) return "ADMINISTRATOR";
+  // Administrative (now checks for admin but not superadmin)
+  if (r.includes("admin") && !r.includes("super")) return "Administrator";
   
   // Organization types
   if (r.includes("sshia")) return "SSHIA";
   if (r.includes("nhia")) return "NHIA";
   if (r.includes("hmo")) return "HMO";
-  if (r.includes("corporate")) return "CORPORATE";
-  if (r.includes("individual")) return "INDIVIDUAL";
+  if (r.includes("corporate")) return "Corporate";
+  if (r.includes("individual")) return "Individual";
   
   // Default fallback
-  return "INDIVIDUAL";
+  return "Individual";
 };
 
 export const useAuth = () => {
@@ -57,7 +72,12 @@ export const useAuth = () => {
     
     try {
       const response = await authAPI.login(credentials);
-      console.log("RAW ORG TYPE:", response.data.orgType);
+      
+      // Debug logging
+      console.log("Login Response:", response);
+      console.log("Role from backend:", response.data.role);
+      console.log("Organization from backend:", response.data.organization);
+      console.log("isProvider:", response.data.isProvider);
 
       if (response.isSuccess && response.data) {
         const dataWithPossibleAltToken =
@@ -74,6 +94,11 @@ export const useAuth = () => {
           return { success: false, error: msg };
         }
 
+        const normalizedRole = normalizeRole(response.data.role);
+        const orgType = deriveOrgType(response.data);
+        
+        console.log("Normalized Role:", normalizedRole);
+        console.log("Derived Org Type:", orgType);
         const user = {
           id: response.data.id,
           fullName: response.data.fullName,
@@ -82,10 +107,10 @@ export const useAuth = () => {
           isProvider: response.data.isProvider,
           providerId: response.data.providerId,
           organization: response.data.organization,
+
           role: normalizeRole(response.data.role),
           orgType: deriveOrgType(response.data),
         };
-
         dispatch(loginSuccess({ token, user }));
         return { success: true };
       }

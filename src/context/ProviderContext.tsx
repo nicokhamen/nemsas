@@ -9,7 +9,7 @@ export const ProviderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const { user } = useSelector((state: RootState) => state.auth);
 
   const isSSHIA = user?.orgType === 'SSHIA';
-  const isProviderUser = user?.orgType === 'PROVIDER';
+  const isProviderUser = user?.orgType === 'Provider';
 
   // TTL for provider list cache (ms). 30 minutes.
   const CACHE_TTL = 30 * 60 * 1000;

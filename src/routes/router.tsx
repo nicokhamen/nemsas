@@ -18,6 +18,7 @@ import { MDReview } from "../pages/md-review/MdReviewIndex";
 import EndorsementReview from "../pages/md-review/EndorsementDetails";
 import MdReviewPatients from "../pages/md-review/MdReviewPatients";
 import MdReviewBills from "../pages/md-review/MdReviewBills";
+
 import NewEmergencyBillWizard from "../pages/providers/bill-center/NewEmergencyBillWizard";
 import { EmergencyBills } from "../pages/providers/bill-center/EmergencyBills";
 import EmergencyBillDetails from "../pages/providers/bill-center/EmergencyBillDetails";
@@ -29,6 +30,9 @@ import { ClaimsTracking } from "../pages/state/tracking/ClaimsTracking";
 import StateBillsVetting from "../pages/state/vetting/StateBillsVetting";
 import StatePatientVetting from "../pages/state/vetting/StatePatientVetting";
 import ErrorBoundary from "../pages/ErrorBoundary";
+import { MDReview } from "../pages/md-review/MdReviewIndex";
+import MdReviewBills from "../pages/md-review/MdReviewBills";
+import EndorsementReview from "../pages/md-review/EndorsementDetails";
 
 export interface RouteHandle {
   title?: string;
@@ -37,9 +41,7 @@ export interface RouteHandle {
 // Dashboard Router Component
 const DashboardRouter = () => {
   const { user } = useSelector((state: RootState) => state.auth);
-  
-  // Use the utility function with proper typing
-  return <Navigate to={getDashboardPath(user?.role || "INDIVIDUAL")} replace />;
+  return <Navigate to={getDashboardPath(user?.role || "Individual")} replace />;
 };
 
 export const router = createBrowserRouter([
@@ -61,9 +63,92 @@ export const router = createBrowserRouter([
     path: "/",
     element: <ProtectedRoute />,
     children: [
+      // Dashboard router
       {
         path: "dashboard",
         element: <DashboardRouter />,
+      },
+      
+      // ===== NEW STRUCTURE (Role-based paths) =====
+      {
+        path: "provider",
+        element: <RoleRoute allowedRoles={["Provider", "Administrator", "MD"]} />,
+        children: [
+          {
+            path: "dashboard",
+            element: <Layout><Dashboard /></Layout>,
+            handle: { title: "Provider Dashboard" },
+          },
+          // Add other provider-specific routes here
+        ],
+      },
+      
+      // ===== ORIGINAL FLAT STRUCTURE (Keep existing links working) =====
+      {
+        path: "claims-management",
+        element: (
+          <RoleRoute allowedRoles={["Provider", "Administrator", "MD"]}>
+            <Layout>
+              <EmergencyClaims />
+            </Layout>
+          </RoleRoute>
+        ),
+        handle: { title: "Emergency Claims" },
+      },
+      {
+        path: "emergency/claims/:id",
+        element: (
+          <RoleRoute allowedRoles={["Provider", "Administrator", "MD"]}>
+            <Layout>
+              <EmergencyClaimsDetails />
+            </Layout>
+          </RoleRoute>
+        ),
+        handle: { title: "Claim Details" },
+      },
+      {
+        path: "emergency/claims/bills/:id",
+        element: (
+          <RoleRoute allowedRoles={["Provider", "Administrator", "MD"]}>
+            <Layout>
+              <EmergencyClaimsView />
+            </Layout>
+          </RoleRoute>
+        ),
+        handle: { title: "Claim Bills" },
+      },
+      {
+        path: "emergency-bills/:claimId/:patientId",
+        element: (
+          <RoleRoute allowedRoles={["Provider", "Administrator", "MD"]}>
+            <Layout>
+              <PatientEncounterDetails />
+            </Layout>
+          </RoleRoute>
+        ),
+        handle: { title: "Patient Encounter Details" },
+      },
+      {
+        path: "emergency/bills",
+        element: (
+          <RoleRoute allowedRoles={["Provider", "Administrator", "MD"]}>
+            <Layout>
+              <EmergencyBills />
+            </Layout>
+          </RoleRoute>
+        ),
+        handle: { title: "Emergency Bills" },
+      },
+      {
+        path: "emergency/bills/:billId",
+        element: (
+          <RoleRoute allowedRoles={["Provider", "Administrator", "MD"]}>
+            <Layout>
+              <EmergencyBillDetails />
+            </Layout>
+          </RoleRoute>
+        ),
+        handle: { title: "Bill Details" },
       },
       
       // Provider Routes (Provider and MD roles)
@@ -226,9 +311,11 @@ export const router = createBrowserRouter([
       {
         path: "md-review",
         element: (
-          <Layout>
-            <MDReview />
-          </Layout>
+          <RoleRoute allowedRoles={["MD", "Administrator"]}>
+            <Layout>
+              <MDReview />
+            </Layout>
+          </RoleRoute>
         ),
         handle: { title: "MD Review & Endorsement" },
       },
@@ -259,8 +346,27 @@ export const router = createBrowserRouter([
         ),
         handle: { title: "Bill Details" },
       },
+      {
+        path: "providers/register",
+        element: (
+          <Layout>
+            <RegisterProvider />
+          </Layout>
+        ),
+      },
+      {
+        path: "providers/all",
+        element: (
+          <RoleRoute allowedRoles={["SSHIA", "NHIA", "Administrator"]}>
+            <Layout>
+              <AllProviders />
+            </Layout>
+          </RoleRoute>
+        ),
+        handle: { title: "All Providers" },
+      },
       
-      // State Routes (SSHIA, NHIA, ADMINISTRATOR)
+      // State Routes
       {
         path: "state",
         element: <RoleRoute allowedRoles={["SSHIA", "NHIA", "ADMINISTRATOR"]} />,
@@ -268,63 +374,77 @@ export const router = createBrowserRouter([
           {
             path: "dashboard",
             element: (
-              <Layout>
-                <Dashboard />
-              </Layout>
+              <RoleRoute allowedRoles={["SSHIA", "NHIA", "Administrator"]}>
+                <Layout>
+                  <Dashboard />
+                </Layout>
+              </RoleRoute>
             ),
             handle: { title: "State Dashboard" },
           },
           {
             path: "providers/all",
             element: (
-              <Layout>
-                <AllProviders />
-              </Layout>
+              <RoleRoute allowedRoles={["SSHIA", "NHIA", "Administrator"]}>
+                <Layout>
+                  <AllProviders />
+                </Layout>
+              </RoleRoute>
             ),
             handle: { title: "All Providers" },
           },
           {
             path: "provider/registration",
             element: (
-              <Layout>
-                <RegisterProvider />
-              </Layout>
+              <RoleRoute allowedRoles={["SSHIA", "NHIA", "Administrator"]}>
+                <Layout>
+                  <RegisterProvider />
+                </Layout>
+              </RoleRoute>
             ),
             handle: { title: "Register Provider" },
           },
           {
             path: "provider/vetting",
             element: (
-              <Layout>
-                <StateClaims />
-              </Layout>
+              <RoleRoute allowedRoles={["SSHIA", "NHIA", "Administrator"]}>
+                <Layout>
+                  <StateClaims />
+                </Layout>
+              </RoleRoute>
             ),
             handle: { title: "Emergency Claims Vetting" },
           },
           {
             path: "emergency/claims/:id",
             element: (
-              <Layout>
-                <StateBillsVetting />
-              </Layout>
+              <RoleRoute allowedRoles={["SSHIA", "NHIA", "Administrator"]}>
+                <Layout>
+                  <StateBillsVetting />
+                </Layout>
+              </RoleRoute>
             ),
             handle: { title: "Claim Bills" },
           },
           {
             path: "emergency-bills/:claimId/:patientId",
             element: (
-              <Layout>
-                <StatePatientVetting />
-              </Layout>
+              <RoleRoute allowedRoles={["SSHIA", "NHIA", "Administrator"]}>
+                <Layout>
+                  <StatePatientVetting />
+                </Layout>
+              </RoleRoute>
             ),
             handle: { title: "Patient Vetting Details" },
           },
           {
             path: "provider/tracking",
             element: (
-              <Layout>
-                <ClaimsTracking />
-              </Layout>
+              <RoleRoute allowedRoles={["SSHIA", "NHIA", "Administrator"]}>
+                <Layout>
+                  <ClaimsTracking />
+                </Layout>
+              </RoleRoute>
             ),
             handle: { title: "Claim Tracking" },
           },
@@ -470,6 +590,21 @@ export const router = createBrowserRouter([
       },
       
       // Catch-all error boundary
+      // Admin Routes
+{
+  path: "admin",
+  element: <RoleRoute allowedRoles={["Administrator", "SuperAdmin"]} />,
+  children: [
+    {
+      path: "dashboard",
+      element: <Layout><Dashboard /></Layout>,
+      handle: { title: "Admin Dashboard" },
+    },
+    // ... other admin routes
+  ],
+},
+      
+      // Catch-all
       {
         path: "*",
         element: <ErrorBoundary />,
@@ -477,3 +612,5 @@ export const router = createBrowserRouter([
     ],
   },
 ]);
+
+export default router;

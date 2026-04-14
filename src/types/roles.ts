@@ -1,15 +1,16 @@
 export type Role = 
   | "MD"
-  | "ADMINISTRATOR"
-  | "INDIVIDUAL"
-  | "CORPORATE"
+  | "Administrator"
+  | "SuperAdmin"
+  | "Individual"
+  | "Corporate"
   | "SSHIA"
-  | "PROVIDER"
+  | "Provider"
   | "HMO"
   | "NHIA";
 
 export type OrganizationType = 
-  | "PROVIDER"
+  | "Provider"
   | "SSHIA"
   | "Administrative"
   | "Individual";

@@ -11,10 +11,19 @@ interface AuthState {
   rememberMe: boolean;
 }
 
+// In authSlice.ts, update the initial state to handle existing users
 const initialState: AuthState = {
   token: localStorage.getItem("token"),
   user: localStorage.getItem("user")
-    ? JSON.parse(localStorage.getItem("user")!)
+    ? (() => {
+        try {
+          const user = JSON.parse(localStorage.getItem("user")!);
+          // Ensure role is properly formatted
+          return user;
+        } catch {
+          return null;
+        }
+      })()
     : null,
   isAuthenticated: !!localStorage.getItem("token"),
   loading: false,
