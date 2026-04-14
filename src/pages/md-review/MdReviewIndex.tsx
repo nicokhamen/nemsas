@@ -129,6 +129,7 @@ export const MDReview = () => {
       id: claim.id,
       sn: index + 1,
       description: claim.description,
+      claimType: claim.claimType,
       claimNumber: claim.claimNumber,
       date: formatDate(claim.date),
       rawDate: claim.date,
@@ -143,13 +144,18 @@ export const MDReview = () => {
   }, [emergencyClaims]);
 
   const routeToClaimDetails = (claim: (typeof tableClaims)[0]) => {
-    navigate(`/md-review/${claim.id}`, {
-      state: {
-        claimNumber: claim.claimNumber,
-        providerId,
-        claimId: claim.id,
+    navigate(
+      `/md-review/${claim.id}?ClaimNumber=${encodeURIComponent(
+        claim.claimNumber || "",
+      )}`,
+      {
+        state: {
+          claimNumber: claim.claimNumber,
+          providerId,
+          claimId: claim.id,
+        },
       },
-    });
+    );
   };
 
   const handleOpenApproveModal = () => {
@@ -285,13 +291,13 @@ export const MDReview = () => {
       enableSorting: true,
     },
     {
-      accessorKey: "claimNumber",
-      header: "Claim Number",
+      accessorKey: "claimType",
+      header: "Claim Type",
       enableSorting: true,
     },
     {
       accessorKey: "date",
-      header: "Claim Date",
+      header: "Date",
       enableSorting: true,
     },
     {
@@ -317,11 +323,6 @@ export const MDReview = () => {
           {row.original.status}
         </span>
       ),
-      enableSorting: true,
-    },
-    {
-      accessorKey: "createdDate",
-      header: "Created Date",
       enableSorting: true,
     },
     {

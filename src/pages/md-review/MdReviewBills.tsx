@@ -32,7 +32,7 @@ import {
 import { Pagination } from "../../components/pagination";
 
 // Thunk and actions
-import { fetchClaimsEmergencyBills } from "../../services/thunks/claimEmergencyThunk";
+import { fetchEmergencyClaimBillsByClaimNumber } from "../../services/thunks/claimEmergencyThunk";
 import { clearCurrentEmergencyBills } from "../../services/slices/claimEmergencyBillsSlice";
 import VettingModal from "../../components/ui/VettingModal";
 import { mdVetEmergencyClaim } from "../../services/thunks/mdRequestThunk";
@@ -96,7 +96,8 @@ export const MdReviewBills = () => {
 
   const currentUser = useSelector((state: RootState) => state.auth.user);
   const providerIdFromLocation = location.state?.providerId;
-  const claimNumberFromLocation = location.state?.claimNumber;
+  const queryClaimNumber = new URLSearchParams(location.search).get("ClaimNumber");
+  const claimNumberFromLocation = location.state?.claimNumber || queryClaimNumber || "";
 
   const providerId = useMemo(() => {
     if (currentUser?.orgType === "PROVIDER") {
@@ -155,34 +156,31 @@ export const MdReviewBills = () => {
   const [pageSize, setPageSize] = useState(10);
   const [selectedBills, setSelectedBills] = useState<string[]>([]);
 
-  // Load emergency bills when claimId and providerId are available
   const loadEmergencyBills = useCallback(() => {
-    if (claimId && providerId) {
+    if (claimNumberFromLocation) {
       dispatch(
-        fetchClaimsEmergencyBills({
-          emergencyClaimId: claimId,
-          providerId,
+        fetchEmergencyClaimBillsByClaimNumber({
+          claimNumber: claimNumberFromLocation,
         }),
       );
     }
-  }, [dispatch, claimId, providerId]);
+  }, [dispatch, claimNumberFromLocation]);
 
-  // Load data on component mount or when IDs change
   useEffect(() => {
-    if (claimId && providerId) {
+    if (claimNumberFromLocation) {
       loadEmergencyBills();
     }
 
-    // Clear data when component unmounts
     return () => {
       dispatch(clearCurrentEmergencyBills());
     };
-  }, [dispatch, claimId, providerId, loadEmergencyBills]);
+  }, [dispatch, claimNumberFromLocation, loadEmergencyBills]);
 
   const calculateTotalAmount = (bill: ClaimEmergencyBill): number => {
     if (!bill.productServices || bill.productServices.length === 0) return 0;
     return bill.productServices.reduce(
-      (total, service) => total + service.netAmount,
+      (total, service) =>
+        total + (service.netAmount || service.price * (service.quantity || 1)),
       0,
     );
   };
@@ -579,11 +577,14 @@ export const MdReviewBills = () => {
                 <div className="flex items-center justify-center h-full">
                   <LoadingSpinner />
                 </div>
-              ) : !providerId ? (
+              ) : !claimNumberFromLocation ? (
                 <div className="text-center py-10">
                   <div className="text-gray-500 mb-4">
-                    Provider ID is required to view emergency bills
+                    Claim number is required to view emergency bills.
                   </div>
+                  <Button onClick={handleBack} className="rounded-sm">
+                    Back to Claims
+                  </Button>
                 </div>
               ) : !claimId ? (
                 <div className="text-center py-10">
