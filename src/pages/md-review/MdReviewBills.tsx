@@ -47,7 +47,10 @@ const getTariffCode = (bill: ClaimEmergencyBill): string => {
 };
 
 export const MdReviewBills = () => {
-  const { id: routeClaimId } = useParams<{ id: string }>();
+  const { id: routeClaimId, patientId } = useParams<{
+    id: string;
+    patientId?: string;
+  }>();
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useAppDispatch();
@@ -59,6 +62,8 @@ export const MdReviewBills = () => {
   const queryClaimNumber = new URLSearchParams(location.search).get("ClaimNumber");
   const claimNumber =
     location.state?.claimNumber || queryClaimNumber || "";
+  const patientName = location.state?.patientName;
+  const descriptionFromLocation = location.state?.description;
 
   const {
     data: emergencyBills,
@@ -68,6 +73,9 @@ export const MdReviewBills = () => {
 
   const [mdName, setMdName] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [pendingAction, setPendingAction] = useState<
+    "Approved" | "Rejected" | null
+  >(null);
 
   const providerId = useMemo(() => {
     if (currentUser?.orgType === "PROVIDER") {
@@ -86,7 +94,11 @@ export const MdReviewBills = () => {
   }, [currentUser, selectedProviderId, providerIdFromLocation]);
 
   const claimDetails = emergencyBills?.claimDetails;
-  const bills = emergencyBills?.data || [];
+  const allBills = emergencyBills?.data || [];
+  const bills = useMemo(() => {
+    if (!patientId) return allBills;
+    return allBills.filter((bill) => bill.patientId === patientId);
+  }, [allBills, patientId]);
   const claimId = claimDetails?.id || routeClaimId || "";
 
   const totalAmount = useMemo(() => {
@@ -110,6 +122,21 @@ export const MdReviewBills = () => {
   }, [dispatch, claimNumber, loadEmergencyBills]);
 
   const handleBack = () => {
+    if (patientId && claimId) {
+      navigate(
+        `/md-review/${claimId}?ClaimNumber=${encodeURIComponent(claimNumber)}`,
+        {
+          state: {
+            claimId,
+            claimNumber,
+            providerId,
+            fromMdReview: true,
+          },
+        },
+      );
+      return;
+    }
+
     navigate("/md-review");
   };
 
@@ -124,6 +151,12 @@ export const MdReviewBills = () => {
         fromMdReview: true,
       },
     });
+  };
+
+  const requestReviewAction = (status: "Approved" | "Rejected") => {
+    if (!claimId || bills.length === 0) return;
+
+    setPendingAction(status);
   };
 
   const submitReview = async (status: "Approved" | "Rejected") => {
@@ -169,6 +202,14 @@ export const MdReviewBills = () => {
     }
   };
 
+  const handleConfirmAction = async () => {
+    if (!pendingAction) return;
+
+    const action = pendingAction;
+    await submitReview(action);
+    setPendingAction(null);
+  };
+
   if (!currentUser) {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -203,7 +244,10 @@ export const MdReviewBills = () => {
             </span>
           </div>
           <p className="mt-2 text-gray-800">
-            {claimDetails?.description || formatDate(claimDetails?.claimDate)}
+            {patientName ||
+              descriptionFromLocation ||
+              claimDetails?.description ||
+              formatDate(claimDetails?.claimDate)}
           </p>
         </div>
 
@@ -245,7 +289,11 @@ export const MdReviewBills = () => {
               icon={<span className="text-2xl">PDF</span>}
               title="No emergency bills available"
               description={
-                error ? "Failed to load bills" : "No bills found for this claim."
+                error
+                  ? "Failed to load bills"
+                  : patientId
+                    ? "No bills found for this patient."
+                    : "No bills found for this claim."
               }
               action={
                 <Button onClick={handleBack} className="rounded-sm">
@@ -319,14 +367,14 @@ export const MdReviewBills = () => {
 
             <div className="mt-9 flex gap-5">
               <button
-                onClick={() => submitReview("Approved")}
+                onClick={() => requestReviewAction("Approved")}
                 disabled={isProcessing}
                 className="rounded-sm bg-green-600 px-10 py-4 font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Approve
               </button>
               <button
-                onClick={() => submitReview("Rejected")}
+                onClick={() => requestReviewAction("Rejected")}
                 disabled={isProcessing}
                 className="rounded-sm border border-red-500 bg-red-100 px-10 py-4 font-semibold text-red-600 transition hover:bg-red-200 disabled:cursor-not-allowed disabled:opacity-60"
               >
@@ -335,6 +383,80 @@ export const MdReviewBills = () => {
             </div>
           </div>
         )}
+      </div>
+
+      <ReviewConfirmModal
+        action={pendingAction}
+        isLoading={isProcessing}
+        onClose={() => setPendingAction(null)}
+        onConfirm={handleConfirmAction}
+      />
+    </div>
+  );
+};
+
+interface ReviewConfirmModalProps {
+  action: "Approved" | "Rejected" | null;
+  isLoading: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+}
+
+const ReviewConfirmModal = ({
+  action,
+  isLoading,
+  onClose,
+  onConfirm,
+}: ReviewConfirmModalProps) => {
+  if (!action) return null;
+
+  const isApprove = action === "Approved";
+  const actionLabel = isApprove ? "Approve" : "Reject";
+
+  return (
+    <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/50 p-4">
+      <div className="relative w-full max-w-lg rounded bg-white px-12 py-10 shadow-xl">
+        <button
+          onClick={onClose}
+          disabled={isLoading}
+          className="absolute right-5 top-5 rounded-full text-gray-400 transition hover:text-gray-600 disabled:opacity-60"
+          title="Close"
+        >
+          <XCircle className="h-6 w-6" />
+        </button>
+
+        <div className="flex flex-col items-center text-center">
+          <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full border border-red-500 bg-red-600 text-white ring-8 ring-red-50">
+            <span className="text-3xl leading-none">×</span>
+          </div>
+
+          <h2 className="text-xl font-medium text-gray-800">Oh Wait!</h2>
+          <p className="mt-2 max-w-sm text-sm leading-6 text-gray-700">
+            You are about to {isApprove ? "approve" : "reject"} a claim, this
+            action is permanent. Do you still wish to continue?
+          </p>
+
+          <div className="mt-14 flex w-full items-center justify-between gap-8">
+            <button
+              onClick={onClose}
+              disabled={isLoading}
+              className="min-w-32 rounded-sm border border-gray-400 bg-white px-6 py-3 text-sm text-gray-500 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              No,cancel
+            </button>
+            <button
+              onClick={onConfirm}
+              disabled={isLoading}
+              className={`min-w-32 rounded-sm px-6 py-3 text-sm text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                isApprove
+                  ? "bg-green-600 hover:bg-green-700"
+                  : "bg-red-600 hover:bg-red-700"
+              }`}
+            >
+              {isLoading ? "Processing..." : `Yes, ${actionLabel}`}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

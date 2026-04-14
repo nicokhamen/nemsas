@@ -6,10 +6,12 @@ import { useAppDispatch } from "../../../hooks/redux";
 import type { RootState } from "../../../services/store/store";
 import { fetchPatientEncounter } from "../../../services/thunks/patientEncounterThunk";
 import { clearPatientEncounter } from "../../../services/slices/patientEncounterSlice";
+import { mdVetEmergencyClaim } from "../../../services/thunks/mdRequestThunk";
 import { LoadingSpinner } from "../../../components/ui/LoadingSpinner";
 import Button from "../../../components/ui/Button";
 import type { EmergencyBill } from "../../../types/PatientsEncounter";
 import { useProviderContext } from "../../../context/useProviderContext";
+import { useCustomToast } from "../../../hooks/useCustomToast";
 
 const ZERO_GUID = "00000000-0000-0000-0000-000000000000";
 
@@ -34,6 +36,21 @@ const formatCurrency = (amount?: number): string => {
 
 const getFileName = (path: string): string => path.split("/").pop() || path;
 
+const getEncounterTotal = (encounter?: EmergencyBill | null): number => {
+  if (!encounter) return 0;
+
+  return (
+    encounter.totalAmount ??
+    encounter.productServices?.reduce((sum, item) => {
+      const itemTotal =
+        item.netAmount ?? (item.price || 0) * (item.quantity || 0);
+
+      return sum + itemTotal;
+    }, 0) ??
+    0
+  );
+};
+
 const statusClass = (status?: string): string => {
   const normalized = status?.toLowerCase();
 
@@ -53,11 +70,18 @@ const PatientEncounterDetails: React.FC = () => {
   const dispatch = useAppDispatch();
   const location = useLocation();
   const { selectedProviderId } = useProviderContext();
+  const toast = useCustomToast();
 
   const claimNumber = location.state?.claimNumber;
   const billId = location.state?.billId;
+  const hospitalNumberFromLocation = location.state?.hospitalNumber;
+  const descriptionFromLocation = location.state?.description;
   const providerIdFromLocation = location.state?.providerId;
   const fromMdReview = location.state?.fromMdReview;
+  const isMdReviewDetail =
+    Boolean(fromMdReview) ||
+    location.pathname.includes("/md-review/") ||
+    location.pathname.includes("/md/review/");
 
   const currentUser = useSelector((state: RootState) => state.auth.user);
   const providerId = useMemo(() => {
@@ -83,16 +107,29 @@ const PatientEncounterDetails: React.FC = () => {
   } = useSelector((state: RootState) => state.patientEncounter);
 
   const [openIndex, setOpenIndex] = useState<number | null>(0);
+  const [selectedActionEncounter, setSelectedActionEncounter] =
+    useState<EmergencyBill | null>(null);
+  const [pendingAction, setPendingAction] = useState<
+    "Approved" | "Rejected" | null
+  >(null);
+  const [isActionLoading, setIsActionLoading] = useState(false);
 
   useEffect(() => {
     if (patientId && providerId) {
-      dispatch(fetchPatientEncounter({ patientId, providerId }));
+      dispatch(
+        fetchPatientEncounter({
+          patientId,
+          providerId,
+          emergencyClaimId: claimId,
+          hospitalNumber: hospitalNumberFromLocation,
+        }),
+      );
     }
 
     return () => {
       dispatch(clearPatientEncounter());
     };
-  }, [dispatch, patientId, providerId]);
+  }, [dispatch, patientId, providerId, claimId, hospitalNumberFromLocation]);
 
   useEffect(() => {
     if (!billId || !encounters?.length) return;
@@ -125,6 +162,7 @@ const PatientEncounterDetails: React.FC = () => {
       navigate(`/md-review/${claimId}`, {
         state: {
           claimNumber,
+          description: descriptionFromLocation,
           claimId,
           providerId,
           fromMdReview: true,
@@ -138,7 +176,67 @@ const PatientEncounterDetails: React.FC = () => {
 
   const handleRefresh = () => {
     if (patientId && providerId) {
-      dispatch(fetchPatientEncounter({ patientId, providerId }));
+      dispatch(
+        fetchPatientEncounter({
+          patientId,
+          providerId,
+          emergencyClaimId: claimId,
+          hospitalNumber: hospitalNumberFromLocation,
+        }),
+      );
+    }
+  };
+
+  const requestBillAction = (
+    action: "Approved" | "Rejected",
+    encounter: EmergencyBill,
+  ) => {
+    setSelectedActionEncounter(encounter);
+    setPendingAction(action);
+  };
+
+  const closeActionModal = () => {
+    setPendingAction(null);
+    setSelectedActionEncounter(null);
+  };
+
+  const confirmBillAction = async () => {
+    if (!claimId || !pendingAction || !selectedActionEncounter?.id) {
+      toast.error("Unable to identify the bill for this action.");
+      return;
+    }
+
+    try {
+      setIsActionLoading(true);
+
+      await dispatch(
+        mdVetEmergencyClaim({
+          claimId,
+          emergencyClaimId: claimId,
+          emergencyBillIds: [selectedActionEncounter.id],
+          status: pendingAction,
+          remark:
+            pendingAction === "Approved"
+              ? "Approved by Medical Director"
+              : "Rejected by Medical Director",
+          isBillOnly: true,
+          vettedAmount: getEncounterTotal(selectedActionEncounter),
+        }),
+      ).unwrap();
+
+      toast.success(
+        pendingAction === "Approved"
+          ? "Bill approved successfully"
+          : "Bill rejected successfully",
+      );
+      closeActionModal();
+      handleRefresh();
+    } catch (error) {
+      toast.error(
+        typeof error === "string" ? error : "Unable to complete bill action",
+      );
+    } finally {
+      setIsActionLoading(false);
     }
   };
 
@@ -263,11 +361,41 @@ const PatientEncounterDetails: React.FC = () => {
                           EncounterID {encounter.encounterId || `00${index + 1}`}
                         </span>
                       </div>
-                      {isOpen ? (
-                        <ChevronUp className="h-5 w-5 text-gray-900" />
-                      ) : (
-                        <ChevronDown className="h-5 w-5 text-gray-900" />
-                      )}
+                      <div className="flex items-center gap-3">
+                        {isMdReviewDetail && (
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                requestBillAction("Approved", encounter);
+                              }}
+                              className="rounded px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+                              style={{ backgroundColor: "#22A857" }}
+                              disabled={isActionLoading}
+                            >
+                              Approve
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                requestBillAction("Rejected", encounter);
+                              }}
+                              className="rounded border border-red-400 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                              disabled={isActionLoading}
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        )}
+
+                        {isOpen ? (
+                          <ChevronUp className="h-5 w-5 text-gray-900" />
+                        ) : (
+                          <ChevronDown className="h-5 w-5 text-gray-900" />
+                        )}
+                      </div>
                     </div>
 
                     {isOpen && (
@@ -421,6 +549,13 @@ const PatientEncounterDetails: React.FC = () => {
           </div>
         )}
       </div>
+      <BillActionModal
+        action={pendingAction}
+        isOpen={Boolean(pendingAction)}
+        isLoading={isActionLoading}
+        onClose={closeActionModal}
+        onConfirm={confirmBillAction}
+      />
     </div>
   );
 };
@@ -458,5 +593,82 @@ const CheckboxLine: React.FC<{ label: string; checked?: boolean }> = ({
     <span>{label}</span>
   </span>
 );
+
+interface BillActionModalProps {
+  action: "Approved" | "Rejected" | null;
+  isOpen: boolean;
+  isLoading: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+}
+
+const BillActionModal: React.FC<BillActionModalProps> = ({
+  action,
+  isOpen,
+  isLoading,
+  onClose,
+  onConfirm,
+}) => {
+  if (!isOpen || !action) return null;
+
+  const isApprove = action === "Approved";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="relative w-full max-w-md rounded bg-white px-10 py-9 shadow-xl">
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-5 top-5 flex h-6 w-6 items-center justify-center rounded-full border border-gray-400 text-gray-500 hover:bg-gray-50"
+          disabled={isLoading}
+          aria-label="Close"
+        >
+          x
+        </button>
+
+        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-red-500">
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-red-600 text-2xl leading-none text-white">
+            x
+          </div>
+        </div>
+
+        <div className="text-center">
+          <h3 className="mb-2 text-xl font-medium text-gray-800">Oh Wait!</h3>
+          <p className="mx-auto max-w-xs text-sm leading-6 text-gray-700">
+            You are about to {isApprove ? "approve" : "reject"} this bill, this
+            action is permanent. Do you still wish to continue?
+          </p>
+        </div>
+
+        <div className="mt-12 flex items-center justify-between gap-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded border border-gray-500 bg-white px-6 py-3 text-sm text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={isLoading}
+          >
+            No, cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className={`rounded px-6 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60 ${
+              isApprove
+                ? "bg-[#22A857] hover:bg-green-700"
+                : "bg-red-600 hover:bg-red-700"
+            }`}
+            disabled={isLoading}
+          >
+            {isLoading
+              ? "Processing..."
+              : isApprove
+                ? "Yes, Approve"
+                : "Yes, Reject"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default PatientEncounterDetails;

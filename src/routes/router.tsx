@@ -16,6 +16,7 @@ import EmergencyClaimsDetails from "../pages/providers/claims-management/Emergen
 import EmergencyClaimsView from "../pages/providers/claims-management/EmergencyClaimsView";
 import { MDReview } from "../pages/md-review/MdReviewIndex";
 import EndorsementReview from "../pages/md-review/EndorsementDetails";
+import MdReviewPatients from "../pages/md-review/MdReviewPatients";
 import MdReviewBills from "../pages/md-review/MdReviewBills";
 import NewEmergencyBillWizard from "../pages/providers/bill-center/NewEmergencyBillWizard";
 import { EmergencyBills } from "../pages/providers/bill-center/EmergencyBills";
@@ -186,10 +187,19 @@ export const router = createBrowserRouter([
             path: "review/:id",
             element: (
               <Layout>
-                <MdReviewBills />
+                <MdReviewPatients />
               </Layout>
             ),
             handle: { title: "MD Review Details" },
+          },
+          {
+            path: "review/:id/patients/:patientId/bills",
+            element: (
+              <Layout>
+                <MdReviewBills />
+              </Layout>
+            ),
+            handle: { title: "MD Review Bills" },
           },
           {
             path: "review/emergency-bills/:claimId/:patientId",
@@ -226,10 +236,19 @@ export const router = createBrowserRouter([
         path: "md-review/:id",
         element: (
           <Layout>
-            <MdReviewBills />
+            <MdReviewPatients />
           </Layout>
         ),
         handle: { title: "MD Review Details" },
+      },
+      {
+        path: "md-review/:id/patients/:patientId/bills",
+        element: (
+          <Layout>
+            <MdReviewBills />
+          </Layout>
+        ),
+        handle: { title: "MD Review Bills" },
       },
       {
         path: "md-review/emergency-bills/:claimId/:patientId",

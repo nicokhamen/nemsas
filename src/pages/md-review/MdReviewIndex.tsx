@@ -151,6 +151,7 @@ export const MDReview = () => {
       {
         state: {
           claimNumber: claim.claimNumber,
+          description: claim.description,
           providerId,
           claimId: claim.id,
         },
