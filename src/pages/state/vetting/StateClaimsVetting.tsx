@@ -244,7 +244,7 @@ export const StateClaims = () => {
   // Step 5: Update loadClaims
   const loadClaims = useCallback(() => {
     if (providerId && sshiaId) {
-      dispatch(fetchEmergencyClaims({ providerId, SSHIAId: sshiaId }));
+      dispatch(fetchEmergencyClaims({ providerId, SSHIAId: sshiaId, status: "Pending" }));
     }
   }, [dispatch, providerId, sshiaId]);
 
@@ -499,56 +499,7 @@ export const StateClaims = () => {
       <div className="p-6">
         <div className="bg-gray-100 overflow-scroll h-full">
           <div className="bg-white rounded-md flex flex-col mb-36">
-            <div className="p-6 space-y-4">
-              {/* Filter By header */}
-              <h3 className="text-lg font-semibold text-gray-700">Filter By</h3>
-
-              {/* Filter controls in a row */}
-              <div className="flex flex-wrap gap-4 justify-between items-end">
-                {/* Date Range inputs */}
-                <div className="flex-1 max-w-4xl">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Date Range
-                  </label>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="date"
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none"
-                      placeholder="Start date"
-                    />
-                    <span className="text-sm text-gray-500 font-medium">
-                      To
-                    </span>
-                    <input
-                      type="date"
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none"
-                      placeholder="End date"
-                    />
-                  </div>
-                </div>
-
-                {/* Action buttons */}
-                <div className="flex gap-3 min-w-[240px]">
-                  <button
-                    onClick={() => {
-                      setSearchTerm("");
-                      table.setColumnFilters([]);
-                    }}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-sm hover:bg-gray-50 transition-colors font-medium"
-                  >
-                    Reset
-                  </button>
-                  <button
-                    onClick={() => {
-                      // Apply filters
-                    }}
-                    className="flex-1 px-4 py-2 bg-[#DC2626] text-white rounded-sm hover:bg-red-700 transition-colors font-medium"
-                  >
-                    Apply filter
-                  </button>
-                </div>
-              </div>
-            </div>
+          
             {/* Header */}
             <div className="flex flex-wrap gap-4 justify-between items-center p-6">
               <div className="flex items-center gap-8">

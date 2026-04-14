@@ -20,11 +20,12 @@ type ProviderDetailsModalProps = {
     isActive: boolean;
   };
   onClose: () => void;
+  onStatusChange: (id: string, isActive: boolean) => void;
 };
 
 const ProviderDetailsModal: React.FC<ProviderDetailsModalProps> = ({
   provider,
-  onClose,
+  onClose,onStatusChange
 }) => {
   const [localStatus, setLocalStatus] = useState(provider.isActive);
   const dispatch = useAppDispatch();
@@ -32,27 +33,52 @@ const ProviderDetailsModal: React.FC<ProviderDetailsModalProps> = ({
   // const statusFlag = provider.isActive ? "Active" : "Inactive";
   const statusFlag = localStatus ? "Active" : "Inactive";
 
+  // const handleActivate = async () => {
+  //   try {
+  //     await dispatch(activateProvider({ providerId: provider.id })).unwrap();
+  //     setLocalStatus(true);
+
+  //     toast.success("Provider activated successfully");
+  //   } catch (error: any) {
+  //     toast.error(error || "Failed to activate provider");
+  //   }
+  // };
+
+  // const handleDeactivate = async () => {
+  //   try {
+  //     await dispatch(deactivateProvider({ providerId: provider.id })).unwrap();
+  //      setLocalStatus(false);
+
+  //     toast.success("Provider suspended successfully");
+  //   } catch (error: any) {
+  //     toast.error(error || "Failed to suspend provider");
+  //   }
+  // };
   const handleActivate = async () => {
-    try {
-      await dispatch(activateProvider({ providerId: provider.id })).unwrap();
-      setLocalStatus(true);
+  try {
+    await dispatch(activateProvider({ providerId: provider.id })).unwrap();
 
-      toast.success("Provider activated successfully");
-    } catch (error: any) {
-      toast.error(error || "Failed to activate provider");
-    }
-  };
+    setLocalStatus(true);
+    onStatusChange(provider.id, true); // 👈 update table instantly
 
-  const handleDeactivate = async () => {
-    try {
-      await dispatch(deactivateProvider({ providerId: provider.id })).unwrap();
-       setLocalStatus(false);
+    toast.success("Provider activated successfully");
+  } catch (error: any) {
+    toast.error(error || "Failed to activate provider");
+  }
+};
 
-      toast.success("Provider suspended successfully");
-    } catch (error: any) {
-      toast.error(error || "Failed to suspend provider");
-    }
-  };
+const handleDeactivate = async () => {
+  try {
+    await dispatch(deactivateProvider({ providerId: provider.id })).unwrap();
+
+    setLocalStatus(false);
+    onStatusChange(provider.id, false); // 👈 update table instantly
+
+    toast.success("Provider suspended successfully");
+  } catch (error: any) {
+    toast.error(error || "Failed to suspend provider");
+  }
+};
   
   useEffect(() => {
   setLocalStatus(provider.isActive);
@@ -103,7 +129,8 @@ const ProviderDetailsModal: React.FC<ProviderDetailsModalProps> = ({
             <div className="flex gap-3">
               <button
                 onClick={handleDeactivate}
-                disabled={!provider.isActive}
+                // disabled={!provider.isActive}
+                disabled={!localStatus}
                 className="border border-red-500 text-red-500 px-5 py-2 rounded-md hover:bg-red-50"
               >
                 Suspend
@@ -111,7 +138,8 @@ const ProviderDetailsModal: React.FC<ProviderDetailsModalProps> = ({
 
               <button
                 onClick={handleActivate}
-                disabled={provider.isActive}
+                // disabled={provider.isActive}
+                disabled={localStatus}
                 className="bg-red-600 text-white px-5 py-2 rounded-md hover:bg-red-700"
               >
                 Activate
