@@ -181,8 +181,8 @@ export const MDReview = () => {
               claimId: claim.id,
               providerId,
               emergencyClaimId: claim.id,
-              remark: "This Claim has been vetted",
-              status: "Vetted",
+              remark: "This Claim has been Approved",
+              status: "Approved",
             }),
           ).unwrap(),
         ),
@@ -461,7 +461,7 @@ export const MDReview = () => {
       <div className="p-6">
         <div className="bg-gray-100 overflow-x-auto h-full">
           <div className="bg-white rounded-md flex flex-col mb-36 min-w-0">
-            <div className="p-6 space-y-4">
+            {/* <div className="p-6 space-y-4">
               <h3 className="text-lg font-semibold text-gray-700">Filter By</h3>
 
               <div className="flex flex-wrap gap-4 justify-between items-end">
@@ -502,7 +502,7 @@ export const MDReview = () => {
                   </button>
                 </div>
               </div>
-            </div>
+            </div> */}
 
             <div className="flex flex-wrap gap-4 justify-between items-center p-6">
               <div className="flex items-center gap-8">
