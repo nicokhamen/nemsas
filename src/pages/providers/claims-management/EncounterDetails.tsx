@@ -6,12 +6,14 @@ import { useAppDispatch } from "../../../hooks/redux";
 import type { RootState } from "../../../services/store/store";
 import { fetchPatientEncounter } from "../../../services/thunks/patientEncounterThunk";
 import { clearPatientEncounter } from "../../../services/slices/patientEncounterSlice";
-import { mdVetEmergencyClaim } from "../../../services/thunks/mdRequestThunk";
+import { disputeRejectBill } from "../../../services/thunks/vettiingBillThunk";
 import { LoadingSpinner } from "../../../components/ui/LoadingSpinner";
 import Button from "../../../components/ui/Button";
 import type { EmergencyBill } from "../../../types/PatientsEncounter";
 import { useProviderContext } from "../../../context/useProviderContext";
 import { useCustomToast } from "../../../hooks/useCustomToast";
+import DisputeVettingModal from "../../../components/ui/DisputeVettingModal";
+import RejectVettingModal from "../../../components/ui/RejectVettingModal";
 
 const ZERO_GUID = "00000000-0000-0000-0000-000000000000";
 
@@ -35,21 +37,6 @@ const formatCurrency = (amount?: number): string => {
 };
 
 const getFileName = (path: string): string => path.split("/").pop() || path;
-
-const getEncounterTotal = (encounter?: EmergencyBill | null): number => {
-  if (!encounter) return 0;
-
-  return (
-    encounter.totalAmount ??
-    encounter.productServices?.reduce((sum, item) => {
-      const itemTotal =
-        item.netAmount ?? (item.price || 0) * (item.quantity || 0);
-
-      return sum + itemTotal;
-    }, 0) ??
-    0
-  );
-};
 
 const statusClass = (status?: string): string => {
   const normalized = status?.toLowerCase();
@@ -107,11 +94,9 @@ const PatientEncounterDetails: React.FC = () => {
   } = useSelector((state: RootState) => state.patientEncounter);
 
   const [openIndex, setOpenIndex] = useState<number | null>(0);
-  const [selectedActionEncounter, setSelectedActionEncounter] =
-    useState<EmergencyBill | null>(null);
-  const [pendingAction, setPendingAction] = useState<
-    "Approved" | "Rejected" | null
-  >(null);
+  const [selectedActionBillId, setSelectedActionBillId] = useState("");
+  const [isDisputeModalOpen, setIsDisputeModalOpen] = useState(false);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState(false);
 
   useEffect(() => {
@@ -187,21 +172,36 @@ const PatientEncounterDetails: React.FC = () => {
     }
   };
 
-  const requestBillAction = (
-    action: "Approved" | "Rejected",
-    encounter: EmergencyBill,
-  ) => {
-    setSelectedActionEncounter(encounter);
-    setPendingAction(action);
+  const requestBillDispute = (emergencyBillId?: string) => {
+    if (!emergencyBillId) {
+      toast.error("Unable to identify the bill for dispute.");
+      return;
+    }
+
+    setSelectedActionBillId(emergencyBillId);
+    setIsDisputeModalOpen(true);
   };
 
-  const closeActionModal = () => {
-    setPendingAction(null);
-    setSelectedActionEncounter(null);
+  const requestBillReject = (emergencyBillId?: string) => {
+    if (!emergencyBillId) {
+      toast.error("Unable to identify the bill for rejection.");
+      return;
+    }
+
+    setSelectedActionBillId(emergencyBillId);
+    setIsRejectModalOpen(true);
   };
 
-  const confirmBillAction = async () => {
-    if (!claimId || !pendingAction || !selectedActionEncounter?.id) {
+  const resetBillAction = () => {
+    if (isActionLoading) return;
+
+    setSelectedActionBillId("");
+    setIsDisputeModalOpen(false);
+    setIsRejectModalOpen(false);
+  };
+
+  const handleRejectBill = async () => {
+    if (!selectedActionBillId || !providerId) {
       toast.error("Unable to identify the bill for this action.");
       return;
     }
@@ -210,30 +210,52 @@ const PatientEncounterDetails: React.FC = () => {
       setIsActionLoading(true);
 
       await dispatch(
-        mdVetEmergencyClaim({
-          claimId,
-          emergencyClaimId: claimId,
-          emergencyBillIds: [selectedActionEncounter.id],
-          status: pendingAction,
-          remark:
-            pendingAction === "Approved"
-              ? "Approved by Medical Director"
-              : "Rejected by Medical Director",
-          isBillOnly: true,
-          vettedAmount: getEncounterTotal(selectedActionEncounter),
+        disputeRejectBill({
+          emergencyBillId: selectedActionBillId,
+          providerId,
+          remark: "Invalid bill",
+          status: "Rejected",
         }),
       ).unwrap();
 
-      toast.success(
-        pendingAction === "Approved"
-          ? "Bill approved successfully"
-          : "Bill rejected successfully",
-      );
-      closeActionModal();
+      toast.error("Bill rejected");
+      setSelectedActionBillId("");
+      setIsRejectModalOpen(false);
       handleRefresh();
     } catch (error) {
       toast.error(
-        typeof error === "string" ? error : "Unable to complete bill action",
+        typeof error === "string" ? error : "Unable to reject bill",
+      );
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleDisputeBill = async (reason: string) => {
+    if (!selectedActionBillId || !providerId) {
+      toast.error("Unable to identify the bill for this action.");
+      return;
+    }
+
+    try {
+      setIsActionLoading(true);
+
+      await dispatch(
+        disputeRejectBill({
+          emergencyBillId: selectedActionBillId,
+          providerId,
+          remark: reason,
+          status: "Disputed",
+        }),
+      ).unwrap();
+
+      toast.info("Bill has been activated for dispute");
+      setSelectedActionBillId("");
+      setIsDisputeModalOpen(false);
+      handleRefresh();
+    } catch (error) {
+      toast.error(
+        typeof error === "string" ? error : "Unable to dispute bill",
       );
     } finally {
       setIsActionLoading(false);
@@ -368,19 +390,18 @@ const PatientEncounterDetails: React.FC = () => {
                               type="button"
                               onClick={(event) => {
                                 event.stopPropagation();
-                                requestBillAction("Approved", encounter);
+                                requestBillDispute(encounter.id);
                               }}
-                              className="rounded px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
-                              style={{ backgroundColor: "#22A857" }}
+                              className="rounded border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-600 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
                               disabled={isActionLoading}
                             >
-                              Approve
+                              Dispute
                             </button>
                             <button
                               type="button"
                               onClick={(event) => {
                                 event.stopPropagation();
-                                requestBillAction("Rejected", encounter);
+                                requestBillReject(encounter.id);
                               }}
                               className="rounded border border-red-400 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
                               disabled={isActionLoading}
@@ -507,6 +528,9 @@ const PatientEncounterDetails: React.FC = () => {
                     <th className="px-6 py-4 font-semibold">NHIS Price</th>
                     <th className="px-6 py-4 font-semibold">NHIS (%)</th>
                     <th className="px-6 py-4 font-semibold">Total</th>
+                    {isMdReviewDetail && (
+                      <th className="px-6 py-4 font-semibold">Action</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -534,11 +558,44 @@ const PatientEncounterDetails: React.FC = () => {
                         <td className="px-6 py-4 font-semibold text-gray-700">
                           {formatCurrency(item.netAmount)}
                         </td>
+                        {isMdReviewDetail && (
+                          <td className="px-6 py-4">
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  requestBillDispute(
+                                    item.emergencyBillId || selectedEncounter.id,
+                                  )
+                                }
+                                className="rounded border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-600 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                disabled={isActionLoading}
+                              >
+                                Dispute
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  requestBillReject(
+                                    item.emergencyBillId || selectedEncounter.id,
+                                  )
+                                }
+                                className="rounded border border-red-400 bg-red-50 px-3 py-1 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                disabled={isActionLoading}
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          </td>
+                        )}
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                      <td
+                        colSpan={isMdReviewDetail ? 8 : 7}
+                        className="px-6 py-8 text-center text-gray-500"
+                      >
                         No product or service items available.
                       </td>
                     </tr>
@@ -549,12 +606,17 @@ const PatientEncounterDetails: React.FC = () => {
           </div>
         )}
       </div>
-      <BillActionModal
-        action={pendingAction}
-        isOpen={Boolean(pendingAction)}
+      <RejectVettingModal
+        isOpen={isRejectModalOpen}
+        onClose={resetBillAction}
+        onConfirm={handleRejectBill}
         isLoading={isActionLoading}
-        onClose={closeActionModal}
-        onConfirm={confirmBillAction}
+      />
+      <DisputeVettingModal
+        isOpen={isDisputeModalOpen}
+        onClose={resetBillAction}
+        onSubmit={handleDisputeBill}
+        isLoading={isActionLoading}
       />
     </div>
   );
@@ -593,82 +655,5 @@ const CheckboxLine: React.FC<{ label: string; checked?: boolean }> = ({
     <span>{label}</span>
   </span>
 );
-
-interface BillActionModalProps {
-  action: "Approved" | "Rejected" | null;
-  isOpen: boolean;
-  isLoading: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-}
-
-const BillActionModal: React.FC<BillActionModalProps> = ({
-  action,
-  isOpen,
-  isLoading,
-  onClose,
-  onConfirm,
-}) => {
-  if (!isOpen || !action) return null;
-
-  const isApprove = action === "Approved";
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="relative w-full max-w-md rounded bg-white px-10 py-9 shadow-xl">
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute right-5 top-5 flex h-6 w-6 items-center justify-center rounded-full border border-gray-400 text-gray-500 hover:bg-gray-50"
-          disabled={isLoading}
-          aria-label="Close"
-        >
-          x
-        </button>
-
-        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-red-500">
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-red-600 text-2xl leading-none text-white">
-            x
-          </div>
-        </div>
-
-        <div className="text-center">
-          <h3 className="mb-2 text-xl font-medium text-gray-800">Oh Wait!</h3>
-          <p className="mx-auto max-w-xs text-sm leading-6 text-gray-700">
-            You are about to {isApprove ? "approve" : "reject"} this bill, this
-            action is permanent. Do you still wish to continue?
-          </p>
-        </div>
-
-        <div className="mt-12 flex items-center justify-between gap-4">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded border border-gray-500 bg-white px-6 py-3 text-sm text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={isLoading}
-          >
-            No, cancel
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className={`rounded px-6 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60 ${
-              isApprove
-                ? "bg-[#22A857] hover:bg-green-700"
-                : "bg-red-600 hover:bg-red-700"
-            }`}
-            disabled={isLoading}
-          >
-            {isLoading
-              ? "Processing..."
-              : isApprove
-                ? "Yes, Approve"
-                : "Yes, Reject"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 export default PatientEncounterDetails;
