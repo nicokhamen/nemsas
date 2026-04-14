@@ -78,7 +78,7 @@ export const MdReviewBills = () => {
   >(null);
 
   const providerId = useMemo(() => {
-    if (currentUser?.orgType === "PROVIDER") {
+    if (currentUser?.orgType === "Provider") {
       return currentUser.providerId || "";
     }
 

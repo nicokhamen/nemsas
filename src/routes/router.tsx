@@ -30,9 +30,6 @@ import { ClaimsTracking } from "../pages/state/tracking/ClaimsTracking";
 import StateBillsVetting from "../pages/state/vetting/StateBillsVetting";
 import StatePatientVetting from "../pages/state/vetting/StatePatientVetting";
 import ErrorBoundary from "../pages/ErrorBoundary";
-import { MDReview } from "../pages/md-review/MdReviewIndex";
-import MdReviewBills from "../pages/md-review/MdReviewBills";
-import EndorsementReview from "../pages/md-review/EndorsementDetails";
 
 export interface RouteHandle {
   title?: string;
@@ -67,20 +64,6 @@ export const router = createBrowserRouter([
       {
         path: "dashboard",
         element: <DashboardRouter />,
-      },
-      
-      // ===== NEW STRUCTURE (Role-based paths) =====
-      {
-        path: "provider",
-        element: <RoleRoute allowedRoles={["Provider", "Administrator", "MD"]} />,
-        children: [
-          {
-            path: "dashboard",
-            element: <Layout><Dashboard /></Layout>,
-            handle: { title: "Provider Dashboard" },
-          },
-          // Add other provider-specific routes here
-        ],
       },
       
       // ===== ORIGINAL FLAT STRUCTURE (Keep existing links working) =====
@@ -154,7 +137,7 @@ export const router = createBrowserRouter([
       // Provider Routes (Provider and MD roles)
       {
         path: "provider",
-        element: <RoleRoute allowedRoles={["PROVIDER", "MD"]} />,
+        element: <RoleRoute allowedRoles={["Provider", "MD"]} />,
         children: [
           {
             path: "dashboard",
@@ -369,7 +352,7 @@ export const router = createBrowserRouter([
       // State Routes
       {
         path: "state",
-        element: <RoleRoute allowedRoles={["SSHIA", "NHIA", "ADMINISTRATOR"]} />,
+        element: <RoleRoute allowedRoles={["SSHIA", "NHIA", "Administrator"]} />,
         children: [
           {
             path: "dashboard",
@@ -472,7 +455,7 @@ export const router = createBrowserRouter([
       // Admin Routes
       {
         path: "admin",
-        element: <RoleRoute allowedRoles={["ADMINISTRATOR"]} />,
+        element: <RoleRoute allowedRoles={["Administrator"]} />,
         children: [
           {
             path: "dashboard",
@@ -524,7 +507,7 @@ export const router = createBrowserRouter([
       // Enrollee Routes (Individual, Corporate)
       {
         path: "enrollee",
-        element: <RoleRoute allowedRoles={["INDIVIDUAL", "CORPORATE"]} />,
+        element: <RoleRoute allowedRoles={["Individual", "Corporate"]} />,
         children: [
           {
             path: "dashboard",
@@ -549,34 +532,6 @@ export const router = createBrowserRouter([
       
       // Legacy routes - redirect to new structure
       {
-        path: "claims-management",
-        element: <Navigate to="/provider/claims-management" replace />,
-      },
-      {
-        path: "emergency/claims/:id",
-        element: <Navigate to="/provider/emergency/claims/:id" replace />,
-      },
-      {
-        path: "emergency/claims/bills/:id",
-        element: <Navigate to="/provider/emergency/claims/bills/:id" replace />,
-      },
-      {
-        path: "emergency-bills/:claimId/:patientId",
-        element: <Navigate to="/provider/emergency-bills/:claimId/:patientId" replace />,
-      },
-      {
-        path: "emergency/bills",
-        element: <Navigate to="/provider/emergency/bills" replace />,
-      },
-      {
-        path: "emergency/bills/:billId",
-        element: <Navigate to="/provider/emergency/bills/:billId" replace />,
-      },
-      {
-        path: "emergency/bill-capture",
-        element: <Navigate to="/provider/emergency/bill-capture" replace />,
-      },
-      {
         path: "endorsement-review",
         element: <Navigate to="/md/endorsement-review" replace />,
       },
@@ -588,21 +543,6 @@ export const router = createBrowserRouter([
         path: "settings",
         element: <Navigate to="/state/settings" replace />,
       },
-      
-      // Catch-all error boundary
-      // Admin Routes
-{
-  path: "admin",
-  element: <RoleRoute allowedRoles={["Administrator", "SuperAdmin"]} />,
-  children: [
-    {
-      path: "dashboard",
-      element: <Layout><Dashboard /></Layout>,
-      handle: { title: "Admin Dashboard" },
-    },
-    // ... other admin routes
-  ],
-},
       
       // Catch-all
       {

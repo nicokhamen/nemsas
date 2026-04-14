@@ -95,7 +95,7 @@ export const MDReview = () => {
   const providerId = useMemo(() => {
     if (!currentUser) return "";
 
-    if (currentUser.orgType === "PROVIDER") {
+    if (currentUser.orgType === "Provider") {
       return currentUser.providerId || "";
     }
 
@@ -555,7 +555,7 @@ export const MDReview = () => {
               ) : !providerId ? (
                 <div className="text-center py-10">
                   <div className="text-gray-500 mb-4">
-                    {currentUser.orgType === "PROVIDER"
+                    {currentUser.orgType === "Provider"
                       ? "Provider ID not found. Please contact support."
                       : "Please select a provider from the dropdown to view claims"}
                   </div>
