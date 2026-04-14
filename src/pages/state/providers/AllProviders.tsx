@@ -74,12 +74,6 @@ interface Provider {
   apiKey: string;
 }
 
-interface ProvidersResponse {
-  data: Provider[];
-  message: string;
-  isSuccess: boolean;
-}
-
 // Custom filter function for searching across multiple fields
 const multiFieldFilter = (row: any, _columnId: string, filterValue: string) => {
   if (!filterValue) return true;
@@ -116,7 +110,6 @@ const exportTableToPDF = (tableData: any[], fileName = "providers.pdf") => {
     format: "a4",
   });
 
-  // set unicode font
   doc.setFont("Roboto", "normal");
 
   doc.setFontSize(16);
@@ -125,7 +118,6 @@ const exportTableToPDF = (tableData: any[], fileName = "providers.pdf") => {
   doc.setFontSize(10);
   doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 18);
 
-  // Safely process rows with null checks
   const rows = tableData.map((provider, i) => {
     return [
       i + 1,
@@ -177,84 +169,82 @@ const exportTableToPDF = (tableData: any[], fileName = "providers.pdf") => {
 };
 
 export const AllProviders = () => {
-  // Filter states
   const [searchTerm, setSearchTerm] = useState("");
-
-  // Table states
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
-  // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(
     null,
   );
-  // states for Inactive and active fields
   const [statusFilter, setStatusFilter] = useState("Active");
-  // Get providers state from Redux
-  const providersState = useAppSelector((state: any) => state.createProvider);
-  // const providers = providersState?.data || [];
-  const providers = providersState?.providers || [];
 
-  //   console.log('providersState:', providersState);
-  // console.log('providers:', providers);
+  const providersState = useAppSelector((state: any) => state.createProvider);
+  const providers = providersState?.providers || [];
   const loading = providersState?.loading || false;
   const error = providersState?.error || null;
 
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-
-  // Get user data from Redux auth state
   const currentUser = useSelector((state: RootState) => state.auth.user);
   const { selectedProviderId } = useProviderContext();
 
-  // Handle view provider
+  const [localProviders, setLocalProviders] = useState<Provider[]>([]);
+
+  // Handle status update - Update local state immediately
+  const handleStatusUpdate = (providerId: string, isActive: boolean) => {
+    setLocalProviders((prev) =>
+      prev.map((p) => (p.id === providerId ? { ...p, isActive } : p)),
+    );
+
+    // also update modal
+    setSelectedProvider((prev) => (prev ? { ...prev, isActive } : prev));
+  };
+
   const handleViewProvider = (provider: Provider) => {
     setSelectedProvider(provider);
     setIsModalOpen(true);
   };
-  // Close modal
+
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedProvider(null);
   };
 
-  // Route to create provider page
   const routeToCreateProvider = () => {
-    navigate("/state/provider/registration"); 
+    navigate("/state/provider/registration");
   };
 
-  // Load providers
   const loadProviders = useCallback(() => {
     dispatch(getProviders());
   }, [dispatch]);
 
-  // Load providers when component mounts
+  useEffect(() => {
+    setLocalProviders(providers);
+  }, [providers]);
+
   useEffect(() => {
     loadProviders();
   }, [loadProviders]);
 
-  // Map providers to table format
+  // Map providers to table format - this will re-run when providers change
   const tableProviders = useMemo(() => {
-    return (providers || []).map((provider: Provider, index: number) => {
-      return {
-        id: provider.id || `provider-${index}`,
-        sn: index + 1,
-        hospitalName: provider.hospitalName || "N/A",
-        email: provider.email || "N/A",
-        phoneNumber: provider.phoneNumber || "N/A",
-        location: provider.hospitalAdress || "N/A",
-        licenseNumber: provider.stateLicenseNumber || "N/A",
-        isActive: provider.isActive,
-        rawProvider: provider,
-      };
-    });
-  }, [providers]);
+    return (localProviders || []).map((provider, index) => ({
+      id: provider.id || `provider-${index}`,
+      sn: index + 1,
+      hospitalName: provider.hospitalName || "N/A",
+      email: provider.email || "N/A",
+      phoneNumber: provider.phoneNumber || "N/A",
+      location: provider.hospitalAdress || "N/A",
+      licenseNumber: provider.stateLicenseNumber || "N/A",
+      isActive: provider.isActive,
+      rawProvider: provider,
+    }));
+  }, [localProviders]);
 
-  // Define columns based on required fields
   const columns: ColumnDef<(typeof tableProviders)[0]>[] = [
     {
       accessorKey: "sn",
@@ -284,25 +274,6 @@ export const AllProviders = () => {
       enableSorting: true,
       filterFn: multiFieldFilter,
     },
-    // {
-    //   accessorKey: "isActive",
-    //   header: "Status",
-    //   cell: ({ row }) => {
-    //     const isActive = row.getValue("isActive");
-
-    //     return (
-    //       <span
-    //         className={`px-2 py-1 text-xs font-medium rounded-full ${
-    //           isActive
-    //             ? "bg-green-100 text-green-700"
-    //             : "bg-red-100 text-red-700"
-    //         }`}
-    //       >
-    //         {isActive ? "Active" : "Inactive"}
-    //       </span>
-    //     );
-    //   },
-    // },
     {
       accessorKey: "isActive",
       header: "Status",
@@ -312,7 +283,6 @@ export const AllProviders = () => {
       },
       cell: ({ row }) => {
         const isActive = row.getValue("isActive");
-
         return (
           <span
             className={`px-2 py-1 text-xs font-medium rounded-full ${
@@ -351,7 +321,6 @@ export const AllProviders = () => {
     },
   ];
 
-  // Initialize table
   const table = useReactTable({
     data: tableProviders,
     columns,
@@ -384,7 +353,6 @@ export const AllProviders = () => {
 
   const totalPages = table.getPageCount();
 
-  // For status change
   useEffect(() => {
     if (statusFilter === "All") {
       table.getColumn("isActive")?.setFilterValue(undefined);
@@ -393,7 +361,6 @@ export const AllProviders = () => {
     }
   }, [statusFilter, table]);
 
-  // Show loading while waiting for user data
   if (!currentUser) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -413,12 +380,10 @@ export const AllProviders = () => {
                 Filter By
               </h3>
               <div className="grid grid-cols-12 gap-4 items-end">
-                {/* Name/Provider ID Filter */}
                 <div className="col-span-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Name/Provider
                   </label>
-
                   <div className="relative">
                     <input
                       type="text"
@@ -431,14 +396,12 @@ export const AllProviders = () => {
                       }}
                       className="w-full h-10 px-3 pr-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none"
                     />
-
                     <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
                       <Search className="h-4 w-4 text-gray-400" />
                     </div>
                   </div>
                 </div>
 
-                {/* Status Filter */}
                 <div className="col-span-3">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Status
@@ -454,20 +417,13 @@ export const AllProviders = () => {
                   </select>
                 </div>
 
-                {/* Empty div for spacing */}
                 <div className="col-span-2"></div>
 
-                {/* Action Buttons */}
                 <div className="col-span-3 flex gap-3">
                   <button
-                    // onClick={() => {
-                    //   setSearchTerm("");
-                    //   table.setColumnFilters([]);
-                    //   loadProviders();
-                    // }}
                     onClick={() => {
                       setSearchTerm("");
-                      setStatusFilter("Active"); // reset dropdown
+                      setStatusFilter("Active");
                       table.setColumnFilters([]);
                       loadProviders();
                     }}
@@ -477,7 +433,6 @@ export const AllProviders = () => {
                   </button>
                   <button
                     onClick={() => {
-                      // Apply filters
                       loadProviders();
                     }}
                     className="flex-1 px-4 py-2 bg-[#DC2626] text-white rounded-md hover:bg-red-700 transition-colors font-medium"
@@ -487,6 +442,7 @@ export const AllProviders = () => {
                 </div>
               </div>
             </div>
+
             {/* Header */}
             <div className="flex flex-wrap gap-4 justify-between items-center py-6 px-6 bg-gray-50">
               <label className="text-lg font-semibold text-gray-700">
@@ -531,7 +487,6 @@ export const AllProviders = () => {
                 />
               ) : (
                 <>
-                  {/* Table */}
                   <div className="flex-1 lg:px-0 lg:mt-4">
                     <Table className="min-w-[800px]">
                       <TableHeader className=" bg-[#E4F7F1] hover:bg-[#E4F7F1] transition-colors">
@@ -560,7 +515,6 @@ export const AllProviders = () => {
                               key={row.id}
                               className="cursor-pointer hover:bg-[#FFFFFF] transition-colors"
                               onClick={() => {
-                                // Navigate to provider details
                                 handleViewProvider(row.original.rawProvider);
                               }}
                             >
@@ -598,7 +552,6 @@ export const AllProviders = () => {
                     </Table>
                   </div>
 
-                  {/* Pagination */}
                   <div className="p-4 flex items-center justify-end">
                     <Pagination
                       totalEntriesSize={table.getFilteredRowModel().rows.length}
@@ -618,10 +571,12 @@ export const AllProviders = () => {
           </div>
         </div>
       </div>
+
       {isModalOpen && selectedProvider && (
         <ProviderDetailsModal
           provider={selectedProvider}
           onClose={handleCloseModal}
+          onStatusChange={handleStatusUpdate}
         />
       )}
     </>

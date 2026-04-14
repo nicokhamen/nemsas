@@ -226,6 +226,7 @@ export const EmergencyBills = () => {
 
   // Route to emergency bill creation page
   const routeToEmergencyBillPage = () => {
+    // navigate("/emergency/bill-capture");
     navigate("/emergency/bill-capture");
   };
 

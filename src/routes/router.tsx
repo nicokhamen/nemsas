@@ -14,11 +14,7 @@ import { AllProviders } from "../pages/state/providers/AllProviders";
 import { EmergencyClaims } from "../pages/providers/claims-management/EmergencyClaims";
 import EmergencyClaimsDetails from "../pages/providers/claims-management/EmergencyClaimsDetails";
 import EmergencyClaimsView from "../pages/providers/claims-management/EmergencyClaimsView";
-import { MDReview } from "../pages/md-review/MdReviewIndex";
-import EndorsementReview from "../pages/md-review/EndorsementDetails";
 import MdReviewPatients from "../pages/md-review/MdReviewPatients";
-import MdReviewBills from "../pages/md-review/MdReviewBills";
-
 import NewEmergencyBillWizard from "../pages/providers/bill-center/NewEmergencyBillWizard";
 import { EmergencyBills } from "../pages/providers/bill-center/EmergencyBills";
 import EmergencyBillDetails from "../pages/providers/bill-center/EmergencyBillDetails";
@@ -33,6 +29,7 @@ import ErrorBoundary from "../pages/ErrorBoundary";
 import { MDReview } from "../pages/md-review/MdReviewIndex";
 import MdReviewBills from "../pages/md-review/MdReviewBills";
 import EndorsementReview from "../pages/md-review/EndorsementDetails";
+import type { Role } from "../types/roles";
 
 export interface RouteHandle {
   title?: string;
@@ -43,6 +40,36 @@ const DashboardRouter = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   return <Navigate to={getDashboardPath(user?.role || "Individual")} replace />;
 };
+
+// Helper function to wrap routes with Layout and RoleRoute
+const createProtectedRoute = (
+  Component: React.ComponentType, 
+  allowedRoles: Role[], // Changed from Role to Role[]
+  title: string
+) => ({
+  element: (
+    <RoleRoute allowedRoles={allowedRoles}>
+      <Layout>
+        <Component />
+      </Layout>
+    </RoleRoute>
+  ),
+  handle: { title },
+});
+
+// Helper for routes without Layout wrapper
+const createSimpleProtectedRoute = (
+  Component: React.ComponentType,
+  allowedRoles: Role[], // Changed from Role to Role[]
+  title: string
+) => ({
+  element: (
+    <RoleRoute allowedRoles={allowedRoles}>
+      <Component />
+    </RoleRoute>
+  ),
+  handle: { title },
+});
 
 export const router = createBrowserRouter([
   {
@@ -58,7 +85,7 @@ export const router = createBrowserRouter([
     element: <Unauthorized />,
   },
   
-  // Protected Routes
+  // Protected Routes - Maintaining flat structure for compatibility
   {
     path: "/",
     element: <ProtectedRoute />,
@@ -69,542 +96,149 @@ export const router = createBrowserRouter([
         element: <DashboardRouter />,
       },
       
-      // ===== NEW STRUCTURE (Role-based paths) =====
-      {
-        path: "provider",
-        element: <RoleRoute allowedRoles={["Provider", "Administrator", "MD"]} />,
-        children: [
-          {
-            path: "dashboard",
-            element: <Layout><Dashboard /></Layout>,
-            handle: { title: "Provider Dashboard" },
-          },
-          // Add other provider-specific routes here
-        ],
-      },
-      
-      // ===== ORIGINAL FLAT STRUCTURE (Keep existing links working) =====
+      // Provider/Claims Management Routes (flat structure)
       {
         path: "claims-management",
-        element: (
-          <RoleRoute allowedRoles={["Provider", "Administrator", "MD"]}>
-            <Layout>
-              <EmergencyClaims />
-            </Layout>
-          </RoleRoute>
-        ),
-        handle: { title: "Emergency Claims" },
+        ...createProtectedRoute(EmergencyClaims, ["Provider", "Administrator", "MD"], "Emergency Claims"),
       },
       {
         path: "emergency/claims/:id",
-        element: (
-          <RoleRoute allowedRoles={["Provider", "Administrator", "MD"]}>
-            <Layout>
-              <EmergencyClaimsDetails />
-            </Layout>
-          </RoleRoute>
-        ),
-        handle: { title: "Claim Details" },
+        ...createProtectedRoute(EmergencyClaimsDetails, ["Provider", "Administrator", "MD"], "Claim Details"),
       },
       {
         path: "emergency/claims/bills/:id",
-        element: (
-          <RoleRoute allowedRoles={["Provider", "Administrator", "MD"]}>
-            <Layout>
-              <EmergencyClaimsView />
-            </Layout>
-          </RoleRoute>
-        ),
-        handle: { title: "Claim Bills" },
+        ...createProtectedRoute(EmergencyClaimsView, ["Provider", "Administrator", "MD"], "Claim Bills"),
       },
       {
         path: "emergency-bills/:claimId/:patientId",
-        element: (
-          <RoleRoute allowedRoles={["Provider", "Administrator", "MD"]}>
-            <Layout>
-              <PatientEncounterDetails />
-            </Layout>
-          </RoleRoute>
-        ),
-        handle: { title: "Patient Encounter Details" },
+        ...createProtectedRoute(PatientEncounterDetails, ["Provider", "Administrator", "MD"], "Patient Encounter Details"),
       },
       {
         path: "emergency/bills",
-        element: (
-          <RoleRoute allowedRoles={["Provider", "Administrator", "MD"]}>
-            <Layout>
-              <EmergencyBills />
-            </Layout>
-          </RoleRoute>
-        ),
-        handle: { title: "Emergency Bills" },
+        ...createProtectedRoute(EmergencyBills, ["Provider", "Administrator", "MD"], "Emergency Bills"),
       },
       {
         path: "emergency/bills/:billId",
-        element: (
-          <RoleRoute allowedRoles={["Provider", "Administrator", "MD"]}>
-            <Layout>
-              <EmergencyBillDetails />
-            </Layout>
-          </RoleRoute>
-        ),
-        handle: { title: "Bill Details" },
+        ...createProtectedRoute(EmergencyBillDetails, ["Provider", "Administrator", "MD"], "Bill Details"),
       },
-      
-      // Provider Routes (Provider and MD roles)
       {
-        path: "provider",
-        element: <RoleRoute allowedRoles={["PROVIDER", "MD"]} />,
-        children: [
-          {
-            path: "dashboard",
-            element: (
-              <Layout>
-                <Dashboard />
-              </Layout>
-            ),
-            handle: { title: "Provider Dashboard" },
-          },
-          {
-            path: "claims-management",
-            element: (
-              <Layout>
-                <EmergencyClaims />
-              </Layout>
-            ),
-            handle: { title: "Emergency Claims" },
-          },
-          {
-            path: "emergency/claims/:id",
-            element: (
-              <Layout>
-                <EmergencyClaimsDetails />
-              </Layout>
-            ),
-            handle: { title: "Claim Details" },
-          },
-          {
-            path: "emergency/claims/bills/:id",
-            element: (
-              <Layout>
-                <EmergencyClaimsView />
-              </Layout>
-            ),
-            handle: { title: "Claim Bills" },
-          },
-          {
-            path: "emergency-bills/:claimId/:patientId",
-            element: (
-              <Layout>
-                <PatientEncounterDetails />
-              </Layout>
-            ),
-            handle: { title: "Patient Encounter Details" },
-          },
-          {
-            path: "emergency/bills",
-            element: (
-              <Layout>
-                <EmergencyBills />
-              </Layout>
-            ),
-            handle: { title: "Emergency Bills" },
-          },
-          {
-            path: "emergency/bills/:billId",
-            element: (
-              <Layout>
-                <EmergencyBillDetails />
-              </Layout>
-            ),
-            handle: { title: "Bill Details" },
-          },
-          {
-            path: "emergency-bills/:billId/edit",
-            element: <EditEmergencyBill />,
-            handle: { title: "Edit Bill" },
-          },
-          {
-            path: "emergency/bill-capture",
-            element: (
-              <Layout>
-                <NewEmergencyBillWizard />
-              </Layout>
-            ),
-            handle: { title: "New Emergency Bill" },
-          },
-          {
-            path: "tariff",
-            element: (
-              <Layout>
-                <Tariffs />
-              </Layout>
-            ),
-            handle: { title: "Tariff Management" },
-          },
-          {
-            path: "settings",
-            element: (
-              <Layout>
-                <Settings />
-              </Layout>
-            ),
-            handle: { title: "Settings" },
-          },
-        ],
+        path: "emergency-bills/:billId/edit",
+        ...createSimpleProtectedRoute(EditEmergencyBill, ["Provider", "MD", "Administrator"], "Edit Bill"), // Added Administrator
       },
-      
-      // MD Specific Routes
       {
-        path: "md",
-        element: <RoleRoute allowedRoles={["MD"]} />,
-        children: [
-          {
-            path: "review",
-            element: (
-              <Layout>
-                <MDReview />
-              </Layout>
-            ),
-            handle: { title: "MD Review & Endorsement" },
-          },
-          {
-            path: "review/:id",
-            element: (
-              <Layout>
-                <MdReviewPatients />
-              </Layout>
-            ),
-            handle: { title: "MD Review Details" },
-          },
-          {
-            path: "review/:id/patients/:patientId/bills",
-            element: (
-              <Layout>
-                <MdReviewBills />
-              </Layout>
-            ),
-            handle: { title: "MD Review Bills" },
-          },
-          {
-            path: "review/emergency-bills/:claimId/:patientId",
-            element: (
-              <Layout>
-                <PatientEncounterDetails />
-              </Layout>
-            ),
-            handle: { title: "Bill Details" },
-          },
-          {
-            path: "endorsement-review",
-            element: (
-              <Layout>
-                <EndorsementReview />
-              </Layout>
-            ),
-            handle: { title: "Endorsement Review" },
-          },
-        ],
+        path: "emergency/bill-capture",
+        ...createProtectedRoute(NewEmergencyBillWizard, ["Provider", "MD", "Administrator"], "New Emergency Bill"), // Added Administrator
+      },
+      {
+        path: "tariff",
+        ...createProtectedRoute(Tariffs, ["Provider", "MD", "SSHIA", "NHIA", "Administrator"], "Tariff Management"),
+      },
+      {
+        path: "settings",
+        ...createProtectedRoute(Settings, ["Provider", "MD", "SSHIA", "NHIA", "Administrator", "HMO", "Individual", "Corporate"], "Settings"),
       },
       
-      // Legacy MD Review URLs used by the current MD review flow
+      // MD Review Routes
       {
         path: "md-review",
-        element: (
-          <RoleRoute allowedRoles={["MD", "Administrator"]}>
-            <Layout>
-              <MDReview />
-            </Layout>
-          </RoleRoute>
-        ),
-        handle: { title: "MD Review & Endorsement" },
+        ...createProtectedRoute(MDReview, ["MD", "Administrator"], "MD Review & Endorsement"),
       },
       {
         path: "md-review/:id",
-        element: (
-          <Layout>
-            <MdReviewPatients />
-          </Layout>
-        ),
-        handle: { title: "MD Review Details" },
+        ...createProtectedRoute(MdReviewPatients, ["MD", "Administrator"], "MD Review Details"),
       },
       {
         path: "md-review/:id/patients/:patientId/bills",
-        element: (
-          <Layout>
-            <MdReviewBills />
-          </Layout>
-        ),
-        handle: { title: "MD Review Bills" },
+        ...createProtectedRoute(MdReviewBills, ["MD", "Administrator"], "MD Review Bills"),
       },
       {
         path: "md-review/emergency-bills/:claimId/:patientId",
-        element: (
-          <Layout>
-            <PatientEncounterDetails />
-          </Layout>
-        ),
-        handle: { title: "Bill Details" },
+        ...createProtectedRoute(PatientEncounterDetails, ["MD", "Administrator"], "Bill Details"),
       },
       {
+        path: "endorsement-review",
+        ...createProtectedRoute(EndorsementReview, ["MD", "Administrator"], "Endorsement Review"),
+      },
+      
+      // Provider Registration & Management
+      {
         path: "providers/register",
-        element: (
-          <Layout>
-            <RegisterProvider />
-          </Layout>
-        ),
+        ...createProtectedRoute(RegisterProvider, ["Provider", "SSHIA", "NHIA", "Administrator"], "Register Provider"),
       },
       {
         path: "providers/all",
-        element: (
-          <RoleRoute allowedRoles={["SSHIA", "NHIA", "Administrator"]}>
-            <Layout>
-              <AllProviders />
-            </Layout>
-          </RoleRoute>
-        ),
-        handle: { title: "All Providers" },
+        ...createProtectedRoute(AllProviders, ["SSHIA", "NHIA", "Administrator"], "All Providers"),
       },
       
       // State Routes
       {
-        path: "state",
-        element: <RoleRoute allowedRoles={["SSHIA", "NHIA", "ADMINISTRATOR"]} />,
-        children: [
-          {
-            path: "dashboard",
-            element: (
-              <RoleRoute allowedRoles={["SSHIA", "NHIA", "Administrator"]}>
-                <Layout>
-                  <Dashboard />
-                </Layout>
-              </RoleRoute>
-            ),
-            handle: { title: "State Dashboard" },
-          },
-          {
-            path: "providers/all",
-            element: (
-              <RoleRoute allowedRoles={["SSHIA", "NHIA", "Administrator"]}>
-                <Layout>
-                  <AllProviders />
-                </Layout>
-              </RoleRoute>
-            ),
-            handle: { title: "All Providers" },
-          },
-          {
-            path: "provider/registration",
-            element: (
-              <RoleRoute allowedRoles={["SSHIA", "NHIA", "Administrator"]}>
-                <Layout>
-                  <RegisterProvider />
-                </Layout>
-              </RoleRoute>
-            ),
-            handle: { title: "Register Provider" },
-          },
-          {
-            path: "provider/vetting",
-            element: (
-              <RoleRoute allowedRoles={["SSHIA", "NHIA", "Administrator"]}>
-                <Layout>
-                  <StateClaims />
-                </Layout>
-              </RoleRoute>
-            ),
-            handle: { title: "Emergency Claims Vetting" },
-          },
-          {
-            path: "emergency/claims/:id",
-            element: (
-              <RoleRoute allowedRoles={["SSHIA", "NHIA", "Administrator"]}>
-                <Layout>
-                  <StateBillsVetting />
-                </Layout>
-              </RoleRoute>
-            ),
-            handle: { title: "Claim Bills" },
-          },
-          {
-            path: "emergency-bills/:claimId/:patientId",
-            element: (
-              <RoleRoute allowedRoles={["SSHIA", "NHIA", "Administrator"]}>
-                <Layout>
-                  <StatePatientVetting />
-                </Layout>
-              </RoleRoute>
-            ),
-            handle: { title: "Patient Vetting Details" },
-          },
-          {
-            path: "provider/tracking",
-            element: (
-              <RoleRoute allowedRoles={["SSHIA", "NHIA", "Administrator"]}>
-                <Layout>
-                  <ClaimsTracking />
-                </Layout>
-              </RoleRoute>
-            ),
-            handle: { title: "Claim Tracking" },
-          },
-          {
-            path: "tariff",
-            element: (
-              <Layout>
-                <Tariffs />
-              </Layout>
-            ),
-            handle: { title: "Tariff Management" },
-          },
-          {
-            path: "settings",
-            element: (
-              <Layout>
-                <Settings />
-              </Layout>
-            ),
-            handle: { title: "Settings" },
-          },
-        ],
+        path: "state/dashboard",
+        ...createProtectedRoute(Dashboard, ["SSHIA", "NHIA", "Administrator"], "State Dashboard"),
+      },
+      {
+        path: "state/providers/all",
+        ...createProtectedRoute(AllProviders, ["SSHIA", "NHIA", "Administrator"], "All Providers"),
+      },
+      {
+        path: "state/provider/registration",
+        ...createProtectedRoute(RegisterProvider, ["SSHIA", "NHIA", "Administrator"], "Register Provider"),
+      },
+      {
+        path: "state/provider/vetting",
+        ...createProtectedRoute(StateClaims, ["SSHIA", "NHIA", "Administrator"], "Emergency Claims Vetting"),
+      },
+      {
+        path: "state/emergency/claims/:id",
+        ...createProtectedRoute(StateBillsVetting, ["SSHIA", "NHIA", "Administrator"], "Claim Bills"),
+      },
+      {
+        path: "state/emergency-bills/:claimId/:patientId",
+        ...createProtectedRoute(StatePatientVetting, ["SSHIA", "NHIA", "Administrator"], "Patient Vetting Details"),
+      },
+      {
+        path: "state/provider/tracking",
+        ...createProtectedRoute(ClaimsTracking, ["SSHIA", "NHIA", "Administrator"], "Claim Tracking"),
+      },
+      {
+        path: "state/tariff",
+        ...createProtectedRoute(Tariffs, ["SSHIA", "NHIA", "Administrator"], "Tariff Management"),
+      },
+      {
+        path: "state/settings",
+        ...createProtectedRoute(Settings, ["SSHIA", "NHIA", "Administrator"], "Settings"),
       },
       
       // Admin Routes
       {
-        path: "admin",
-        element: <RoleRoute allowedRoles={["ADMINISTRATOR"]} />,
-        children: [
-          {
-            path: "dashboard",
-            element: (
-              <Layout>
-                <Dashboard />
-              </Layout>
-            ),
-            handle: { title: "Admin Dashboard" },
-          },
-          {
-            path: "settings",
-            element: (
-              <Layout>
-                <Settings />
-              </Layout>
-            ),
-            handle: { title: "Settings" },
-          },
-        ],
+        path: "admin/dashboard",
+        ...createProtectedRoute(Dashboard, ["Administrator", "SuperAdmin"], "Admin Dashboard"),
+      },
+      {
+        path: "admin/settings",
+        ...createProtectedRoute(Settings, ["Administrator", "SuperAdmin"], "Settings"),
       },
       
       // HMO Routes
       {
-        path: "hmo",
-        element: <RoleRoute allowedRoles={["HMO"]} />,
-        children: [
-          {
-            path: "dashboard",
-            element: (
-              <Layout>
-                <Dashboard />
-              </Layout>
-            ),
-            handle: { title: "HMO Dashboard" },
-          },
-          {
-            path: "settings",
-            element: (
-              <Layout>
-                <Settings />
-              </Layout>
-            ),
-            handle: { title: "Settings" },
-          },
-        ],
+        path: "hmo/dashboard",
+        ...createProtectedRoute(Dashboard, ["HMO"], "HMO Dashboard"),
+      },
+      {
+        path: "hmo/settings",
+        ...createProtectedRoute(Settings, ["HMO"], "Settings"),
       },
       
-      // Enrollee Routes (Individual, Corporate)
+      // Enrollee Routes
       {
-        path: "enrollee",
-        element: <RoleRoute allowedRoles={["INDIVIDUAL", "CORPORATE"]} />,
-        children: [
-          {
-            path: "dashboard",
-            element: (
-              <Layout>
-                <Dashboard />
-              </Layout>
-            ),
-            handle: { title: "Enrollee Dashboard" },
-          },
-          {
-            path: "settings",
-            element: (
-              <Layout>
-                <Settings />
-              </Layout>
-            ),
-            handle: { title: "Settings" },
-          },
-        ],
-      },
-      
-      // Legacy routes - redirect to new structure
-      {
-        path: "claims-management",
-        element: <Navigate to="/provider/claims-management" replace />,
+        path: "enrollee/dashboard",
+        ...createProtectedRoute(Dashboard, ["Individual", "Corporate"], "Enrollee Dashboard"),
       },
       {
-        path: "emergency/claims/:id",
-        element: <Navigate to="/provider/emergency/claims/:id" replace />,
-      },
-      {
-        path: "emergency/claims/bills/:id",
-        element: <Navigate to="/provider/emergency/claims/bills/:id" replace />,
-      },
-      {
-        path: "emergency-bills/:claimId/:patientId",
-        element: <Navigate to="/provider/emergency-bills/:claimId/:patientId" replace />,
-      },
-      {
-        path: "emergency/bills",
-        element: <Navigate to="/provider/emergency/bills" replace />,
-      },
-      {
-        path: "emergency/bills/:billId",
-        element: <Navigate to="/provider/emergency/bills/:billId" replace />,
-      },
-      {
-        path: "emergency/bill-capture",
-        element: <Navigate to="/provider/emergency/bill-capture" replace />,
-      },
-      {
-        path: "endorsement-review",
-        element: <Navigate to="/md/endorsement-review" replace />,
-      },
-      {
-        path: "tariff",
-        element: <Navigate to="/state/tariff" replace />,
-      },
-      {
-        path: "settings",
-        element: <Navigate to="/state/settings" replace />,
+        path: "enrollee/settings",
+        ...createProtectedRoute(Settings, ["Individual", "Corporate"], "Settings"),
       },
       
       // Catch-all error boundary
-      // Admin Routes
-{
-  path: "admin",
-  element: <RoleRoute allowedRoles={["Administrator", "SuperAdmin"]} />,
-  children: [
-    {
-      path: "dashboard",
-      element: <Layout><Dashboard /></Layout>,
-      handle: { title: "Admin Dashboard" },
-    },
-    // ... other admin routes
-  ],
-},
-      
-      // Catch-all
       {
         path: "*",
         element: <ErrorBoundary />,
