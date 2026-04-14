@@ -64,6 +64,7 @@ export interface EmergencyClaimResponse {
 export interface EmergencyClaimRequest {
   providerId: string;
   SSHIAId: string;
+  status?: string;
 }
 
 export interface CreateEmergencyClaimRequest {

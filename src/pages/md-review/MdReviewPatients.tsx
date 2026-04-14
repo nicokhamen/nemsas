@@ -124,6 +124,7 @@ export const MdReviewPatients = () => {
   }
 
   return (
+    <>
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="bg-white px-5 py-5 shadow-sm">
         <div className="border-b border-gray-300 pb-5">
@@ -274,6 +275,7 @@ export const MdReviewPatients = () => {
         )}
       </div>
     </div>
+    </>
   );
 };
 

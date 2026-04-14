@@ -10,16 +10,36 @@ import type {
 } from "../../types/emergencyClaim";
 
 // Async Thunks
+// export const fetchEmergencyClaims = createAsyncThunk(
+//   "emergencyClaim/fetchAll",
+//   async (
+//     { providerId, SSHIAId }: EmergencyClaimRequest,
+//     { rejectWithValue }
+//   ) => {
+//     try {
+//       const response = await axiosInstance.get<EmergencyClaimResponse>(
+//         `/emergency-Claim?ProviderId=${providerId}&SSHIAId=${SSHIAId}`
+//       );
+//       return response.data;
+//     } catch (error: any) {
+//       return rejectWithValue(
+//         error.response?.data?.message || "Failed to fetch emergency claims"
+//       );
+//     }
+//   }
+// );
 export const fetchEmergencyClaims = createAsyncThunk(
   "emergencyClaim/fetchAll",
   async (
-    { providerId, SSHIAId }: EmergencyClaimRequest,
+    { providerId, SSHIAId, status }: EmergencyClaimRequest,
     { rejectWithValue }
   ) => {
     try {
-      const response = await axiosInstance.get<EmergencyClaimResponse>(
-        `/emergency-Claim?ProviderId=${providerId}&SSHIAId=${SSHIAId}`
-      );
+      let url = `/emergency-Claim?ProviderId=${providerId}&SSHIAId=${SSHIAId}`;
+      if (status) {
+        url += `&Status=${status}`;
+      }
+      const response = await axiosInstance.get<EmergencyClaimResponse>(url);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(

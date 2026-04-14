@@ -223,9 +223,7 @@ const PatientEncounterDetails: React.FC = () => {
       setIsRejectModalOpen(false);
       handleRefresh();
     } catch (error) {
-      toast.error(
-        typeof error === "string" ? error : "Unable to reject bill",
-      );
+      toast.error(typeof error === "string" ? error : "Unable to reject bill");
     } finally {
       setIsActionLoading(false);
     }
@@ -254,9 +252,7 @@ const PatientEncounterDetails: React.FC = () => {
       setIsDisputeModalOpen(false);
       handleRefresh();
     } catch (error) {
-      toast.error(
-        typeof error === "string" ? error : "Unable to dispute bill",
-      );
+      toast.error(typeof error === "string" ? error : "Unable to dispute bill");
     } finally {
       setIsActionLoading(false);
     }
@@ -336,7 +332,10 @@ const PatientEncounterDetails: React.FC = () => {
                 label="Patient Number"
                 value={patientDetails.hospitalNumber || "N/A"}
               />
-              <DetailRow label="Gender" value={patientDetails.gender || "N/A"} />
+              <DetailRow
+                label="Gender"
+                value={patientDetails.gender || "N/A"}
+              />
               <DetailRow
                 label="Phone number"
                 value={patientDetails.phoneNumber || "N/A"}
@@ -380,7 +379,8 @@ const PatientEncounterDetails: React.FC = () => {
                       <div className="flex items-center gap-3">
                         <CheckCircle2 className="h-5 w-5 text-green-500" />
                         <span className="font-medium text-gray-900">
-                          EncounterID {encounter.encounterId || `00${index + 1}`}
+                          EncounterID{" "}
+                          {encounter.encounterId || `00${index + 1}`}
                         </span>
                       </div>
                       <div className="flex items-center gap-3">
@@ -465,7 +465,10 @@ const PatientEncounterDetails: React.FC = () => {
               />
               <DetailRow label="Type" value={diagnosis?.type || "N/A"} />
               <DetailRow label="Code" value={diagnosis?.code || "N/A"} />
-              <DetailRow label="Note" value={diagnosis?.note || "No comment..."} />
+              <DetailRow
+                label="Note"
+                value={diagnosis?.note || "No comment..."}
+              />
             </div>
 
             <SectionTitle>Emergency History</SectionTitle>
@@ -499,20 +502,24 @@ const PatientEncounterDetails: React.FC = () => {
             <SectionTitle>Uploaded Documents</SectionTitle>
             {selectedEncounter.supportingDocuments?.length ? (
               <div className="grid gap-x-20 md:grid-cols-2">
-                {selectedEncounter.supportingDocuments.map((documentUrl, idx) => (
-                  <a
-                    key={`${documentUrl}-${idx}`}
-                    href={documentUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="border-b border-gray-100 py-4 text-gray-600 hover:text-red-600"
-                  >
-                    {getFileName(documentUrl)}
-                  </a>
-                ))}
+                {selectedEncounter.supportingDocuments.map(
+                  (documentUrl, idx) => (
+                    <a
+                      key={`${documentUrl}-${idx}`}
+                      href={documentUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="border-b border-gray-100 py-4 text-gray-600 hover:text-red-600"
+                    >
+                      {getFileName(documentUrl)}
+                    </a>
+                  ),
+                )}
               </div>
             ) : (
-              <p className="py-4 text-gray-500">No uploaded documents available.</p>
+              <p className="py-4 text-gray-500">
+                No uploaded documents available.
+              </p>
             )}
 
             <SectionTitle>Product/Service</SectionTitle>
@@ -524,49 +531,69 @@ const PatientEncounterDetails: React.FC = () => {
                     <th className="px-6 py-4 font-semibold">
                       Service Description
                     </th>
-                    <th className="px-6 py-4 font-semibold">Qty</th>
-                    <th className="px-6 py-4 font-semibold">Unit Price</th>
-                    <th className="px-6 py-4 font-semibold">NHIS Price</th>
-                    <th className="px-6 py-4 font-semibold">NHIS (%)</th>
-                    <th className="px-6 py-4 font-semibold">Total</th>
+                    <th className="px-6 py-4 font-semibold text-center">Qty</th>
+                    <th className="px-6 py-4 font-semibold text-right">
+                      Unit Price
+                    </th>
+                    <th className="px-6 py-4 font-semibold text-right">
+                      NHIS Price
+                    </th>
+                    <th className="px-6 py-4 font-semibold text-center">
+                      NHIS (%)
+                    </th>
+                    <th className="px-6 py-4 font-semibold text-right">
+                      Total
+                    </th>
                     {isMdReviewDetail && (
-                      <th className="px-6 py-4 font-semibold">Action</th>
+                      <th className="px-6 py-4 font-semibold text-center">
+                        Action
+                      </th>
                     )}
                   </tr>
                 </thead>
                 <tbody>
                   {selectedEncounter.productServices?.length ? (
                     selectedEncounter.productServices.map((item, idx) => (
-                      <tr key={item.id || idx} className="border-b border-gray-100">
-                        {/* <td className="px-6 py-4 text-gray-600">
-                          <CheckboxLine label={item.name || "N/A"} />
-                        </td> */}
+                      <tr
+                        key={item.id || idx}
+                        className="border-b border-gray-100 hover:bg-gray-50"
+                      >
+                        <td className="px-6 py-4 text-gray-800 font-medium">
+                          {item.name || "N/A"}
+                        </td>
                         <td className="px-6 py-4 text-gray-600">
                           {item.description || item.code || "N/A"}
                         </td>
-                        <td className="px-6 py-4 text-gray-600">
+                        <td className="px-6 py-4 text-gray-600 text-center">
                           {item.quantity || 0}
                         </td>
-                        <td className="px-6 py-4 text-gray-600">
+                        <td className="px-6 py-4 text-gray-600 text-right">
                           {formatCurrency(item.price)}
                         </td>
-                        <td className="px-6 py-4 text-gray-600">
-                          {formatCurrency(item.nhisPrice)}
+                        <td className="px-6 py-4 text-gray-600 text-right">
+                          {item.nhisPrice !== undefined &&
+                          item.nhisPrice !== null
+                            ? formatCurrency(item.nhisPrice)
+                            : "-"}
                         </td>
-                        <td className="px-6 py-4 text-gray-600">
-                          {item.nhisPercentage ?? "-"}
+                        <td className="px-6 py-4 text-gray-600 text-center">
+                          {item.nhisPercentage !== undefined &&
+                          item.nhisPercentage !== null
+                            ? `${item.nhisPercentage}%`
+                            : "-"}
                         </td>
-                        <td className="px-6 py-4 font-semibold text-gray-700">
+                        <td className="px-6 py-4 font-semibold text-gray-800 text-right">
                           {formatCurrency(item.netAmount)}
                         </td>
                         {isMdReviewDetail && (
-                          <td className="px-6 py-4">
-                            <div className="flex gap-2">
+                          <td className="px-6 py-4 text-center">
+                            <div className="flex gap-2 justify-center">
                               <button
                                 type="button"
                                 onClick={() =>
                                   requestBillDispute(
-                                    item.emergencyBillId || selectedEncounter.id,
+                                    item.emergencyBillId ||
+                                      selectedEncounter.id,
                                   )
                                 }
                                 className="rounded border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-600 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
@@ -578,7 +605,8 @@ const PatientEncounterDetails: React.FC = () => {
                                 type="button"
                                 onClick={() =>
                                   requestBillReject(
-                                    item.emergencyBillId || selectedEncounter.id,
+                                    item.emergencyBillId ||
+                                      selectedEncounter.id,
                                   )
                                 }
                                 className="rounded border border-red-400 bg-red-50 px-3 py-1 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
@@ -637,7 +665,9 @@ const DetailRow: React.FC<DetailRowProps> = ({ label, value }) => (
   </div>
 );
 
-const SectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+const SectionTitle: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => (
   <div className="border-b border-gray-300 pb-3">
     <h2 className="text-xl font-semibold text-red-600">{children}</h2>
   </div>
