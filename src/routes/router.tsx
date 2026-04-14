@@ -154,6 +154,15 @@ export const router = createBrowserRouter([
         handle: { title: "MD Review Details" },
       },
       {
+        path: "md-review/emergency-bills/:claimId/:patientId",
+        element: (
+          <Layout>
+            <PatientEncounterDetails />
+          </Layout>
+        ),
+        handle: { title: "Bill Details" },
+      },
+      {
         path: "endorsement-review",
         element: (
           <Layout>

@@ -49,6 +49,7 @@ const StatePatientVetting: React.FC = () => {
   // Get data from location state (UI CONVENIENCE ONLY - NOT PRIMARY SOURCE)
   const claimNumberFromLocation = location.state?.claimNumber;
   const fromEmergencyClaims = location.state?.fromEmergencyClaims;
+  const fromMdReview = location.state?.fromMdReview;
 
   // dispute and reject modals
   const [isDisputeModalOpen, setIsDisputeModalOpen] = useState(false);
@@ -143,6 +144,17 @@ const StatePatientVetting: React.FC = () => {
 
   // Handle back navigation - go back to the bills page
   const handleBack = () => {
+    if (fromMdReview && claimId) {
+      navigate(`/md-review/${claimId}`, {
+        state: {
+          claimNumber: claimNumberFromLocation,
+          claimId: claimId,
+          fromMdReview: true,
+        },
+      });
+      return;
+    }
+
     if (fromEmergencyClaims && claimId) {
       navigate(`/state/emergency/claims/${claimId}`, {
         state: {

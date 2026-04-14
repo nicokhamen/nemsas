@@ -66,6 +66,7 @@ export const StateBillsVetting = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const location = useLocation();
+  const isMdReviewRoute = location.pathname.startsWith("/md-review");
   
   // Get the selected provider from context (PRIMARY SOURCE)
   const { selectedProviderId, setSelectedProviderId } = useProviderContext();
@@ -383,7 +384,7 @@ export const StateBillsVetting = () => {
 
   // Handle back navigation
   const handleBack = () => {
-    navigate("/state/provider/vetting");
+    navigate(isMdReviewRoute ? "/md-review" : "/state/provider/vetting");
   };
 
   // Handle refresh
@@ -393,13 +394,18 @@ export const StateBillsVetting = () => {
 
   // Handle row click to view patient details
   const handleRowClick = (patientId: string) => {
-    navigate(`/state/emergency-bills/${claimId}/${patientId}`, {
+    const patientDetailsPath = isMdReviewRoute
+      ? `/md-review/emergency-bills/${claimId}/${patientId}`
+      : `/state/emergency-bills/${claimId}/${patientId}`;
+
+    navigate(patientDetailsPath, {
       state: {
         patientId: patientId,
         claimId: claimId,
         claimNumber: claimNumberFromLocation,
         providerId: activeProviderId, // Use resolved provider ID
-        fromEmergencyClaims: true
+        fromEmergencyClaims: true,
+        fromMdReview: isMdReviewRoute,
       }
     });
   };

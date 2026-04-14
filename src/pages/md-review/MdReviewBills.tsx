@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../services/store/store";
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
@@ -37,6 +37,9 @@ import { clearCurrentEmergencyBills } from "../../services/slices/claimEmergency
 import VettingModal from "../../components/ui/VettingModal";
 import { mdVetEmergencyClaim } from "../../services/thunks/mdRequestThunk";
 import type { ClaimEmergencyBill } from "../../types/ClaimEmergencyBills";
+import { useProviderContext } from "../../context/useProviderContext";
+
+const ZERO_GUID = "00000000-0000-0000-0000-000000000000";
 
 // Status color map for discharge status
 const statusColor: Record<string, string> = {
@@ -44,14 +47,6 @@ const statusColor: Record<string, string> = {
   Pending: "#1976d2",
   Rejected: "#d32f2f",
   Default: "#6b6f80",
-};
-
-// Insurance status color
-const insuranceStatusColor: Record<string, string> = {
-  NHIA: "#2196f3",
-  Private: "#4caf50",
-  SSHIAS: "#9c27b0",
-  Default: "#4caf50",
 };
 
 // Format currency
@@ -78,26 +73,46 @@ const multiFieldFilter = (row: any, _columnId: string, filterValue: string) => {
   if (!filterValue) return true;
 
   const searchTerm = filterValue.toLowerCase();
-  const patientName = (row.getValue("patientName") || "").toLowerCase();
+  const patientName = (row.original.patientName || "").toLowerCase();
   const patientHospitalNumber = (
-    row.getValue("patientHospitalNumber") || ""
+    row.original.patientHospitalNumber || ""
   ).toLowerCase();
+  const patientNumber = (row.original.patientNumber || "").toLowerCase();
 
   return (
     patientName.includes(searchTerm) ||
-    patientHospitalNumber.includes(searchTerm)
+    patientHospitalNumber.includes(searchTerm) ||
+    patientNumber.includes(searchTerm)
   );
 };
 
 export const MdReviewBills = () => {
   const { id: claimId } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useAppDispatch();
   const { error: toastError } = useCustomToast();
+  const { selectedProviderId } = useProviderContext();
 
-  // Get providerId from auth context
   const currentUser = useSelector((state: RootState) => state.auth.user);
-  const providerId = currentUser?.providerId || "";
+  const providerIdFromLocation = location.state?.providerId;
+  const claimNumberFromLocation = location.state?.claimNumber;
+
+  const providerId = useMemo(() => {
+    if (currentUser?.orgType === "PROVIDER") {
+      return currentUser.providerId || "";
+    }
+
+    if (selectedProviderId && selectedProviderId !== ZERO_GUID) {
+      return selectedProviderId;
+    }
+
+    if (providerIdFromLocation && providerIdFromLocation !== ZERO_GUID) {
+      return providerIdFromLocation;
+    }
+
+    return currentUser?.providerId || "";
+  }, [currentUser, selectedProviderId, providerIdFromLocation]);
 
   // Approve Reject bill state
   const [showVettingModal, setShowVettingModal] = useState(false);
@@ -185,10 +200,17 @@ export const MdReviewBills = () => {
       patientAge: bill.patient?.age || "N/A",
       patientGender: bill.patient?.gender || "N/A",
       patientInsuranceStatus: bill.patient?.insuranceStatus || "N/A",
+      patientNumber: bill.patient?.hospitalNumber || "N/A",
       hospitalName: bill.hospitalName,
       department: bill.department,
       serviceType: bill.serviceType,
       encounterStart: formatDate(bill.encounterStartDateTime),
+      rawEncounterDate: bill.encounterStartDateTime,
+      encounterId: bill.encounterId || "N/A",
+      diagnosis: bill.diagnoses?.[0]?.diagnosis || "N/A",
+      tariffCode:
+        bill.productServices?.map((service) => service.code).filter(Boolean)[0] ||
+        "N/A",
       dischargeStatus: bill.dischargeStatus,
       status: bill.status,
       dischargeDate: bill.dischargeDate
@@ -197,7 +219,7 @@ export const MdReviewBills = () => {
       attendingPhysician: bill.attendingPhysician || "N/A",
       diagnosesCount: bill.diagnoses?.length || 0,
       servicesCount: bill.productServices?.length || 0,
-      totalAmount: calculateTotalAmount(bill), // Use calculated amount
+      totalAmount: calculateTotalAmount(bill),
       formattedTotalAmount: formatCurrency(calculateTotalAmount(bill)),
       serviceCategories: bill.serviceCategories?.join(", ") || "N/A",
       createdDate: formatDate(bill.createdDate),
@@ -237,54 +259,38 @@ export const MdReviewBills = () => {
       size: 40,
     },
     {
-      accessorKey: "sn",
-      header: "S/N",
-      size: 60,
-    },
-    {
-      accessorKey: "patientName",
-      header: "Patient Name",
+      accessorKey: "patientNumber",
+      header: "Patient Number",
       enableSorting: true,
       filterFn: multiFieldFilter,
     },
     {
-      accessorKey: "patientHospitalNumber",
-      header: "Hospital No.",
-      enableSorting: true,
-      filterFn: multiFieldFilter,
-    },
-    {
-      accessorKey: "patientInsuranceStatus",
-      header: "Insurance",
-      cell: ({ row }) => {
-        const status = row.original.patientInsuranceStatus;
-        return (
-          <span
-            className="px-2 py-1 rounded-full text-xs font-medium"
-            style={{
-              backgroundColor: `${insuranceStatusColor[status] || insuranceStatusColor.Default}20`,
-              color:
-                insuranceStatusColor[status] || insuranceStatusColor.Default,
-            }}
-          >
-            {status}
-          </span>
-        );
-      },
+      accessorKey: "encounterId",
+      header: "Encounter ID",
       enableSorting: true,
     },
     {
-      accessorKey: "hospitalName",
-      header: "Hospital",
+      accessorKey: "encounterStart",
+      header: "Encounter Date",
+      enableSorting: true,
+    },
+    {
+      accessorKey: "diagnosis",
+      header: "Diagnosis",
       enableSorting: true,
       cell: ({ row }) => (
         <div
-          className="max-w-[150px] truncate"
-          title={row.original.hospitalName}
+          className="max-w-[220px] truncate"
+          title={row.original.diagnosis}
         >
-          {row.original.hospitalName}
+          {row.original.diagnosis}
         </div>
       ),
+    },
+    {
+      accessorKey: "tariffCode",
+      header: "Tariff Code",
+      enableSorting: true,
     },
     {
       accessorKey: "formattedTotalAmount",
@@ -364,8 +370,17 @@ export const MdReviewBills = () => {
   };
 
   // Handle row click to view bill details
-  const handleRowClick = (billId: string) => {
-    navigate(`/emergency/bills/${billId}`);
+  const handleRowClick = (bill: (typeof tableBills)[0]) => {
+    navigate(`/md-review/emergency-bills/${claimId}/${bill.rawData.patientId}`, {
+      state: {
+        patientId: bill.rawData.patientId,
+        billId: bill.id,
+        claimId,
+        claimNumber: claimNumberFromLocation,
+        providerId,
+        fromMdReview: true,
+      },
+    });
   };
 
   // Handle bulk action
@@ -460,16 +475,16 @@ export const MdReviewBills = () => {
               <div className="grid grid-cols-12 gap-4 items-end">
                 <div className="col-span-3">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Patient Name or Hospital No
+                    Patient Number
                   </label>
                   <input
                     type="text"
-                    placeholder="Enter name or Hospital No"
+                    placeholder="Enter patient number"
                     value={searchTerm}
                     onChange={(e) => {
                       const value = e.target.value;
                       setSearchTerm(value);
-                      table.getColumn("patientName")?.setFilterValue(value);
+                      table.getColumn("patientNumber")?.setFilterValue(value);
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none"
                   />
@@ -527,7 +542,12 @@ export const MdReviewBills = () => {
             {/* Header */}
             <div className="flex flex-wrap gap-4 justify-between items-center py-6 px-6 bg-gray-50">
               <h3 className="text-lg font-semibold text-gray-700">
-                Emergency Bills for Claim
+                MD Endorsement
+                {claimNumberFromLocation && (
+                  <span className="ml-3 text-sm font-normal text-gray-500">
+                    {claimNumberFromLocation}
+                  </span>
+                )}
               </h3>
               <Button
                 size="sm"
@@ -658,7 +678,7 @@ export const MdReviewBills = () => {
                                   key={row.id}
                                   className="cursor-pointer hover:bg-[#FFFFFF] transition-colors"
                                   onClick={() =>
-                                    handleRowClick(row.original.id)
+                                    handleRowClick(row.original)
                                   }
                                 >
                                   {row.getVisibleCells().map((cell) => (
