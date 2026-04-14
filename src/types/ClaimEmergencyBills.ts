@@ -95,6 +95,7 @@ export interface ClaimEmergencyBills {
   data: ClaimEmergencyBill[];
   message: string;
   isSuccess: boolean;
+  claimDetails?: EmergencyClaimBillsDetails;
 }
 
 export interface EmergencyClaimBillsDetails {

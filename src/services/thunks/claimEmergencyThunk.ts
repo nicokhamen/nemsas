@@ -57,6 +57,7 @@ export const fetchEmergencyClaimBillsByClaimNumber = createAsyncThunk<
         data: response.data.data?.bills || [],
         message: response.data.message,
         isSuccess: response.data.isSuccess,
+        claimDetails: response.data.data,
       };
     } catch (error: any) {
       if (error.response?.data) {
