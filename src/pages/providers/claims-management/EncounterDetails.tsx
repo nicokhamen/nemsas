@@ -7,7 +7,6 @@ import type { RootState } from "../../../services/store/store";
 import { fetchPatientEncounter } from "../../../services/thunks/patientEncounterThunk";
 import { clearPatientEncounter } from "../../../services/slices/patientEncounterSlice";
 import { disputeRejectBill } from "../../../services/thunks/vettiingBillThunk";
-import { mdVetEmergencyClaim } from "../../../services/thunks/mdRequestThunk";
 import { LoadingSpinner } from "../../../components/ui/LoadingSpinner";
 import Button from "../../../components/ui/Button";
 import type { EmergencyBill } from "../../../types/PatientsEncounter";
@@ -95,13 +94,15 @@ const PatientEncounterDetails: React.FC = () => {
   } = useSelector((state: RootState) => state.patientEncounter);
 
   const [openIndex, setOpenIndex] = useState<number | null>(0);
-  const [selectedActionBillId, setSelectedActionBillId] = useState("");
+  const [selectedActionBillIds, setSelectedActionBillIds] = useState<string[]>(
+    [],
+  );
+  const [selectedProductServiceIds, setSelectedProductServiceIds] = useState<
+    string[]
+  >([]);
   const [isDisputeModalOpen, setIsDisputeModalOpen] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState(false);
-  const [pendingGeneralAction, setPendingGeneralAction] = useState<
-    "Approved" | "Rejected" | null
-  >(null);
 
   useEffect(() => {
     if (patientId && providerId) {
@@ -146,13 +147,30 @@ const PatientEncounterDetails: React.FC = () => {
 
   const diagnosis = selectedEncounter?.diagnoses?.[0];
 
-  const selectedEncounterTotal = useMemo(() => {
-    return (
-      selectedEncounter?.productServices?.reduce((total, item) => {
-        return total + (item.netAmount || item.price * (item.quantity || 1));
-      }, 0) || selectedEncounter?.totalAmount || 0
-    );
-  }, [selectedEncounter]);
+  useEffect(() => {
+    setSelectedProductServiceIds([]);
+  }, [selectedEncounter?.id]);
+
+  const getProductServiceSelectionId = (itemId?: string, index?: number) => {
+    return itemId || `${selectedEncounter?.id || "service"}-${index ?? 0}`;
+  };
+
+  const productServices = selectedEncounter?.productServices || [];
+  const selectedProductServices = productServices.filter((item, index) =>
+    selectedProductServiceIds.includes(
+      getProductServiceSelectionId(item.id, index),
+    ),
+  );
+  const selectedProductServiceBillIds = Array.from(
+    new Set(
+      selectedProductServices
+        .map((item) => item.emergencyBillId || selectedEncounter?.id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  );
+  const allProductServicesSelected =
+    productServices.length > 0 &&
+    selectedProductServiceIds.length === productServices.length;
 
   const handleBack = () => {
     if (fromMdReview && claimId) {
@@ -184,36 +202,75 @@ const PatientEncounterDetails: React.FC = () => {
     }
   };
 
-  const requestBillDispute = (emergencyBillId?: string) => {
-    if (!emergencyBillId) {
+  const requestBillDispute = (emergencyBillIds?: string[]) => {
+    if (!emergencyBillIds?.length) {
       toast.error("Unable to identify the bill for dispute.");
       return;
     }
 
-    setSelectedActionBillId(emergencyBillId);
+    setSelectedActionBillIds(emergencyBillIds);
     setIsDisputeModalOpen(true);
   };
 
-  const requestBillReject = (emergencyBillId?: string) => {
-    if (!emergencyBillId) {
+  const requestBillReject = (emergencyBillIds?: string[]) => {
+    if (!emergencyBillIds?.length) {
       toast.error("Unable to identify the bill for rejection.");
       return;
     }
 
-    setSelectedActionBillId(emergencyBillId);
+    setSelectedActionBillIds(emergencyBillIds);
     setIsRejectModalOpen(true);
+  };
+
+  const requestSelectedProductServiceDispute = () => {
+    if (!selectedProductServiceBillIds.length) {
+      toast.error("Please select at least one product or service to dispute.");
+      return;
+    }
+
+    requestBillDispute(selectedProductServiceBillIds);
+  };
+
+  const requestSelectedProductServiceReject = () => {
+    if (!selectedProductServiceBillIds.length) {
+      toast.error("Please select at least one product or service to reject.");
+      return;
+    }
+
+    requestBillReject(selectedProductServiceBillIds);
+  };
+
+  const toggleProductServiceSelection = (selectionId: string) => {
+    setSelectedProductServiceIds((currentIds) =>
+      currentIds.includes(selectionId)
+        ? currentIds.filter((id) => id !== selectionId)
+        : [...currentIds, selectionId],
+    );
+  };
+
+  const toggleAllProductServices = () => {
+    if (allProductServicesSelected) {
+      setSelectedProductServiceIds([]);
+      return;
+    }
+
+    setSelectedProductServiceIds(
+      productServices.map((item, index) =>
+        getProductServiceSelectionId(item.id, index),
+      ),
+    );
   };
 
   const resetBillAction = () => {
     if (isActionLoading) return;
 
-    setSelectedActionBillId("");
+    setSelectedActionBillIds([]);
     setIsDisputeModalOpen(false);
     setIsRejectModalOpen(false);
   };
 
   const handleRejectBill = async () => {
-    if (!selectedActionBillId || !providerId) {
+    if (!selectedActionBillIds.length || !providerId) {
       toast.error("Unable to identify the bill for this action.");
       return;
     }
@@ -221,17 +278,24 @@ const PatientEncounterDetails: React.FC = () => {
     try {
       setIsActionLoading(true);
 
-      await dispatch(
-        disputeRejectBill({
-          emergencyBillId: selectedActionBillId,
-          providerId,
-          remark: "Invalid bill",
-          status: "Rejected",
-        }),
-      ).unwrap();
+      await Promise.all(
+        selectedActionBillIds.map((emergencyBillId) =>
+          dispatch(
+            disputeRejectBill({
+              emergencyBillId,
+              providerId,
+              remark: "Invalid bill",
+              status: "Rejected",
+            }),
+          ).unwrap(),
+        ),
+      );
 
-      toast.error("Bill rejected");
-      setSelectedActionBillId("");
+      toast.error(
+        selectedActionBillIds.length > 1 ? "Bills rejected" : "Bill rejected",
+      );
+      setSelectedActionBillIds([]);
+      setSelectedProductServiceIds([]);
       setIsRejectModalOpen(false);
       handleRefresh();
     } catch (error) {
@@ -242,7 +306,7 @@ const PatientEncounterDetails: React.FC = () => {
   };
 
   const handleDisputeBill = async (reason: string) => {
-    if (!selectedActionBillId || !providerId) {
+    if (!selectedActionBillIds.length || !providerId) {
       toast.error("Unable to identify the bill for this action.");
       return;
     }
@@ -250,74 +314,30 @@ const PatientEncounterDetails: React.FC = () => {
     try {
       setIsActionLoading(true);
 
-      await dispatch(
-        disputeRejectBill({
-          emergencyBillId: selectedActionBillId,
-          providerId,
-          remark: reason,
-          status: "Disputed",
-        }),
-      ).unwrap();
+      await Promise.all(
+        selectedActionBillIds.map((emergencyBillId) =>
+          dispatch(
+            disputeRejectBill({
+              emergencyBillId,
+              providerId,
+              remark: reason,
+              status: "Disputed",
+            }),
+          ).unwrap(),
+        ),
+      );
 
-      toast.info("Bill has been activated for dispute");
-      setSelectedActionBillId("");
+      toast.info(
+        selectedActionBillIds.length > 1
+          ? "Bills have been activated for dispute"
+          : "Bill has been activated for dispute",
+      );
+      setSelectedActionBillIds([]);
+      setSelectedProductServiceIds([]);
       setIsDisputeModalOpen(false);
       handleRefresh();
     } catch (error) {
       toast.error(typeof error === "string" ? error : "Unable to dispute bill");
-    } finally {
-      setIsActionLoading(false);
-    }
-  };
-
-  const requestGeneralBillAction = (status: "Approved" | "Rejected") => {
-    if (!selectedEncounter?.id || !claimId) {
-      toast.error("Unable to identify the bill for this action.");
-      return;
-    }
-
-    setPendingGeneralAction(status);
-  };
-
-  const handleGeneralBillAction = async () => {
-    if (!pendingGeneralAction || !selectedEncounter?.id || !claimId) {
-      toast.error("Unable to identify the bill for this action.");
-      return;
-    }
-
-    const status = pendingGeneralAction;
-
-    try {
-      setIsActionLoading(true);
-
-      await dispatch(
-        mdVetEmergencyClaim({
-          claimId,
-          emergencyClaimId: claimId,
-          emergencyBillIds: [selectedEncounter.id],
-          status,
-          remark:
-            status === "Approved"
-              ? "Approved by Medical Director"
-              : "Rejected by Medical Director",
-          isBillOnly: true,
-          vettedAmount: selectedEncounterTotal,
-        }),
-      ).unwrap();
-
-      toast.success(
-        status === "Approved"
-          ? "Bill approved successfully"
-          : "Bill rejected successfully",
-      );
-      setPendingGeneralAction(null);
-      handleRefresh();
-    } catch (error) {
-      toast.error(
-        typeof error === "string"
-          ? error
-          : `Unable to ${status.toLowerCase()} bill`,
-      );
     } finally {
       setIsActionLoading(false);
     }
@@ -337,26 +357,6 @@ const PatientEncounterDetails: React.FC = () => {
         <div className="flex items-center justify-between gap-4 border-b border-gray-300 px-8 py-4">
           <h1 className="text-2xl font-semibold text-gray-600">Bill Details</h1>
           <div className="flex items-center gap-3">
-            {isMdReviewDetail && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => requestGeneralBillAction("Approved")}
-                  disabled={!selectedEncounter || isActionLoading}
-                  className="rounded bg-green-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  Approve
-                </button>
-                <button
-                  type="button"
-                  onClick={() => requestGeneralBillAction("Rejected")}
-                  disabled={!selectedEncounter || isActionLoading}
-                  className="rounded border border-red-500 bg-red-50 px-5 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  Reject
-                </button>
-              </>
-            )}
             <button
               onClick={handleBack}
               className="rounded-full text-[#0B4972] transition hover:bg-gray-100"
@@ -477,7 +477,9 @@ const PatientEncounterDetails: React.FC = () => {
                               type="button"
                               onClick={(event) => {
                                 event.stopPropagation();
-                                requestBillDispute(encounter.id);
+                                requestBillDispute(
+                                  encounter.id ? [encounter.id] : undefined,
+                                );
                               }}
                               className="rounded border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-600 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
                               disabled={isActionLoading}
@@ -488,7 +490,9 @@ const PatientEncounterDetails: React.FC = () => {
                               type="button"
                               onClick={(event) => {
                                 event.stopPropagation();
-                                requestBillReject(encounter.id);
+                                requestBillReject(
+                                  encounter.id ? [encounter.id] : undefined,
+                                );
                               }}
                               className="rounded border border-red-400 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
                               disabled={isActionLoading}
@@ -610,10 +614,54 @@ const PatientEncounterDetails: React.FC = () => {
             )}
 
             <SectionTitle>Product/Service</SectionTitle>
+            {isMdReviewDetail && selectedProductServiceIds.length > 0 && (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded border border-emerald-100 bg-emerald-50 px-4 py-3">
+                <p className="text-sm font-medium text-gray-700">
+                  {selectedProductServiceIds.length} item(s) selected
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={requestSelectedProductServiceDispute}
+                    disabled={isActionLoading}
+                    className="rounded border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-600 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Dispute Selected
+                  </button>
+                  <button
+                    type="button"
+                    onClick={requestSelectedProductServiceReject}
+                    disabled={isActionLoading}
+                    className="rounded border border-red-400 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Reject Selected
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedProductServiceIds([])}
+                    disabled={isActionLoading}
+                    className="rounded border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Clear Selection
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="overflow-x-auto">
               <table className="min-w-full text-left text-sm">
                 <thead className="bg-[#F1FAF7] text-gray-500">
                   <tr>
+                    {isMdReviewDetail && (
+                      <th className="w-12 px-6 py-4 font-semibold">
+                        <input
+                          type="checkbox"
+                          checked={allProductServicesSelected}
+                          onChange={toggleAllProductServices}
+                          className="h-4 w-4 rounded border-gray-300"
+                          aria-label="Select all product or service items"
+                        />
+                      </th>
+                    )}
                     <th className="px-6 py-4 font-semibold">Name</th>
                     <th className="px-6 py-4 font-semibold">
                       Service Description
@@ -631,81 +679,66 @@ const PatientEncounterDetails: React.FC = () => {
                     <th className="px-6 py-4 font-semibold text-right">
                       Total
                     </th>
-                    {isMdReviewDetail && (
-                      <th className="px-6 py-4 font-semibold text-center">
-                        Action
-                      </th>
-                    )}
                   </tr>
                 </thead>
                 <tbody>
                   {selectedEncounter.productServices?.length ? (
-                    selectedEncounter.productServices.map((item, idx) => (
-                      <tr
-                        key={item.id || idx}
-                        className="border-b border-gray-100 hover:bg-gray-50"
-                      >
-                        <td className="px-6 py-4 text-gray-800 font-medium">
-                          {item.name || "N/A"}
-                        </td>
-                        <td className="px-6 py-4 text-gray-600">
-                          {item.description || item.code || "N/A"}
-                        </td>
-                        <td className="px-6 py-4 text-gray-600 text-center">
-                          {item.quantity || 0}
-                        </td>
-                        <td className="px-6 py-4 text-gray-600 text-right">
-                          {formatCurrency(item.price)}
-                        </td>
-                        <td className="px-6 py-4 text-gray-600 text-right">
-                          {item.nhisPrice !== undefined &&
-                          item.nhisPrice !== null
-                            ? formatCurrency(item.nhisPrice)
-                            : "-"}
-                        </td>
-                        <td className="px-6 py-4 text-gray-600 text-center">
-                          {item.nhisPercentage !== undefined &&
-                          item.nhisPercentage !== null
-                            ? `${item.nhisPercentage}%`
-                            : "-"}
-                        </td>
-                        <td className="px-6 py-4 font-semibold text-gray-800 text-right">
-                          {formatCurrency(item.netAmount)}
-                        </td>
-                        {isMdReviewDetail && (
-                          <td className="px-6 py-4 text-center">
-                            <div className="flex gap-2 justify-center">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  requestBillDispute(
-                                    item.emergencyBillId ||
-                                      selectedEncounter.id,
-                                  )
+                    selectedEncounter.productServices.map((item, idx) => {
+                      const selectionId = getProductServiceSelectionId(
+                        item.id,
+                        idx,
+                      );
+                      const isSelected =
+                        selectedProductServiceIds.includes(selectionId);
+
+                      return (
+                        <tr
+                          key={item.id || idx}
+                          className="border-b border-gray-100 hover:bg-gray-50"
+                        >
+                          {isMdReviewDetail && (
+                            <td className="px-6 py-4">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() =>
+                                  toggleProductServiceSelection(selectionId)
                                 }
-                                className="rounded border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-600 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
-                                disabled={isActionLoading}
-                              >
-                                Dispute
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  requestBillReject(
-                                    item.emergencyBillId ||
-                                      selectedEncounter.id,
-                                  )
-                                }
-                                className="rounded border border-red-400 bg-red-50 px-3 py-1 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
-                                disabled={isActionLoading}
-                              >
-                                Reject
-                              </button>
-                            </div>
+                                className="h-4 w-4 rounded border-gray-300"
+                                aria-label={`Select ${item.name || "item"}`}
+                              />
+                            </td>
+                          )}
+                          <td className="px-6 py-4 text-gray-800 font-medium">
+                            {item.name || "N/A"}
                           </td>
-                        )}
-                      </tr>
-                    ))
+                          <td className="px-6 py-4 text-gray-600">
+                            {item.description || item.code || "N/A"}
+                          </td>
+                          <td className="px-6 py-4 text-gray-600 text-center">
+                            {item.quantity || 0}
+                          </td>
+                          <td className="px-6 py-4 text-gray-600 text-right">
+                            {formatCurrency(item.price)}
+                          </td>
+                          <td className="px-6 py-4 text-gray-600 text-right">
+                            {item.nhisPrice !== undefined &&
+                            item.nhisPrice !== null
+                              ? formatCurrency(item.nhisPrice)
+                              : "-"}
+                          </td>
+                          <td className="px-6 py-4 text-gray-600 text-center">
+                            {item.nhisPercentage !== undefined &&
+                            item.nhisPercentage !== null
+                              ? `${item.nhisPercentage}%`
+                              : "-"}
+                          </td>
+                          <td className="px-6 py-4 font-semibold text-gray-800 text-right">
+                            {formatCurrency(item.netAmount)}
+                          </td>
+                        </tr>
+                      );
+                    })
                   ) : (
                     <tr>
                       <td
@@ -726,19 +759,25 @@ const PatientEncounterDetails: React.FC = () => {
         isOpen={isRejectModalOpen}
         onClose={resetBillAction}
         onConfirm={handleRejectBill}
+        title={
+          selectedActionBillIds.length > 1 ? "Reject Bills" : "Reject Bill"
+        }
+        message={
+          selectedActionBillIds.length > 1
+            ? `Are you sure you want to reject ${selectedActionBillIds.length} selected bill items? This action cannot be undone.`
+            : "Are you sure you want to reject this bill item? This action cannot be undone."
+        }
         isLoading={isActionLoading}
       />
       <DisputeVettingModal
         isOpen={isDisputeModalOpen}
         onClose={resetBillAction}
         onSubmit={handleDisputeBill}
+        title={
+          selectedActionBillIds.length > 1 ? "Dispute Bills" : "Dispute Bill"
+        }
+        confirmText="Submit Dispute"
         isLoading={isActionLoading}
-      />
-      <GeneralBillActionModal
-        action={pendingGeneralAction}
-        isLoading={isActionLoading}
-        onClose={() => setPendingGeneralAction(null)}
-        onConfirm={handleGeneralBillAction}
       />
     </div>
   );
@@ -779,72 +818,5 @@ const CheckboxLine: React.FC<{ label: string; checked?: boolean }> = ({
     <span>{label}</span>
   </span>
 );
-
-interface GeneralBillActionModalProps {
-  action: "Approved" | "Rejected" | null;
-  isLoading: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-}
-
-const GeneralBillActionModal: React.FC<GeneralBillActionModalProps> = ({
-  action,
-  isLoading,
-  onClose,
-  onConfirm,
-}) => {
-  if (!action) return null;
-
-  const isApprove = action === "Approved";
-  const actionLabel = isApprove ? "Approve" : "Reject";
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-md rounded bg-white p-6 shadow-xl">
-        <div
-          className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full ${
-            isApprove ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
-          }`}
-        >
-          {isApprove ? (
-            <CheckCircle2 className="h-6 w-6" />
-          ) : (
-            <XCircle className="h-6 w-6" />
-          )}
-        </div>
-
-        <h2 className="mb-2 text-center text-lg font-semibold text-gray-800">
-          {actionLabel} Bill
-        </h2>
-        <p className="mb-6 text-center text-sm text-gray-600">
-          Are you sure you want to {actionLabel.toLowerCase()} this bill? This
-          action cannot be undone.
-        </p>
-
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            disabled={isLoading}
-            className="flex-1"
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={onConfirm}
-            disabled={isLoading}
-            className={`flex-1 text-white ${
-              isApprove
-                ? "bg-green-600 hover:bg-green-700"
-                : "bg-red-600 hover:bg-red-700"
-            }`}
-          >
-            {isLoading ? "Processing..." : actionLabel}
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 export default PatientEncounterDetails;
