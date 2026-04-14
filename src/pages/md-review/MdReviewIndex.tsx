@@ -37,6 +37,9 @@ import autoTable from "jspdf-autotable";
 
 import "../../utils/pdfFont";
 import FormHeader from "../../components/form/FormHeader";
+import VetConfirmModal from "../../components/ui/VetSuccessModal";
+import { submitVettingClaim } from "../../services/thunks/vettingClaimThunk";
+import { useCustomToast } from "../../hooks/useCustomToast";
 
 const ZERO_GUID = "00000000-0000-0000-0000-000000000000";
 
@@ -71,9 +74,13 @@ export const MDReview = () => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [rowSelection, setRowSelection] = useState({});
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [approvalLoading, setApprovalLoading] = useState(false);
 
+  const toast = useCustomToast();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
@@ -152,6 +159,48 @@ export const MDReview = () => {
     );
   };
 
+  const handleOpenApproveModal = () => {
+    if (selectedRows.length !== 1) {
+      toast.error("Please select exactly one claim to approve");
+      return;
+    }
+
+    setShowConfirmModal(true);
+  };
+
+  const handleApproveClaims = async () => {
+    const selectedData = selectedRows.map((row) => row.original);
+
+    setApprovalLoading(true);
+
+    try {
+      await Promise.all(
+        selectedData.map((claim) =>
+          dispatch(
+            submitVettingClaim({
+              claimId: claim.id,
+              providerId,
+              emergencyClaimId: claim.id,
+              remark: "This Claim has been vetted",
+              status: "Vetted",
+            }),
+          ).unwrap(),
+        ),
+      );
+
+      setShowConfirmModal(false);
+      setRowSelection({});
+      loadClaims();
+
+      toast.success("Claims approved successfully");
+    } catch (error) {
+      console.error("Approval failed:", error);
+      toast.error("Failed to approve claims");
+    } finally {
+      setApprovalLoading(false);
+    }
+  };
+
   const exportTableToPDF = (
     tableData: typeof tableClaims,
     fileName = "emergencyclaims.pdf",
@@ -223,6 +272,21 @@ export const MDReview = () => {
 
   const columns: ColumnDef<(typeof tableClaims)[0]>[] = [
     {
+      id: "select",
+      header: () => null,
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          checked={row.getIsSelected()}
+          onChange={() => {
+            setRowSelection({ [row.id]: true });
+          }}
+          onClick={(e) => e.stopPropagation()}
+        />
+      ),
+      size: 40,
+    },
+    {
       accessorKey: "description",
       header: "Description",
       enableSorting: true,
@@ -287,11 +351,26 @@ export const MDReview = () => {
     state: {
       sorting,
       columnVisibility,
+      rowSelection,
       columnFilters,
       pagination: { pageIndex, pageSize },
     },
+    enableRowSelection: true,
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange: (updater) => {
+      const newSelection =
+        typeof updater === "function" ? updater(rowSelection) : updater;
+
+      const selectedKeys = Object.keys(newSelection);
+
+      if (selectedKeys.length > 1) {
+        const lastSelectedKey = selectedKeys[selectedKeys.length - 1];
+        setRowSelection({ [lastSelectedKey]: true });
+      } else {
+        setRowSelection(newSelection);
+      }
+    },
     onColumnFiltersChange: setColumnFilters,
     onPaginationChange: (updater) => {
       if (typeof updater === "function") {
@@ -310,6 +389,8 @@ export const MDReview = () => {
   });
 
   const totalPages = table.getPageCount();
+  const selectedRows = table.getSelectedRowModel().rows;
+  const hasSelection = selectedRows.length > 0;
 
   const totalAmount = useMemo(() => {
     const total = tableClaims.reduce(
@@ -491,6 +572,31 @@ export const MDReview = () => {
                 />
               ) : (
                 <>
+                  {hasSelection && (
+                    <div className="flex items-center justify-between px-6 py-3 bg-green-50 border-b">
+                      <p className="text-sm text-gray-700">
+                        {selectedRows.length} item(s) selected
+                      </p>
+
+                      <div className="flex gap-3">
+                        <Button
+                          color="green"
+                          onClick={handleOpenApproveModal}
+                          className="bg-green-600 text-white hover:bg-green-700"
+                        >
+                          Approve Claims
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          onClick={() => setRowSelection({})}
+                        >
+                          Clear Selection
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex-1 lg:px-0 lg:mt-4 min-w-0">
                     <div className="w-full overflow-x-auto">
                       <Table className="min-w-[1000px] w-full">
@@ -574,6 +680,16 @@ export const MDReview = () => {
             </div>
           </div>
         </div>
+        <VetConfirmModal
+          isOpen={showConfirmModal}
+          onClose={() => setShowConfirmModal(false)}
+          onConfirm={handleApproveClaims}
+          title="Confirm Approval"
+          message="Are you sure you want to approve claim? This action cannot be undone."
+          confirmText="Yes, Approve"
+          cancelText="Cancel"
+          isLoading={approvalLoading}
+        />
       </div>
     </>
   );
