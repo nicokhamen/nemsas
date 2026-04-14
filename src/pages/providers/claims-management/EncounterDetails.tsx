@@ -7,6 +7,7 @@ import type { RootState } from "../../../services/store/store";
 import { fetchPatientEncounter } from "../../../services/thunks/patientEncounterThunk";
 import { clearPatientEncounter } from "../../../services/slices/patientEncounterSlice";
 import { disputeRejectBill } from "../../../services/thunks/vettiingBillThunk";
+import { mdVetEmergencyClaim } from "../../../services/thunks/mdRequestThunk";
 import { LoadingSpinner } from "../../../components/ui/LoadingSpinner";
 import Button from "../../../components/ui/Button";
 import type { EmergencyBill } from "../../../types/PatientsEncounter";
@@ -98,6 +99,9 @@ const PatientEncounterDetails: React.FC = () => {
   const [isDisputeModalOpen, setIsDisputeModalOpen] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState(false);
+  const [pendingGeneralAction, setPendingGeneralAction] = useState<
+    "Approved" | "Rejected" | null
+  >(null);
 
   useEffect(() => {
     if (patientId && providerId) {
@@ -141,6 +145,14 @@ const PatientEncounterDetails: React.FC = () => {
   }, [encounters, openIndex]);
 
   const diagnosis = selectedEncounter?.diagnoses?.[0];
+
+  const selectedEncounterTotal = useMemo(() => {
+    return (
+      selectedEncounter?.productServices?.reduce((total, item) => {
+        return total + (item.netAmount || item.price * (item.quantity || 1));
+      }, 0) || selectedEncounter?.totalAmount || 0
+    );
+  }, [selectedEncounter]);
 
   const handleBack = () => {
     if (fromMdReview && claimId) {
@@ -258,6 +270,59 @@ const PatientEncounterDetails: React.FC = () => {
     }
   };
 
+  const requestGeneralBillAction = (status: "Approved" | "Rejected") => {
+    if (!selectedEncounter?.id || !claimId) {
+      toast.error("Unable to identify the bill for this action.");
+      return;
+    }
+
+    setPendingGeneralAction(status);
+  };
+
+  const handleGeneralBillAction = async () => {
+    if (!pendingGeneralAction || !selectedEncounter?.id || !claimId) {
+      toast.error("Unable to identify the bill for this action.");
+      return;
+    }
+
+    const status = pendingGeneralAction;
+
+    try {
+      setIsActionLoading(true);
+
+      await dispatch(
+        mdVetEmergencyClaim({
+          claimId,
+          emergencyClaimId: claimId,
+          emergencyBillIds: [selectedEncounter.id],
+          status,
+          remark:
+            status === "Approved"
+              ? "Approved by Medical Director"
+              : "Rejected by Medical Director",
+          isBillOnly: true,
+          vettedAmount: selectedEncounterTotal,
+        }),
+      ).unwrap();
+
+      toast.success(
+        status === "Approved"
+          ? "Bill approved successfully"
+          : "Bill rejected successfully",
+      );
+      setPendingGeneralAction(null);
+      handleRefresh();
+    } catch (error) {
+      toast.error(
+        typeof error === "string"
+          ? error
+          : `Unable to ${status.toLowerCase()} bill`,
+      );
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
   if (!currentUser) {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -269,15 +334,37 @@ const PatientEncounterDetails: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="mx-auto max-w-6xl bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-gray-300 px-8 py-4">
+        <div className="flex items-center justify-between gap-4 border-b border-gray-300 px-8 py-4">
           <h1 className="text-2xl font-semibold text-gray-600">Bill Details</h1>
-          <button
-            onClick={handleBack}
-            className="rounded-full text-[#0B4972] transition hover:bg-gray-100"
-            title="Close"
-          >
-            <XCircle className="h-9 w-9" />
-          </button>
+          <div className="flex items-center gap-3">
+            {isMdReviewDetail && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => requestGeneralBillAction("Approved")}
+                  disabled={!selectedEncounter || isActionLoading}
+                  className="rounded bg-green-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Approve
+                </button>
+                <button
+                  type="button"
+                  onClick={() => requestGeneralBillAction("Rejected")}
+                  disabled={!selectedEncounter || isActionLoading}
+                  className="rounded border border-red-500 bg-red-50 px-5 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Reject
+                </button>
+              </>
+            )}
+            <button
+              onClick={handleBack}
+              className="rounded-full text-[#0B4972] transition hover:bg-gray-100"
+              title="Close"
+            >
+              <XCircle className="h-9 w-9" />
+            </button>
+          </div>
         </div>
 
         <div className="px-8 py-6">
@@ -647,6 +734,12 @@ const PatientEncounterDetails: React.FC = () => {
         onSubmit={handleDisputeBill}
         isLoading={isActionLoading}
       />
+      <GeneralBillActionModal
+        action={pendingGeneralAction}
+        isLoading={isActionLoading}
+        onClose={() => setPendingGeneralAction(null)}
+        onConfirm={handleGeneralBillAction}
+      />
     </div>
   );
 };
@@ -686,5 +779,72 @@ const CheckboxLine: React.FC<{ label: string; checked?: boolean }> = ({
     <span>{label}</span>
   </span>
 );
+
+interface GeneralBillActionModalProps {
+  action: "Approved" | "Rejected" | null;
+  isLoading: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+}
+
+const GeneralBillActionModal: React.FC<GeneralBillActionModalProps> = ({
+  action,
+  isLoading,
+  onClose,
+  onConfirm,
+}) => {
+  if (!action) return null;
+
+  const isApprove = action === "Approved";
+  const actionLabel = isApprove ? "Approve" : "Reject";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-md rounded bg-white p-6 shadow-xl">
+        <div
+          className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full ${
+            isApprove ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
+          }`}
+        >
+          {isApprove ? (
+            <CheckCircle2 className="h-6 w-6" />
+          ) : (
+            <XCircle className="h-6 w-6" />
+          )}
+        </div>
+
+        <h2 className="mb-2 text-center text-lg font-semibold text-gray-800">
+          {actionLabel} Bill
+        </h2>
+        <p className="mb-6 text-center text-sm text-gray-600">
+          Are you sure you want to {actionLabel.toLowerCase()} this bill? This
+          action cannot be undone.
+        </p>
+
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={isLoading}
+            className="flex-1"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={onConfirm}
+            disabled={isLoading}
+            className={`flex-1 text-white ${
+              isApprove
+                ? "bg-green-600 hover:bg-green-700"
+                : "bg-red-600 hover:bg-red-700"
+            }`}
+          >
+            {isLoading ? "Processing..." : actionLabel}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default PatientEncounterDetails;
