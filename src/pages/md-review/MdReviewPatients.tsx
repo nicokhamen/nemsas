@@ -194,7 +194,7 @@ export const MdReviewPatients = () => {
               <table className="min-w-[1050px] w-full border-collapse text-left text-sm">
                 <thead className="bg-[#F1FAF7] text-gray-500">
                   <tr>
-                    <th className="w-8 px-2 py-4 font-semibold"></th>
+                    {/* <th className="w-8 px-2 py-4 font-semibold"></th> */}
                     <th className="px-4 py-4 font-semibold">Hospital Number</th>
                     <th className="px-4 py-4 font-semibold">First Name</th>
                     <th className="px-4 py-4 font-semibold">Last Name</th>
@@ -215,13 +215,13 @@ export const MdReviewPatients = () => {
                       className="cursor-pointer border-b border-gray-100 text-gray-600 transition hover:bg-gray-50"
                       onClick={() => handlePatientClick(patient)}
                     >
-                      <td className="px-2 py-4">
+                      {/* <td className="px-2 py-4">
                         <input
                           type="checkbox"
                           onClick={(event) => event.stopPropagation()}
                           className="h-4 w-4"
                         />
-                      </td>
+                      </td> */}
                       <td className="px-4 py-4">
                         {patient.hospitalNumber || "N/A"}
                       </td>

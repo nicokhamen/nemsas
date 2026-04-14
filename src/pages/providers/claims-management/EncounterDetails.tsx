@@ -72,7 +72,7 @@ const PatientEncounterDetails: React.FC = () => {
 
   const currentUser = useSelector((state: RootState) => state.auth.user);
   const providerId = useMemo(() => {
-    if (currentUser?.orgType === "PROVIDER") {
+    if (currentUser?.orgType === "Provider") {
       return currentUser.providerId || "";
     }
 
@@ -479,19 +479,20 @@ const PatientEncounterDetails: React.FC = () => {
                 "Assault Cases",
                 "Other",
               ].map((label) => (
-                <CheckboxLine
-                  key={label}
-                  label={label}
-                  checked={
-                    selectedEncounter.serviceCategories?.some((category) =>
-                      category.toLowerCase().includes(label.toLowerCase()),
-                    ) ||
-                    selectedEncounter.serviceType
-                      ?.toLowerCase()
-                      .includes(label.toLowerCase()) ||
-                    false
-                  }
-                />
+                // <CheckboxLine
+                //   key={label}
+                //   label={label}
+                //   checked={
+                //     selectedEncounter.serviceCategories?.some((category) =>
+                //       category.toLowerCase().includes(label.toLowerCase()),
+                //     ) ||
+                //     selectedEncounter.serviceType
+                //       ?.toLowerCase()
+                //       .includes(label.toLowerCase()) ||
+                //     false
+                //   }
+                // />
+                <p>{label}</p>
               ))}
             </div>
 
@@ -537,9 +538,9 @@ const PatientEncounterDetails: React.FC = () => {
                   {selectedEncounter.productServices?.length ? (
                     selectedEncounter.productServices.map((item, idx) => (
                       <tr key={item.id || idx} className="border-b border-gray-100">
-                        <td className="px-6 py-4 text-gray-600">
+                        {/* <td className="px-6 py-4 text-gray-600">
                           <CheckboxLine label={item.name || "N/A"} />
-                        </td>
+                        </td> */}
                         <td className="px-6 py-4 text-gray-600">
                           {item.description || item.code || "N/A"}
                         </td>
