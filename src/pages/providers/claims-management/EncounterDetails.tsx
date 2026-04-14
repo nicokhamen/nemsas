@@ -72,7 +72,7 @@ const PatientEncounterDetails: React.FC = () => {
 
   const currentUser = useSelector((state: RootState) => state.auth.user);
   const providerId = useMemo(() => {
-    if (currentUser?.orgType === "PROVIDER") {
+    if (currentUser?.orgType === "Provider") {
       return currentUser.providerId || "";
     }
 
@@ -479,19 +479,20 @@ const PatientEncounterDetails: React.FC = () => {
                 "Assault Cases",
                 "Other",
               ].map((label) => (
-                <CheckboxLine
-                  key={label}
-                  label={label}
-                  checked={
-                    selectedEncounter.serviceCategories?.some((category) =>
-                      category.toLowerCase().includes(label.toLowerCase()),
-                    ) ||
-                    selectedEncounter.serviceType
-                      ?.toLowerCase()
-                      .includes(label.toLowerCase()) ||
-                    false
-                  }
-                />
+                // <CheckboxLine
+                //   key={label}
+                //   label={label}
+                //   checked={
+                //     selectedEncounter.serviceCategories?.some((category) =>
+                //       category.toLowerCase().includes(label.toLowerCase()),
+                //     ) ||
+                //     selectedEncounter.serviceType
+                //       ?.toLowerCase()
+                //       .includes(label.toLowerCase()) ||
+                //     false
+                //   }
+                // />
+                <p>{label}</p>
               ))}
             </div>
 
