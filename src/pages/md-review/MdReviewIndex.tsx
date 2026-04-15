@@ -182,7 +182,7 @@ export const MDReview = () => {
               providerId,
               emergencyClaimId: claim.id,
               remark: "This Claim has been Approved",
-              status: "Approved",
+              status: "Pending",
             }),
           ).unwrap(),
         ),

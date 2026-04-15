@@ -7,13 +7,17 @@ import type { RootState } from "../../../services/store/store";
 import { fetchPatientEncounter } from "../../../services/thunks/patientEncounterThunk";
 import { clearPatientEncounter } from "../../../services/slices/patientEncounterSlice";
 import { disputeRejectBill } from "../../../services/thunks/vettiingBillThunk";
+import { serviceVettingThunk } from "../../../services/thunks/serviceVettingThunk";
 import { LoadingSpinner } from "../../../components/ui/LoadingSpinner";
 import Button from "../../../components/ui/Button";
-import type { EmergencyBill } from "../../../types/PatientsEncounter";
+import type {
+  EmergencyBill,
+  ProductService,
+} from "../../../types/PatientsEncounter";
+import type { ServiceVettingStatus } from "../../../types/serviceVetting";
 import { useProviderContext } from "../../../context/useProviderContext";
 import { useCustomToast } from "../../../hooks/useCustomToast";
 import DisputeVettingModal from "../../../components/ui/DisputeVettingModal";
-import RejectVettingModal from "../../../components/ui/RejectVettingModal";
 
 const ZERO_GUID = "00000000-0000-0000-0000-000000000000";
 
@@ -97,11 +101,20 @@ const PatientEncounterDetails: React.FC = () => {
   const [selectedActionBillIds, setSelectedActionBillIds] = useState<string[]>(
     [],
   );
-  const [selectedProductServiceIds, setSelectedProductServiceIds] = useState<
-    string[]
-  >([]);
   const [isDisputeModalOpen, setIsDisputeModalOpen] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [selectedServiceAction, setSelectedServiceAction] = useState<{
+    action: "Dispute" | "Reject";
+    emergencyBillId: string;
+    productId: string;
+    serviceName: string;
+  } | null>(null);
+  const [encounterRejectRemark, setEncounterRejectRemark] = useState("");
+  const [encounterRejectError, setEncounterRejectError] = useState("");
+  const [serviceActionStatus, setServiceActionStatus] =
+    useState<ServiceVettingStatus>("New");
+  const [serviceActionRemark, setServiceActionRemark] = useState("");
+  const [serviceActionError, setServiceActionError] = useState("");
   const [isActionLoading, setIsActionLoading] = useState(false);
 
   useEffect(() => {
@@ -146,31 +159,6 @@ const PatientEncounterDetails: React.FC = () => {
   }, [encounters, openIndex]);
 
   const diagnosis = selectedEncounter?.diagnoses?.[0];
-
-  useEffect(() => {
-    setSelectedProductServiceIds([]);
-  }, [selectedEncounter?.id]);
-
-  const getProductServiceSelectionId = (itemId?: string, index?: number) => {
-    return itemId || `${selectedEncounter?.id || "service"}-${index ?? 0}`;
-  };
-
-  const productServices = selectedEncounter?.productServices || [];
-  const selectedProductServices = productServices.filter((item, index) =>
-    selectedProductServiceIds.includes(
-      getProductServiceSelectionId(item.id, index),
-    ),
-  );
-  const selectedProductServiceBillIds = Array.from(
-    new Set(
-      selectedProductServices
-        .map((item) => item.emergencyBillId || selectedEncounter?.id)
-        .filter((id): id is string => Boolean(id)),
-    ),
-  );
-  const allProductServicesSelected =
-    productServices.length > 0 &&
-    selectedProductServiceIds.length === productServices.length;
 
   const handleBack = () => {
     if (fromMdReview && claimId) {
@@ -222,43 +210,36 @@ const PatientEncounterDetails: React.FC = () => {
     setIsRejectModalOpen(true);
   };
 
-  const requestSelectedProductServiceDispute = () => {
-    if (!selectedProductServiceBillIds.length) {
-      toast.error("Please select at least one product or service to dispute.");
+  const requestServiceAction = (
+    action: "Dispute" | "Reject",
+    item: ProductService,
+  ) => {
+    const emergencyBillId = item.emergencyBillId || selectedEncounter?.id;
+    const productId = item.id;
+
+    if (!emergencyBillId || !productId) {
+      toast.error("Unable to identify this service for vetting.");
       return;
     }
 
-    requestBillDispute(selectedProductServiceBillIds);
+    setSelectedServiceAction({
+      action,
+      emergencyBillId,
+      productId,
+      serviceName: item.name || "this service",
+    });
+    setServiceActionStatus(action === "Reject" ? "Rejected" : "Disputed");
+    setServiceActionRemark("");
+    setServiceActionError("");
   };
 
-  const requestSelectedProductServiceReject = () => {
-    if (!selectedProductServiceBillIds.length) {
-      toast.error("Please select at least one product or service to reject.");
-      return;
-    }
+  const resetServiceAction = () => {
+    if (isActionLoading) return;
 
-    requestBillReject(selectedProductServiceBillIds);
-  };
-
-  const toggleProductServiceSelection = (selectionId: string) => {
-    setSelectedProductServiceIds((currentIds) =>
-      currentIds.includes(selectionId)
-        ? currentIds.filter((id) => id !== selectionId)
-        : [...currentIds, selectionId],
-    );
-  };
-
-  const toggleAllProductServices = () => {
-    if (allProductServicesSelected) {
-      setSelectedProductServiceIds([]);
-      return;
-    }
-
-    setSelectedProductServiceIds(
-      productServices.map((item, index) =>
-        getProductServiceSelectionId(item.id, index),
-      ),
-    );
+    setSelectedServiceAction(null);
+    setServiceActionRemark("");
+    setServiceActionStatus("New");
+    setServiceActionError("");
   };
 
   const resetBillAction = () => {
@@ -267,6 +248,8 @@ const PatientEncounterDetails: React.FC = () => {
     setSelectedActionBillIds([]);
     setIsDisputeModalOpen(false);
     setIsRejectModalOpen(false);
+    setEncounterRejectRemark("");
+    setEncounterRejectError("");
   };
 
   const handleRejectBill = async () => {
@@ -275,8 +258,14 @@ const PatientEncounterDetails: React.FC = () => {
       return;
     }
 
+    if (!encounterRejectRemark.trim()) {
+      setEncounterRejectError("Please enter a reason for rejecting this bill.");
+      return;
+    }
+
     try {
       setIsActionLoading(true);
+      setEncounterRejectError("");
 
       await Promise.all(
         selectedActionBillIds.map((emergencyBillId) =>
@@ -284,7 +273,7 @@ const PatientEncounterDetails: React.FC = () => {
             disputeRejectBill({
               emergencyBillId,
               providerId,
-              remark: "Invalid bill",
+              remark: encounterRejectRemark.trim(),
               status: "Rejected",
             }),
           ).unwrap(),
@@ -295,7 +284,7 @@ const PatientEncounterDetails: React.FC = () => {
         selectedActionBillIds.length > 1 ? "Bills rejected" : "Bill rejected",
       );
       setSelectedActionBillIds([]);
-      setSelectedProductServiceIds([]);
+      setEncounterRejectRemark("");
       setIsRejectModalOpen(false);
       handleRefresh();
     } catch (error) {
@@ -333,11 +322,47 @@ const PatientEncounterDetails: React.FC = () => {
           : "Bill has been activated for dispute",
       );
       setSelectedActionBillIds([]);
-      setSelectedProductServiceIds([]);
       setIsDisputeModalOpen(false);
       handleRefresh();
     } catch (error) {
       toast.error(typeof error === "string" ? error : "Unable to dispute bill");
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleServiceActionSubmit = async () => {
+    if (!selectedServiceAction) return;
+
+    if (!serviceActionRemark.trim()) {
+      setServiceActionError("Please enter a reason for this action.");
+      return;
+    }
+
+    try {
+      setIsActionLoading(true);
+      setServiceActionError("");
+
+      await dispatch(
+        serviceVettingThunk({
+          emergencyBillId: selectedServiceAction.emergencyBillId,
+          productId: selectedServiceAction.productId,
+          remark: serviceActionRemark.trim(),
+          status: serviceActionStatus,
+        }),
+      ).unwrap();
+
+      toast.success("Service vetting submitted successfully");
+      setSelectedServiceAction(null);
+      setServiceActionRemark("");
+      setServiceActionStatus("New");
+      handleRefresh();
+    } catch (error) {
+      toast.error(
+        typeof error === "string"
+          ? error
+          : "Unable to submit service vetting",
+      );
     } finally {
       setIsActionLoading(false);
     }
@@ -614,54 +639,10 @@ const PatientEncounterDetails: React.FC = () => {
             )}
 
             <SectionTitle>Product/Service</SectionTitle>
-            {isMdReviewDetail && selectedProductServiceIds.length > 0 && (
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded border border-emerald-100 bg-emerald-50 px-4 py-3">
-                <p className="text-sm font-medium text-gray-700">
-                  {selectedProductServiceIds.length} item(s) selected
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={requestSelectedProductServiceDispute}
-                    disabled={isActionLoading}
-                    className="rounded border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-600 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    Dispute Selected
-                  </button>
-                  <button
-                    type="button"
-                    onClick={requestSelectedProductServiceReject}
-                    disabled={isActionLoading}
-                    className="rounded border border-red-400 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    Reject Selected
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedProductServiceIds([])}
-                    disabled={isActionLoading}
-                    className="rounded border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    Clear Selection
-                  </button>
-                </div>
-              </div>
-            )}
             <div className="overflow-x-auto">
               <table className="min-w-full text-left text-sm">
                 <thead className="bg-[#F1FAF7] text-gray-500">
                   <tr>
-                    {isMdReviewDetail && (
-                      <th className="w-12 px-6 py-4 font-semibold">
-                        <input
-                          type="checkbox"
-                          checked={allProductServicesSelected}
-                          onChange={toggleAllProductServices}
-                          className="h-4 w-4 rounded border-gray-300"
-                          aria-label="Select all product or service items"
-                        />
-                      </th>
-                    )}
                     <th className="px-6 py-4 font-semibold">Name</th>
                     <th className="px-6 py-4 font-semibold">
                       Service Description
@@ -679,36 +660,20 @@ const PatientEncounterDetails: React.FC = () => {
                     <th className="px-6 py-4 font-semibold text-right">
                       Total
                     </th>
+                    {isMdReviewDetail && (
+                      <th className="px-6 py-4 font-semibold text-center">
+                        Action
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
                   {selectedEncounter.productServices?.length ? (
-                    selectedEncounter.productServices.map((item, idx) => {
-                      const selectionId = getProductServiceSelectionId(
-                        item.id,
-                        idx,
-                      );
-                      const isSelected =
-                        selectedProductServiceIds.includes(selectionId);
-
-                      return (
-                        <tr
-                          key={item.id || idx}
-                          className="border-b border-gray-100 hover:bg-gray-50"
-                        >
-                          {isMdReviewDetail && (
-                            <td className="px-6 py-4">
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={() =>
-                                  toggleProductServiceSelection(selectionId)
-                                }
-                                className="h-4 w-4 rounded border-gray-300"
-                                aria-label={`Select ${item.name || "item"}`}
-                              />
-                            </td>
-                          )}
+                    selectedEncounter.productServices.map((item, idx) => (
+                      <tr
+                        key={item.id || idx}
+                        className="border-b border-gray-100 hover:bg-gray-50"
+                      >
                           <td className="px-6 py-4 text-gray-800 font-medium">
                             {item.name || "N/A"}
                           </td>
@@ -736,9 +701,34 @@ const PatientEncounterDetails: React.FC = () => {
                           <td className="px-6 py-4 font-semibold text-gray-800 text-right">
                             {formatCurrency(item.netAmount)}
                           </td>
-                        </tr>
-                      );
-                    })
+                          {isMdReviewDetail && (
+                            <td className="px-6 py-4 text-center">
+                              <div className="flex justify-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    requestServiceAction("Dispute", item)
+                                  }
+                                  disabled={isActionLoading}
+                                  className="rounded border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-600 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  Dispute
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    requestServiceAction("Reject", item)
+                                  }
+                                  disabled={isActionLoading}
+                                  className="rounded border border-red-400 bg-red-50 px-3 py-1 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            </td>
+                          )}
+                      </tr>
+                    ))
                   ) : (
                     <tr>
                       <td
@@ -755,7 +745,7 @@ const PatientEncounterDetails: React.FC = () => {
           </div>
         )}
       </div>
-      <RejectVettingModal
+      <EncounterRejectModal
         isOpen={isRejectModalOpen}
         onClose={resetBillAction}
         onConfirm={handleRejectBill}
@@ -767,6 +757,14 @@ const PatientEncounterDetails: React.FC = () => {
             ? `Are you sure you want to reject ${selectedActionBillIds.length} selected bill items? This action cannot be undone.`
             : "Are you sure you want to reject this bill item? This action cannot be undone."
         }
+        remark={encounterRejectRemark}
+        error={encounterRejectError}
+        onRemarkChange={(value) => {
+          setEncounterRejectRemark(value);
+          if (encounterRejectError && value.trim()) {
+            setEncounterRejectError("");
+          }
+        }}
         isLoading={isActionLoading}
       />
       <DisputeVettingModal
@@ -778,6 +776,22 @@ const PatientEncounterDetails: React.FC = () => {
         }
         confirmText="Submit Dispute"
         isLoading={isActionLoading}
+      />
+      <ServiceVettingActionModal
+        action={selectedServiceAction?.action || null}
+        serviceName={selectedServiceAction?.serviceName || ""}
+        remark={serviceActionRemark}
+        status={serviceActionStatus}
+        error={serviceActionError}
+        isLoading={isActionLoading}
+        onRemarkChange={(value) => {
+          setServiceActionRemark(value);
+          if (serviceActionError && value.trim()) {
+            setServiceActionError("");
+          }
+        }}
+        onClose={resetServiceAction}
+        onSubmit={handleServiceActionSubmit}
       />
     </div>
   );
@@ -818,5 +832,198 @@ const CheckboxLine: React.FC<{ label: string; checked?: boolean }> = ({
     <span>{label}</span>
   </span>
 );
+
+interface EncounterRejectModalProps {
+  isOpen: boolean;
+  title: string;
+  message: string;
+  remark: string;
+  error: string;
+  isLoading: boolean;
+  onRemarkChange: (value: string) => void;
+  onClose: () => void;
+  onConfirm: () => void;
+}
+
+const EncounterRejectModal: React.FC<EncounterRejectModalProps> = ({
+  isOpen,
+  title,
+  message,
+  remark,
+  error,
+  isLoading,
+  onRemarkChange,
+  onClose,
+  onConfirm,
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-md rounded bg-white p-6 shadow-xl">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600">
+          <XCircle className="h-6 w-6" />
+        </div>
+
+        <h2 className="mb-2 text-center text-lg font-semibold text-gray-800">
+          {title}
+        </h2>
+        <p className="mb-5 text-center text-sm text-gray-600">{message}</p>
+
+        <div className="mb-5">
+          <label className="mb-2 block text-sm font-medium text-gray-700">
+            Reason
+          </label>
+          <textarea
+            value={remark}
+            onChange={(event) => onRemarkChange(event.target.value)}
+            disabled={isLoading}
+            rows={4}
+            maxLength={200}
+            placeholder="Enter rejection reason..."
+            className={`w-full resize-none rounded border px-3 py-2 text-sm text-gray-700 outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60 ${
+              error
+                ? "border-red-500 focus:border-red-500 focus:ring-red-100"
+                : "border-gray-300 focus:border-red-500 focus:ring-red-100"
+            }`}
+          />
+          <div className="mt-1 flex justify-between text-xs">
+            <span className="text-red-500">{error}</span>
+            <span className="text-gray-400">{remark.length} / 200</span>
+          </div>
+        </div>
+
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={isLoading}
+            className="flex-1"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={onConfirm}
+            disabled={isLoading}
+            className="flex-1 bg-red-600 text-white hover:bg-red-700"
+          >
+            {isLoading ? "Processing..." : "Reject"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+interface ServiceVettingActionModalProps {
+  action: "Dispute" | "Reject" | null;
+  serviceName: string;
+  remark: string;
+  status: ServiceVettingStatus;
+  error: string;
+  isLoading: boolean;
+  onRemarkChange: (value: string) => void;
+  onClose: () => void;
+  onSubmit: () => void;
+}
+
+const ServiceVettingActionModal: React.FC<ServiceVettingActionModalProps> = ({
+  action,
+  serviceName,
+  remark,
+  status,
+  error,
+  isLoading,
+  onRemarkChange,
+  onClose,
+  onSubmit,
+}) => {
+  if (!action) return null;
+
+  const isReject = action === "Reject";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-md rounded bg-white p-6 shadow-xl">
+        <div
+          className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full ${
+            isReject ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-600"
+          }`}
+        >
+          <XCircle className="h-6 w-6" />
+        </div>
+
+        <h2 className="mb-2 text-center text-lg font-semibold text-gray-800">
+          {action} Service
+        </h2>
+        <p className="mb-5 text-center text-sm text-gray-600">
+          Add the MD review details for {serviceName || "this service"}.
+        </p>
+
+        <div className="space-y-4">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-700">
+              Status
+            </label>
+            <div
+              className={`w-full rounded border px-3 py-2 text-sm font-semibold ${
+                isReject
+                  ? "border-red-200 bg-red-50 text-red-600"
+                  : "border-amber-200 bg-amber-50 text-amber-600"
+              }`}
+            >
+              {status}
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-700">
+              Reason
+            </label>
+            <textarea
+              value={remark}
+              onChange={(event) => onRemarkChange(event.target.value)}
+              disabled={isLoading}
+              rows={4}
+              maxLength={200}
+              placeholder="Enter reason here..."
+              className={`w-full resize-none rounded border px-3 py-2 text-sm text-gray-700 outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60 ${
+                error
+                  ? "border-red-500 focus:border-red-500 focus:ring-red-100"
+                  : "border-gray-300 focus:border-red-500 focus:ring-red-100"
+              }`}
+            />
+            <div className="mt-1 flex justify-between text-xs">
+              <span className="text-red-500">{error}</span>
+              <span className="text-gray-400">{remark.length} / 200</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 flex gap-3">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={isLoading}
+            className="flex-1"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={onSubmit}
+            disabled={isLoading}
+            className={`flex-1 text-white ${
+              isReject
+                ? "bg-red-600 hover:bg-red-700"
+                : "bg-amber-600 hover:bg-amber-700"
+            }`}
+          >
+            {isLoading ? "Submitting..." : "Submit"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default PatientEncounterDetails;
