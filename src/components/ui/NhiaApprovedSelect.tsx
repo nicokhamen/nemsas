@@ -20,18 +20,24 @@ const NhiaApprovedSelect: React.FC<NhiaApprovedSelectProps> = ({
 
   const [search, setSearch] = useState("");
 
-  // 🔥 Trigger search only when >= 3 chars
+  // ✅ Debounced search (single source of truth)
   useEffect(() => {
-    if (search.length >= 3) {
+    if (search.length < 3) return;
+
+    const delay = setTimeout(() => {
       dispatch(fetchNhiaApprovedProviders(search));
-    }
+    }, 400);
+
+    return () => clearTimeout(delay);
   }, [search, dispatch]);
 
-  const options = data.map((item) => ({
-    label: item.name,
-    value: item.code,
-    meta: item,
-  }));
+  const options = search.length >= 3
+    ? data.map((item) => ({
+        label: item.name,
+        value: item.code,
+        meta: item,
+      }))
+    : [];
 
   return (
     <SearchableSelect
@@ -45,7 +51,6 @@ const NhiaApprovedSelect: React.FC<NhiaApprovedSelectProps> = ({
       onSelect={(option) => {
         onChange(option.meta);
       }}
-      minSearchLength={3} // optional if your component supports it
     />
   );
 };

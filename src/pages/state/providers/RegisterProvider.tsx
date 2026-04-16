@@ -142,6 +142,7 @@ const RegisterProvider: React.FC = () => {
       ],
     }));
   };
+ 
 
   // Remove contact
   const removeContact = (index: number) => {
