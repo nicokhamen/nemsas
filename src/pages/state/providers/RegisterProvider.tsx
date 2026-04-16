@@ -3,7 +3,7 @@ import Input from "../../../components/form/Input";
 import FormSelect from "../../../components/form/FormSelect";
 import { providerTypeOptions } from "../../../utils/providerType";
 import { ownershipTypeOptions } from "../../../utils/ownershipType";
-import { toast } from "react-toastify";
+// import { toast } from "react-toastify";
 import { useAppDispatch, useAppSelector } from "../../../hooks/redux";
 import type { CreateProviderPayload } from "../../../types/stateProvider";
 import { createProvider } from "../../../services/thunks/stateProviderThunk";
@@ -13,6 +13,8 @@ import ProviderConfirmModal from "../../../components/ui/ProviderConfirmModal";
 import { useNavigate } from "react-router-dom";
 import BankSelect from "../../../components/ui/BankSelect";
 import { enforceDigits } from "../../../utils/enforceDigits";
+import NhiaApprovedSelect from "../../../components/ui/NhiaApprovedSelect";
+import { useCustomToast } from "../../../hooks/useCustomToast";
 
 interface FormErrors {
   [key: string]: string;
@@ -22,6 +24,7 @@ const RegisterProvider: React.FC = () => {
   const { user } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const toast = useCustomToast();
   const { loading, error } = useAppSelector((state) => state.createProvider);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const { data: states, loading: statesLoading } = useAppSelector(
@@ -83,7 +86,7 @@ const RegisterProvider: React.FC = () => {
 
     let newValue = value;
 
-    // 🔥 Apply rules
+    //  Apply rules
     if (name === "phoneNumber" || name === "bankVeririfationNumber") {
       newValue = enforceDigits(value, 11);
     }
@@ -139,6 +142,7 @@ const RegisterProvider: React.FC = () => {
       ],
     }));
   };
+ 
 
   // Remove contact
   const removeContact = (index: number) => {
@@ -284,7 +288,7 @@ const RegisterProvider: React.FC = () => {
 
             {/* Form Grid */}
             <div className="grid grid-cols-3 gap-4 mb-6">
-              <Input
+              {/* <Input
                 type="text"
                 name="hospitalName"
                 placeholder="Hospital Name"
@@ -293,6 +297,29 @@ const RegisterProvider: React.FC = () => {
                 error={errors.hospitalName}
                 className="input"
                 required
+              /> */}
+              <NhiaApprovedSelect
+                value={formData.hospitalName}
+                error={errors.hospitalName}
+                
+                onChange={(hospital) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    hospitalName: hospital.name,
+                    code: hospital.code,
+                    hospitalAdress: hospital.address,
+                  }));
+
+                  // clear related errors
+                  setErrors((prev) => {
+                    const newErrors = { ...prev };
+                    delete newErrors.hospitalName;
+                    delete newErrors.code;
+                    delete newErrors.hospitalAdress;
+                    return newErrors;
+                  });
+                  
+                }}
               />
 
               <Input
@@ -340,6 +367,7 @@ const RegisterProvider: React.FC = () => {
                 error={errors.code}
                 className="input"
                 required
+                readOnly
               />
 
               <FormSelect
@@ -507,26 +535,6 @@ const RegisterProvider: React.FC = () => {
                   </option>
                 ))}
               </FormSelect>
-
-              {/* <Input
-                type="text"
-                name="hmoId"
-                placeholder="HMO ID"
-                value={formData.hmoId}
-                onChange={handleInputChange}
-                error={errors.hmoId}
-                className="input"
-              /> */}
-
-              {/* <Input
-                type="text"
-                name="organizationId"
-                placeholder="Organization ID"
-                value={formData.organizationId}
-                onChange={handleInputChange}
-                error={errors.organizationId}
-                className="input"
-              /> */}
             </div>
 
             {/* Contact Details */}

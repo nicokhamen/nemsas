@@ -7,13 +7,17 @@ import type { RootState } from "../../../services/store/store";
 import { fetchPatientEncounter } from "../../../services/thunks/patientEncounterThunk";
 import { clearPatientEncounter } from "../../../services/slices/patientEncounterSlice";
 import { disputeRejectBill } from "../../../services/thunks/vettiingBillThunk";
+import { serviceVettingThunk } from "../../../services/thunks/serviceVettingThunk";
 import { LoadingSpinner } from "../../../components/ui/LoadingSpinner";
 import Button from "../../../components/ui/Button";
-import type { EmergencyBill } from "../../../types/PatientsEncounter";
+import type {
+  EmergencyBill,
+  ProductService,
+} from "../../../types/PatientsEncounter";
+import type { ServiceVettingStatus } from "../../../types/serviceVetting";
 import { useProviderContext } from "../../../context/useProviderContext";
 import { useCustomToast } from "../../../hooks/useCustomToast";
 import DisputeVettingModal from "../../../components/ui/DisputeVettingModal";
-import RejectVettingModal from "../../../components/ui/RejectVettingModal";
 
 const ZERO_GUID = "00000000-0000-0000-0000-000000000000";
 
@@ -94,9 +98,23 @@ const PatientEncounterDetails: React.FC = () => {
   } = useSelector((state: RootState) => state.patientEncounter);
 
   const [openIndex, setOpenIndex] = useState<number | null>(0);
-  const [selectedActionBillId, setSelectedActionBillId] = useState("");
+  const [selectedActionBillIds, setSelectedActionBillIds] = useState<string[]>(
+    [],
+  );
   const [isDisputeModalOpen, setIsDisputeModalOpen] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [selectedServiceAction, setSelectedServiceAction] = useState<{
+    action: "Dispute" | "Reject";
+    emergencyBillId: string;
+    productId: string;
+    serviceName: string;
+  } | null>(null);
+  const [encounterRejectRemark, setEncounterRejectRemark] = useState("");
+  const [encounterRejectError, setEncounterRejectError] = useState("");
+  const [serviceActionStatus, setServiceActionStatus] =
+    useState<ServiceVettingStatus>("New");
+  const [serviceActionRemark, setServiceActionRemark] = useState("");
+  const [serviceActionError, setServiceActionError] = useState("");
   const [isActionLoading, setIsActionLoading] = useState(false);
 
   useEffect(() => {
@@ -172,54 +190,101 @@ const PatientEncounterDetails: React.FC = () => {
     }
   };
 
-  const requestBillDispute = (emergencyBillId?: string) => {
-    if (!emergencyBillId) {
+  const requestBillDispute = (emergencyBillIds?: string[]) => {
+    if (!emergencyBillIds?.length) {
       toast.error("Unable to identify the bill for dispute.");
       return;
     }
 
-    setSelectedActionBillId(emergencyBillId);
+    setSelectedActionBillIds(emergencyBillIds);
     setIsDisputeModalOpen(true);
   };
 
-  const requestBillReject = (emergencyBillId?: string) => {
-    if (!emergencyBillId) {
+  const requestBillReject = (emergencyBillIds?: string[]) => {
+    if (!emergencyBillIds?.length) {
       toast.error("Unable to identify the bill for rejection.");
       return;
     }
 
-    setSelectedActionBillId(emergencyBillId);
+    setSelectedActionBillIds(emergencyBillIds);
     setIsRejectModalOpen(true);
+  };
+
+  const requestServiceAction = (
+    action: "Dispute" | "Reject",
+    item: ProductService,
+  ) => {
+    const emergencyBillId = item.emergencyBillId || selectedEncounter?.id;
+    const productId = item.id;
+
+    if (!emergencyBillId || !productId) {
+      toast.error("Unable to identify this service for vetting.");
+      return;
+    }
+
+    setSelectedServiceAction({
+      action,
+      emergencyBillId,
+      productId,
+      serviceName: item.name || "this service",
+    });
+    setServiceActionStatus(action === "Reject" ? "Rejected" : "Disputed");
+    setServiceActionRemark("");
+    setServiceActionError("");
+  };
+
+  const resetServiceAction = () => {
+    if (isActionLoading) return;
+
+    setSelectedServiceAction(null);
+    setServiceActionRemark("");
+    setServiceActionStatus("New");
+    setServiceActionError("");
   };
 
   const resetBillAction = () => {
     if (isActionLoading) return;
 
-    setSelectedActionBillId("");
+    setSelectedActionBillIds([]);
     setIsDisputeModalOpen(false);
     setIsRejectModalOpen(false);
+    setEncounterRejectRemark("");
+    setEncounterRejectError("");
   };
 
   const handleRejectBill = async () => {
-    if (!selectedActionBillId || !providerId) {
+    if (!selectedActionBillIds.length || !providerId) {
       toast.error("Unable to identify the bill for this action.");
+      return;
+    }
+
+    if (!encounterRejectRemark.trim()) {
+      setEncounterRejectError("Please enter a reason for rejecting this bill.");
       return;
     }
 
     try {
       setIsActionLoading(true);
+      setEncounterRejectError("");
 
-      await dispatch(
-        disputeRejectBill({
-          emergencyBillId: selectedActionBillId,
-          providerId,
-          remark: "Invalid bill",
-          status: "Rejected",
-        }),
-      ).unwrap();
+      await Promise.all(
+        selectedActionBillIds.map((emergencyBillId) =>
+          dispatch(
+            disputeRejectBill({
+              emergencyBillId,
+              providerId,
+              remark: encounterRejectRemark.trim(),
+              status: "Rejected",
+            }),
+          ).unwrap(),
+        ),
+      );
 
-      toast.error("Bill rejected");
-      setSelectedActionBillId("");
+      toast.error(
+        selectedActionBillIds.length > 1 ? "Bills rejected" : "Bill rejected",
+      );
+      setSelectedActionBillIds([]);
+      setEncounterRejectRemark("");
       setIsRejectModalOpen(false);
       handleRefresh();
     } catch (error) {
@@ -230,7 +295,7 @@ const PatientEncounterDetails: React.FC = () => {
   };
 
   const handleDisputeBill = async (reason: string) => {
-    if (!selectedActionBillId || !providerId) {
+    if (!selectedActionBillIds.length || !providerId) {
       toast.error("Unable to identify the bill for this action.");
       return;
     }
@@ -238,21 +303,64 @@ const PatientEncounterDetails: React.FC = () => {
     try {
       setIsActionLoading(true);
 
-      await dispatch(
-        disputeRejectBill({
-          emergencyBillId: selectedActionBillId,
-          providerId,
-          remark: reason,
-          status: "Disputed",
-        }),
-      ).unwrap();
+      await Promise.all(
+        selectedActionBillIds.map((emergencyBillId) =>
+          dispatch(
+            disputeRejectBill({
+              emergencyBillId,
+              providerId,
+              remark: reason,
+              status: "Disputed",
+            }),
+          ).unwrap(),
+        ),
+      );
 
-      toast.info("Bill has been activated for dispute");
-      setSelectedActionBillId("");
+      toast.info(
+        selectedActionBillIds.length > 1
+          ? "Bills have been activated for dispute"
+          : "Bill has been activated for dispute",
+      );
+      setSelectedActionBillIds([]);
       setIsDisputeModalOpen(false);
       handleRefresh();
     } catch (error) {
       toast.error(typeof error === "string" ? error : "Unable to dispute bill");
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleServiceActionSubmit = async () => {
+    if (!selectedServiceAction) return;
+
+    if (!serviceActionRemark.trim()) {
+      setServiceActionError("Please enter a reason for this action.");
+      return;
+    }
+
+    try {
+      setIsActionLoading(true);
+      setServiceActionError("");
+
+      await dispatch(
+        serviceVettingThunk({
+          emergencyBillId: selectedServiceAction.emergencyBillId,
+          productId: selectedServiceAction.productId,
+          remark: serviceActionRemark.trim(),
+          status: serviceActionStatus,
+        }),
+      ).unwrap();
+
+      toast.success("Service vetting submitted successfully");
+      setSelectedServiceAction(null);
+      setServiceActionRemark("");
+      setServiceActionStatus("New");
+      handleRefresh();
+    } catch (error) {
+      toast.error(
+        typeof error === "string" ? error : "Unable to submit service vetting",
+      );
     } finally {
       setIsActionLoading(false);
     }
@@ -269,15 +377,17 @@ const PatientEncounterDetails: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="mx-auto max-w-6xl bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-gray-300 px-8 py-4">
+        <div className="flex items-center justify-between gap-4 border-b border-gray-300 px-8 py-4">
           <h1 className="text-2xl font-semibold text-gray-600">Bill Details</h1>
-          <button
-            onClick={handleBack}
-            className="rounded-full text-[#0B4972] transition hover:bg-gray-100"
-            title="Close"
-          >
-            <XCircle className="h-9 w-9" />
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleBack}
+              className="rounded-full text-[#0B4972] transition hover:bg-gray-100"
+              title="Close"
+            >
+              <XCircle className="h-9 w-9" />
+            </button>
+          </div>
         </div>
 
         <div className="px-8 py-6">
@@ -390,7 +500,9 @@ const PatientEncounterDetails: React.FC = () => {
                               type="button"
                               onClick={(event) => {
                                 event.stopPropagation();
-                                requestBillDispute(encounter.id);
+                                requestBillDispute(
+                                  encounter.id ? [encounter.id] : undefined,
+                                );
                               }}
                               className="rounded border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-600 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
                               disabled={isActionLoading}
@@ -401,7 +513,9 @@ const PatientEncounterDetails: React.FC = () => {
                               type="button"
                               onClick={(event) => {
                                 event.stopPropagation();
-                                requestBillReject(encounter.id);
+                                requestBillReject(
+                                  encounter.id ? [encounter.id] : undefined,
+                                );
                               }}
                               className="rounded border border-red-400 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
                               disabled={isActionLoading}
@@ -587,30 +701,24 @@ const PatientEncounterDetails: React.FC = () => {
                         </td>
                         {isMdReviewDetail && (
                           <td className="px-6 py-4 text-center">
-                            <div className="flex gap-2 justify-center">
+                            <div className="flex justify-center gap-2">
                               <button
                                 type="button"
                                 onClick={() =>
-                                  requestBillDispute(
-                                    item.emergencyBillId ||
-                                      selectedEncounter.id,
-                                  )
+                                  requestServiceAction("Dispute", item)
                                 }
-                                className="rounded border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-600 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
                                 disabled={isActionLoading}
+                                className="rounded border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-600 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
                               >
                                 Dispute
                               </button>
                               <button
                                 type="button"
                                 onClick={() =>
-                                  requestBillReject(
-                                    item.emergencyBillId ||
-                                      selectedEncounter.id,
-                                  )
+                                  requestServiceAction("Reject", item)
                                 }
-                                className="rounded border border-red-400 bg-red-50 px-3 py-1 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
                                 disabled={isActionLoading}
+                                className="rounded border border-red-400 bg-red-50 px-3 py-1 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
                               >
                                 Reject
                               </button>
@@ -635,17 +743,53 @@ const PatientEncounterDetails: React.FC = () => {
           </div>
         )}
       </div>
-      <RejectVettingModal
+      <EncounterRejectModal
         isOpen={isRejectModalOpen}
         onClose={resetBillAction}
         onConfirm={handleRejectBill}
+        title={
+          selectedActionBillIds.length > 1 ? "Reject Bills" : "Reject Bill"
+        }
+        message={
+          selectedActionBillIds.length > 1
+            ? `Are you sure you want to reject ${selectedActionBillIds.length} selected bill items? This action cannot be undone.`
+            : "Are you sure you want to reject this bill item? This action cannot be undone."
+        }
+        remark={encounterRejectRemark}
+        error={encounterRejectError}
+        onRemarkChange={(value) => {
+          setEncounterRejectRemark(value);
+          if (encounterRejectError && value.trim()) {
+            setEncounterRejectError("");
+          }
+        }}
         isLoading={isActionLoading}
       />
       <DisputeVettingModal
         isOpen={isDisputeModalOpen}
         onClose={resetBillAction}
         onSubmit={handleDisputeBill}
+        title={
+          selectedActionBillIds.length > 1 ? "Dispute Bills" : "Dispute Bill"
+        }
+        confirmText="Submit Dispute"
         isLoading={isActionLoading}
+      />
+      <ServiceVettingActionModal
+        action={selectedServiceAction?.action || null}
+        serviceName={selectedServiceAction?.serviceName || ""}
+        remark={serviceActionRemark}
+        status={serviceActionStatus}
+        error={serviceActionError}
+        isLoading={isActionLoading}
+        onRemarkChange={(value) => {
+          setServiceActionRemark(value);
+          if (serviceActionError && value.trim()) {
+            setServiceActionError("");
+          }
+        }}
+        onClose={resetServiceAction}
+        onSubmit={handleServiceActionSubmit}
       />
     </div>
   );
@@ -686,5 +830,199 @@ const CheckboxLine: React.FC<{ label: string; checked?: boolean }> = ({
     <span>{label}</span>
   </span>
 );
+
+interface EncounterRejectModalProps {
+  isOpen: boolean;
+  title: string;
+  message: string;
+  remark: string;
+  error: string;
+  isLoading: boolean;
+  onRemarkChange: (value: string) => void;
+  onClose: () => void;
+  onConfirm: () => void;
+}
+
+const EncounterRejectModal: React.FC<EncounterRejectModalProps> = ({
+  isOpen,
+  title,
+  message,
+  remark,
+  error,
+  isLoading,
+  onRemarkChange,
+  onClose,
+  onConfirm,
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-md rounded bg-white p-6 shadow-xl">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600">
+          <XCircle className="h-6 w-6" />
+        </div>
+
+        <h2 className="mb-2 text-center text-lg font-semibold text-gray-800">
+          {title}
+        </h2>
+        <p className="mb-5 text-center text-sm text-gray-600">{message}</p>
+
+        <div className="mb-5">
+          <label className="mb-2 block text-sm font-medium text-gray-700">
+            Reason
+          </label>
+          <textarea
+            value={remark}
+            onChange={(event) => onRemarkChange(event.target.value)}
+            disabled={isLoading}
+            rows={4}
+            maxLength={200}
+            placeholder="Enter rejection reason..."
+            className={`w-full resize-none rounded border px-3 py-2 text-sm text-gray-700 outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60 ${
+              error
+                ? "border-red-500 focus:border-red-500 focus:ring-red-100"
+                : "border-gray-300 focus:border-red-500 focus:ring-red-100"
+            }`}
+          />
+          <div className="mt-1 flex justify-between text-xs">
+            <span className="text-red-500">{error}</span>
+            <span className="text-gray-400">{remark.length} / 200</span>
+          </div>
+        </div>
+
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={isLoading}
+            className="flex-1"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={onConfirm}
+            disabled={isLoading}
+            className="flex-1 bg-red-600 text-white hover:bg-red-700"
+          >
+            {isLoading ? "Processing..." : "Reject"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+interface ServiceVettingActionModalProps {
+  action: "Dispute" | "Reject" | null;
+  serviceName: string;
+  remark: string;
+  status: ServiceVettingStatus;
+  error: string;
+  isLoading: boolean;
+  onRemarkChange: (value: string) => void;
+  onClose: () => void;
+  onSubmit: () => void;
+}
+
+const ServiceVettingActionModal: React.FC<ServiceVettingActionModalProps> = ({
+  action,
+  serviceName,
+  remark,
+  status,
+  error,
+  isLoading,
+  onRemarkChange,
+  onClose,
+  onSubmit,
+}) => {
+  if (!action) return null;
+
+  const isReject = action === "Reject";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-md rounded bg-white p-6 shadow-xl">
+        <div
+          className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full ${
+            isReject ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-600"
+          }`}
+        >
+          <XCircle className="h-6 w-6" />
+        </div>
+
+        <h2 className="mb-2 text-center text-lg font-semibold text-gray-800">
+          {action} Service
+        </h2>
+        <p className="mb-5 text-center text-sm text-gray-600">
+          Please provide a reason for your decision regarding{" "}
+          {serviceName || "this service"}.
+        </p>
+
+        <div className="space-y-4">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-700">
+              Status
+            </label>
+            <div
+              className={`w-full rounded border px-3 py-2 text-sm font-semibold ${
+                isReject
+                  ? "border-red-200 bg-red-50 text-red-600"
+                  : "border-amber-200 bg-amber-50 text-amber-600"
+              }`}
+            >
+              {status}
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-700">
+              Reason
+            </label>
+            <textarea
+              value={remark}
+              onChange={(event) => onRemarkChange(event.target.value)}
+              disabled={isLoading}
+              rows={4}
+              maxLength={200}
+              placeholder="Enter reason here..."
+              className={`w-full resize-none rounded border px-3 py-2 text-sm text-gray-700 outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60 ${
+                error
+                  ? "border-red-500 focus:border-red-500 focus:ring-red-100"
+                  : "border-gray-300 focus:border-red-500 focus:ring-red-100"
+              }`}
+            />
+            <div className="mt-1 flex justify-between text-xs">
+              <span className="text-red-500">{error}</span>
+              <span className="text-gray-400">{remark.length} / 200</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 flex gap-3">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={isLoading}
+            className="flex-1"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={onSubmit}
+            disabled={isLoading}
+            className={`flex-1 text-white ${
+              isReject
+                ? "bg-red-600 hover:bg-red-700"
+                : "bg-amber-600 hover:bg-amber-700"
+            }`}
+          >
+            {isLoading ? "Submitting..." : "Submit"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default PatientEncounterDetails;

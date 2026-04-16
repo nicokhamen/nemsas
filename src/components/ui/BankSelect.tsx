@@ -38,7 +38,7 @@ const { banks = [] } = useAppSelector((state) => state.banks);
       value={value}
       error={error}
       onSelect={(option) => {
-        onChange(option.meta); // return full bank
+        onChange(option.meta); 
       }}
     />
   );
