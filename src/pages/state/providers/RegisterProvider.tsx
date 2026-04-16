@@ -404,6 +404,7 @@ const RegisterProvider: React.FC = () => {
                 error={errors.hospitalAdress}
                 className="input"
                 required
+                readOnly
               />
 
               <Input
