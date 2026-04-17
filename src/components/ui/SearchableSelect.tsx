@@ -25,11 +25,11 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
   error,
   placeholder = "Search...",
   onInputChange,
-  minSearchLength,
 }) => {
   const [query, setQuery] = useState(value || "");
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  
 
   // Filter options
   const filteredOptions = useMemo(() => {
