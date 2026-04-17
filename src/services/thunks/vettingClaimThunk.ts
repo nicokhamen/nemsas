@@ -49,8 +49,11 @@ export const submitVettingClaim = createAsyncThunk<
 
       return response.data;
     } catch (error: any) {
+      // Backend sometimes returns RFC7807-like payloads with `title` instead of `message`.
       return rejectWithValue(
-        error?.response?.data?.message || "Something went wrong"
+        error?.response?.data?.title ||
+          error?.response?.data?.message ||
+          "Something went wrong"
       );
     }
   }

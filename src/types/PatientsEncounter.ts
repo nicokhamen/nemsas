@@ -44,6 +44,7 @@ interface ProductService extends BaseEntity {
   netAmount: number;
   productId?: string;
   emergencyBillId?: string;
+  status?: string;
   flag?: string;
 }
 

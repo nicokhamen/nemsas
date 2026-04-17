@@ -104,7 +104,7 @@ const PatientEncounterDetails: React.FC = () => {
   const [isDisputeModalOpen, setIsDisputeModalOpen] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [selectedServiceAction, setSelectedServiceAction] = useState<{
-    action: "Dispute" | "Reject";
+    action: "Dispute" | "Reject" | "Resolve";
     emergencyBillId: string;
     productId: string;
     serviceName: string;
@@ -211,7 +211,7 @@ const PatientEncounterDetails: React.FC = () => {
   };
 
   const requestServiceAction = (
-    action: "Dispute" | "Reject",
+    action: "Dispute" | "Reject" | "Resolve",
     item: ProductService,
   ) => {
     const emergencyBillId = item.emergencyBillId || selectedEncounter?.id;
@@ -228,7 +228,13 @@ const PatientEncounterDetails: React.FC = () => {
       productId,
       serviceName: item.name || "this service",
     });
-    setServiceActionStatus(action === "Reject" ? "Rejected" : "Disputed");
+    setServiceActionStatus(
+      action === "Reject"
+        ? "Rejected"
+        : action === "Resolve"
+          ? "Resolved"
+          : "Disputed",
+    );
     setServiceActionRemark("");
     setServiceActionError("");
   };
@@ -704,26 +710,43 @@ const PatientEncounterDetails: React.FC = () => {
                           {isMdReviewDetail && (
                             <td className="px-6 py-4 text-center">
                               <div className="flex justify-center gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    requestServiceAction("Dispute", item)
-                                  }
-                                  disabled={isActionLoading}
-                                  className="rounded border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-600 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
-                                >
-                                  Dispute
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    requestServiceAction("Reject", item)
-                                  }
-                                  disabled={isActionLoading}
-                                  className="rounded border border-red-400 bg-red-50 px-3 py-1 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
-                                >
-                                  Reject
-                                </button>
+                                {["rejected", "disputed"].includes(
+                                  (item.status || "").toLowerCase(),
+                                ) ? (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      requestServiceAction("Resolve", item)
+                                    }
+                                    disabled={isActionLoading}
+                                    className="rounded border border-emerald-300 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                  >
+                                    Resolve
+                                  </button>
+                                ) : (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        requestServiceAction("Dispute", item)
+                                      }
+                                      disabled={isActionLoading}
+                                      className="rounded border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-600 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                      Dispute
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        requestServiceAction("Reject", item)
+                                      }
+                                      disabled={isActionLoading}
+                                      className="rounded border border-red-400 bg-red-50 px-3 py-1 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                      Reject
+                                    </button>
+                                  </>
+                                )}
                               </div>
                             </td>
                           )}
@@ -916,7 +939,7 @@ const EncounterRejectModal: React.FC<EncounterRejectModalProps> = ({
 };
 
 interface ServiceVettingActionModalProps {
-  action: "Dispute" | "Reject" | null;
+  action: "Dispute" | "Reject" | "Resolve" | null;
   serviceName: string;
   remark: string;
   status: ServiceVettingStatus;
@@ -941,23 +964,32 @@ const ServiceVettingActionModal: React.FC<ServiceVettingActionModalProps> = ({
   if (!action) return null;
 
   const isReject = action === "Reject";
+  const isResolve = action === "Resolve";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="w-full max-w-md rounded bg-white p-6 shadow-xl">
         <div
           className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full ${
-            isReject ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-600"
+            isResolve
+              ? "bg-emerald-100 text-emerald-700"
+              : isReject
+                ? "bg-red-100 text-red-600"
+                : "bg-amber-100 text-amber-600"
           }`}
         >
-          <XCircle className="h-6 w-6" />
+          {isResolve ? (
+            <CheckCircle2 className="h-6 w-6" />
+          ) : (
+            <XCircle className="h-6 w-6" />
+          )}
         </div>
 
         <h2 className="mb-2 text-center text-lg font-semibold text-gray-800">
           {action} Service
         </h2>
         <p className="mb-5 text-center text-sm text-gray-600">
-          Add the MD review details for {serviceName || "this service"}.
+          Provide the MD review details for {serviceName || "this service"}.
         </p>
 
         <div className="space-y-4">
@@ -967,9 +999,11 @@ const ServiceVettingActionModal: React.FC<ServiceVettingActionModalProps> = ({
             </label>
             <div
               className={`w-full rounded border px-3 py-2 text-sm font-semibold ${
-                isReject
-                  ? "border-red-200 bg-red-50 text-red-600"
-                  : "border-amber-200 bg-amber-50 text-amber-600"
+                isResolve
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                  : isReject
+                    ? "border-red-200 bg-red-50 text-red-600"
+                    : "border-amber-200 bg-amber-50 text-amber-600"
               }`}
             >
               {status}
@@ -1013,12 +1047,18 @@ const ServiceVettingActionModal: React.FC<ServiceVettingActionModalProps> = ({
             onClick={onSubmit}
             disabled={isLoading}
             className={`flex-1 text-white ${
-              isReject
-                ? "bg-red-600 hover:bg-red-700"
-                : "bg-amber-600 hover:bg-amber-700"
+              isResolve
+                ? "bg-emerald-600 hover:bg-emerald-700"
+                : isReject
+                  ? "bg-red-600 hover:bg-red-700"
+                  : "bg-amber-600 hover:bg-amber-700"
             }`}
           >
-            {isLoading ? "Submitting..." : "Submit"}
+            {isLoading
+              ? "Submitting..."
+              : isResolve
+                ? "Resolve"
+                : "Submit"}
           </Button>
         </div>
       </div>
