@@ -2,6 +2,7 @@ export type ServiceVettingStatus =
   | "New"
   | "Vetted"
   | "Disputed"
+  | "Resolved"
   | "Pending"
   | "Rejected"
   | "Submitted"
