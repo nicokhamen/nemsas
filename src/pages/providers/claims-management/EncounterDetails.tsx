@@ -365,9 +365,7 @@ const PatientEncounterDetails: React.FC = () => {
       handleRefresh();
     } catch (error) {
       toast.error(
-        typeof error === "string"
-          ? error
-          : "Unable to submit service vetting",
+        typeof error === "string" ? error : "Unable to submit service vetting",
       );
     } finally {
       setIsActionLoading(false);
@@ -680,76 +678,76 @@ const PatientEncounterDetails: React.FC = () => {
                         key={item.id || idx}
                         className="border-b border-gray-100 hover:bg-gray-50"
                       >
-                          <td className="px-6 py-4 text-gray-800 font-medium">
-                            {item.name || "N/A"}
-                          </td>
-                          <td className="px-6 py-4 text-gray-600">
-                            {item.description || item.code || "N/A"}
-                          </td>
-                          <td className="px-6 py-4 text-gray-600 text-center">
-                            {item.quantity || 0}
-                          </td>
-                          <td className="px-6 py-4 text-gray-600 text-right">
-                            {formatCurrency(item.price)}
-                          </td>
-                          <td className="px-6 py-4 text-gray-600 text-right">
-                            {item.nhisPrice !== undefined &&
-                            item.nhisPrice !== null
-                              ? formatCurrency(item.nhisPrice)
-                              : "-"}
-                          </td>
-                          <td className="px-6 py-4 text-gray-600 text-center">
-                            {item.nhisPercentage !== undefined &&
-                            item.nhisPercentage !== null
-                              ? `${item.nhisPercentage}%`
-                              : "-"}
-                          </td>
-                          <td className="px-6 py-4 font-semibold text-gray-800 text-right">
-                            {formatCurrency(item.netAmount)}
-                          </td>
-                          {isMdReviewDetail && (
-                            <td className="px-6 py-4 text-center">
-                              <div className="flex justify-center gap-2">
-                                {["rejected", "disputed"].includes(
-                                  (item.status || "").toLowerCase(),
-                                ) ? (
+                        <td className="px-6 py-4 text-gray-800 font-medium">
+                          {item.name || "N/A"}
+                        </td>
+                        <td className="px-6 py-4 text-gray-600">
+                          {item.description || item.code || "N/A"}
+                        </td>
+                        <td className="px-6 py-4 text-gray-600 text-center">
+                          {item.quantity || 0}
+                        </td>
+                        <td className="px-6 py-4 text-gray-600 text-right">
+                          {formatCurrency(item.price)}
+                        </td>
+                        <td className="px-6 py-4 text-gray-600 text-right">
+                          {item.nhisPrice !== undefined &&
+                          item.nhisPrice !== null
+                            ? formatCurrency(item.nhisPrice)
+                            : "-"}
+                        </td>
+                        <td className="px-6 py-4 text-gray-600 text-center">
+                          {item.nhisPercentage !== undefined &&
+                          item.nhisPercentage !== null
+                            ? `${item.nhisPercentage}%`
+                            : "-"}
+                        </td>
+                        <td className="px-6 py-4 font-semibold text-gray-800 text-right">
+                          {formatCurrency(item.netAmount)}
+                        </td>
+                        {isMdReviewDetail && (
+                          <td className="px-6 py-4 text-center">
+                            <div className="flex justify-center gap-2">
+                              {["rejected", "disputed"].includes(
+                                (item.status || "").toLowerCase(),
+                              ) ? (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    requestServiceAction("Resolve", item)
+                                  }
+                                  disabled={isActionLoading}
+                                  className="rounded border border-emerald-300 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  Resolve
+                                </button>
+                              ) : (
+                                <>
                                   <button
                                     type="button"
                                     onClick={() =>
-                                      requestServiceAction("Resolve", item)
+                                      requestServiceAction("Dispute", item)
                                     }
                                     disabled={isActionLoading}
-                                    className="rounded border border-emerald-300 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                    className="rounded border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-600 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
                                   >
-                                    Resolve
+                                    Dispute
                                   </button>
-                                ) : (
-                                  <>
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        requestServiceAction("Dispute", item)
-                                      }
-                                      disabled={isActionLoading}
-                                      className="rounded border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-600 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
-                                    >
-                                      Dispute
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        requestServiceAction("Reject", item)
-                                      }
-                                      disabled={isActionLoading}
-                                      className="rounded border border-red-400 bg-red-50 px-3 py-1 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
-                                    >
-                                      Reject
-                                    </button>
-                                  </>
-                                )}
-                              </div>
-                            </td>
-                          )}
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      requestServiceAction("Reject", item)
+                                    }
+                                    disabled={isActionLoading}
+                                    className="rounded border border-red-400 bg-red-50 px-3 py-1 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                  >
+                                    Reject
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        )}
                       </tr>
                     ))
                   ) : (

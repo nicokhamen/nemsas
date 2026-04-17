@@ -3,7 +3,7 @@ import React, { useState, useMemo, useRef, useEffect } from "react";
 interface Option {
   label: string;
   value: string;
-  meta?: any; 
+  meta?: any;
 }
 
 interface SearchableSelectProps {
@@ -13,6 +13,8 @@ interface SearchableSelectProps {
   onSelect: (option: Option) => void;
   error?: string;
   placeholder?: string;
+  onInputChange?: (input: string) => void;
+  minSearchLength?: number;
 }
 
 const SearchableSelect: React.FC<SearchableSelectProps> = ({
@@ -22,15 +24,17 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
   onSelect,
   error,
   placeholder = "Search...",
+  onInputChange,
 }) => {
   const [query, setQuery] = useState(value || "");
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  
 
   // Filter options
   const filteredOptions = useMemo(() => {
     return options.filter((opt) =>
-      opt.label.toLowerCase().includes(query.toLowerCase())
+      opt.label.toLowerCase().includes(query.toLowerCase()),
     );
   }, [query, options]);
 
@@ -46,13 +50,23 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
   }, []);
 
   return (
+    <>
     <div className="relative w-full mb-4" ref={ref}>
       <input
         type="text"
         value={query}
         placeholder={placeholder}
         onFocus={() => setOpen(true)}
-        onChange={(e) => setQuery(e.target.value)}
+        // onChange={(e) => setQuery(e.target.value)}
+        onChange={(e) => {
+          const val = e.target.value;
+          setQuery(val);
+
+          // ✅ notify parent (your thunk trigger)
+          if (onInputChange) {
+            onInputChange(val);
+          }
+        }}
         className={`w-full border rounded-md px-3 pt-5 pb-2 focus:outline-none focus:ring-2 focus:ring-[#DC2626] ${
           error ? "border-red-500" : "border-gray-300"
         }`}
@@ -88,6 +102,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
 
       {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
     </div>
+    </>
   );
 };
 

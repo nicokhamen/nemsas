@@ -4,10 +4,8 @@ import { Plus, Eye, Share, Search } from "lucide-react";
 import type { RootState } from "../../../services/store/store";
 import EmptyState from "../../../components/ui/EmptyState";
 import Button from "../../../components/ui/Button";
-import FormHeader from "../../../components/form/FormHeader";
 import { LoadingSpinner } from "../../../components/ui/LoadingSpinner";
 import { useAppSelector, useAppDispatch } from "../../../hooks/redux";
-import { useProviderContext } from "../../../context/useProviderContext";
 
 // Table imports
 import {
@@ -440,7 +438,7 @@ export const ClaimsTracking = () => {
               </h3>
 
               <div className="grid grid-cols-12 gap-4 items-end">
-                {/* Search Filter */}
+            
                 <div className="col-span-3">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Search Claims
@@ -463,7 +461,7 @@ export const ClaimsTracking = () => {
                   </div>
                 </div>
 
-                {/* Status Filter */}
+          
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Status
@@ -481,7 +479,7 @@ export const ClaimsTracking = () => {
                   </select>
                 </div>
 
-                {/* Start Date */}
+             
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Start Date
@@ -494,7 +492,7 @@ export const ClaimsTracking = () => {
                   />
                 </div>
 
-                {/* End Date */}
+               
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     End Date
@@ -507,7 +505,7 @@ export const ClaimsTracking = () => {
                   />
                 </div>
 
-                {/* Action Buttons */}
+             
                 <div className="col-span-3 flex gap-3">
                   <button
                     onClick={() => {

@@ -56,6 +56,11 @@ const StatePatientVetting: React.FC = () => {
   const [selectedEncounter, setSelectedEncounter] =
     useState<EmergencyBill | null>(null);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState<boolean>(false);
+  
+  // Track which bills have been disputed/rejected
+  const [disputedBills, setDisputedBills] = useState<Set<string>>(new Set());
+  const [rejectedBills, setRejectedBills] = useState<Set<string>>(new Set());
+  const [processingBillId, setProcessingBillId] = useState<string | null>(null);
 
   // Get current user from auth
   const currentUser = useSelector((state: RootState) => state.auth.user);
@@ -117,6 +122,25 @@ const StatePatientVetting: React.FC = () => {
   } = useSelector((state: RootState) => state.patientEncounter);
 
   const [openIndex, setOpenIndex] = useState<number | null>(0);
+
+  // Initialize disputed/rejected sets from existing encounter statuses
+  useEffect(() => {
+    if (encounters && encounters.length > 0) {
+      const disputed = new Set<string>();
+      const rejected = new Set<string>();
+      
+      encounters.forEach(encounter => {
+        if (encounter.status === "Disputed") {
+          disputed.add(encounter.id);
+        } else if (encounter.status === "Rejected") {
+          rejected.add(encounter.id);
+        }
+      });
+      
+      setDisputedBills(disputed);
+      setRejectedBills(rejected);
+    }
+  }, [encounters]);
 
   // Load patient encounters with SAFE API CALL - BLOCK INVALID PROVIDER IDS
   useEffect(() => {
@@ -184,6 +208,8 @@ const StatePatientVetting: React.FC = () => {
   const handleRejectBill = async () => {
     if (!selectedEncounter?.id) return;
 
+    setProcessingBillId(selectedEncounter.id);
+    
     try {
       await dispatch(
         disputeRejectBill({
@@ -194,15 +220,30 @@ const StatePatientVetting: React.FC = () => {
         }),
       ).unwrap();
 
+      // Add to rejected set
+      setRejectedBills(prev => new Set(prev).add(selectedEncounter.id));
+      // Remove from disputed set if it was there
+      setDisputedBills(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(selectedEncounter.id);
+        return newSet;
+      });
+      
       toast.error("Bill rejected");
       setIsRejectModalOpen(false);
-    } catch (error) {}
+    } catch (error) {
+      toast.error("Failed to reject bill");
+    } finally {
+      setProcessingBillId(null);
+    }
   };
 
   const handleDisputeBill = async (reason: string) => {
     console.log(selectedEncounter);
     if (!selectedEncounter?.id) return;
 
+    setProcessingBillId(selectedEncounter.id);
+    
     try {
       await dispatch(
         disputeRejectBill({
@@ -213,9 +254,22 @@ const StatePatientVetting: React.FC = () => {
         }),
       ).unwrap();
 
+      // Add to disputed set
+      setDisputedBills(prev => new Set(prev).add(selectedEncounter.id));
+      // Remove from rejected set if it was there
+      setRejectedBills(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(selectedEncounter.id);
+        return newSet;
+      });
+      
       toast.info("Bill has been activated for dispute");
       setIsDisputeModalOpen(false);
-    } catch (error) {}
+    } catch (error) {
+      toast.error("Failed to dispute bill");
+    } finally {
+      setProcessingBillId(null);
+    }
   };
   // ------------------------------------------------------
 
@@ -416,6 +470,10 @@ const StatePatientVetting: React.FC = () => {
             <div className="space-y-4">
               {encounters.map((encounter: EmergencyBill, index: number) => {
                 const isOpen = openIndex === index;
+                const isDisputed = disputedBills.has(encounter.id);
+                const isRejected = rejectedBills.has(encounter.id);
+                const isProcessing = processingBillId === encounter.id;
+                const isDisabled = isDisputed || isRejected || isProcessing;
 
                 return (
                   <div
@@ -440,27 +498,48 @@ const StatePatientVetting: React.FC = () => {
                       </div>
 
                       <div className="flex items-center gap-3">
-                        {/* Dummy Buttons */}
+                        {/* Action Buttons */}
                         <div className="flex gap-2">
+                          {/* Dispute Button */}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setSelectedEncounter(encounter);
-                              setIsDisputeModalOpen(true);
+                              if (!isDisabled) {
+                                setSelectedEncounter(encounter);
+                                setIsDisputeModalOpen(true);
+                              }
                             }}
-                            className="px-3 py-1 text-sm font-medium text-amber-600 bg-amber-50 border border-amber-200 rounded hover:bg-amber-100 transition-colors"
+                            disabled={isDisabled}
+                            className={`px-3 py-1 text-sm font-medium rounded transition-colors ${
+                              isDisputed
+                                ? "bg-gray-100 text-gray-500 border border-gray-200 cursor-not-allowed"
+                                : isProcessing
+                                ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-wait"
+                                : "text-amber-600 bg-amber-50 border border-amber-200 hover:bg-amber-100"
+                            }`}
                           >
-                            Dispute
+                            {isDisputed ? "Disputed" : "Dispute"}
                           </button>
+
+                          {/* Reject Button */}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setSelectedEncounter(encounter);
-                              setIsRejectModalOpen(true);
+                              if (!isDisabled) {
+                                setSelectedEncounter(encounter);
+                                setIsRejectModalOpen(true);
+                              }
                             }}
-                            className="px-3 py-1 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded hover:bg-red-100 transition-colors"
+                            disabled={isDisabled}
+                            className={`px-3 py-1 text-sm font-medium rounded transition-colors ${
+                              isRejected
+                                ? "bg-gray-100 text-gray-500 border border-gray-200 cursor-not-allowed"
+                                : isProcessing
+                                ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-wait"
+                                : "text-red-600 bg-red-50 border border-red-200 hover:bg-red-100"
+                            }`}
                           >
-                            Reject
+                            {isRejected ? "Rejected" : "Reject"}
                           </button>
                         </div>
 
@@ -632,7 +711,7 @@ const StatePatientVetting: React.FC = () => {
         isOpen={isRejectModalOpen}
         onClose={() => setIsRejectModalOpen(false)}
         onConfirm={handleRejectBill}
-        isLoading={false}
+        isLoading={processingBillId !== null}
       />
       <DisputeVettingModal
         isOpen={isDisputeModalOpen}
@@ -640,7 +719,7 @@ const StatePatientVetting: React.FC = () => {
         onSubmit={async (reason) => {
           await handleDisputeBill(reason);
         }}
-        isLoading={false}
+        isLoading={processingBillId !== null}
       />
     </>
   );

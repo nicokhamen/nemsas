@@ -122,6 +122,7 @@ const sidebarItems = getSidebarItems();
           </div>
 
           {/* ORG BADGE - Dynamic based on role */}
+         <br/>
           <div className="absolute bottom-0 right-[20%]">
             <span
               className={`w-fit inline-flex items-center px-2 pb-0.5 rounded text-[10px] font-semibold tracking-wide uppercase shadow-sm ${getBadgeStyles(orgType)}`}
