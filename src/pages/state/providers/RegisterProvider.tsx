@@ -419,16 +419,7 @@ const RegisterProvider: React.FC = () => {
                 required
               />
 
-              {/* <Input
-                type="text"
-                name="bankName"
-                placeholder="Bank Name"
-                value={formData.bankName}
-                onChange={handleInputChange}
-                error={errors.bankName}
-                className="input"
-                required
-              /> */}
+           
               <BankSelect
                 value={formData.bankName}
                 error={errors.bankName}

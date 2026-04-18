@@ -8,6 +8,7 @@ interface BankSelectProps {
   value?: string;
   onChange: (bank: BankType) => void;
   error?: string;
+  
 }
 
 const BankSelect: React.FC<BankSelectProps> = ({
@@ -16,7 +17,6 @@ const BankSelect: React.FC<BankSelectProps> = ({
   error,
 }) => {
   const dispatch = useAppDispatch();
-//   const { banks } = useAppSelector((state) => state.banks);
 const { banks = [] } = useAppSelector((state) => state.banks);
 
   useEffect(() => {
