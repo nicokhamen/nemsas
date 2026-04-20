@@ -116,6 +116,7 @@ const EmergencyClaimsView = () => {
   const totalAmount = calculateTotal();
 
   return (
+    <>
     <div className="max-w-5xl mx-auto bg-white rounded-xl border shadow-sm">
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b">
@@ -307,6 +308,7 @@ const EmergencyClaimsView = () => {
           </Section>
         )}
     </div>
+    </>
   );
 };
 

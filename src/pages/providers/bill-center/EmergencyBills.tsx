@@ -42,6 +42,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 import "../../../utils/pdfFont";
+import { EmergencyBillModal } from "./EmergencyBillModal";
 
 // Status color map for emergency bills
 const statusColor: Record<string, string> = {
@@ -210,6 +211,9 @@ export const EmergencyBills = () => {
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
 
+  const [selectedBill, setSelectedBill] = useState<any>(null);
+const [isModalOpen, setIsModalOpen] = useState(false);
+
   // Get emergency bills state from Redux
   const {
     bills: reduxEmergencyBills,
@@ -223,6 +227,12 @@ export const EmergencyBills = () => {
   // Get user data from Redux auth state
   const currentUser = useSelector((state: RootState) => state.auth.user);
   const { selectedProviderId } = useProviderContext();
+
+  
+      const handleViewBill = (bill: any) => {
+  setSelectedBill(bill.rawBill); // important: use rawBill
+  setIsModalOpen(true);
+};
 
   // Route to emergency bill creation page
   const routeToEmergencyBillPage = () => {
@@ -274,6 +284,7 @@ export const EmergencyBills = () => {
 
       const patientName = `${firstName} ${lastName}`.trim() || "N/A";
       const patientNumber = patient.hospitalNumber || "N/A";
+
 
       // Calculate age from date of birth
       const calculateAgeFromDOB = (dob: string | undefined): string => {
@@ -409,10 +420,14 @@ export const EmergencyBills = () => {
       cell: ({ row }) => (
         <button
           className="flex items-center justify-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+          // onClick={(e) => {
+          //   e.stopPropagation();
+          //   navigate(`/emergency/bills/${row.original.id}`);
+          // }}
           onClick={(e) => {
-            e.stopPropagation();
-            navigate(`/emergency/bills/${row.original.id}`);
-          }}
+  e.stopPropagation();
+  handleViewBill(row.original);
+}}
           title="View Bill"
         >
           <Eye className="h-5 w-5" />
@@ -682,6 +697,20 @@ export const EmergencyBills = () => {
           </div>
         </div>
       </div>
+      {selectedBill && (
+  <EmergencyBillModal
+    isOpen={isModalOpen}
+    onClose={() => {
+      setIsModalOpen(false);
+      setSelectedBill(null);
+    }}
+    billData={selectedBill}
+    providerId={selectedProviderId || currentUser?.providerId || ""}
+    onSuccess={() => {
+      loadEmergencyBills(); // refresh after edit
+    }}
+  />
+)}
     </>
   );
 };
