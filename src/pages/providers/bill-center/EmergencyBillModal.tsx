@@ -29,7 +29,7 @@ export const EmergencyBillModal: React.FC<EmergencyBillModalProps> = ({
   onClose,
   billData,
   providerId,
-  onSuccess,
+  // onSuccess,
 }) => {
   const dispatch = useAppDispatch();
   const [isEditing, setIsEditing] = useState(false);
