@@ -23,7 +23,7 @@ const deriveOrgType = (data: any): OrganizationType => {
   // Check organization field
   if (data.organization === "SSHIA") return "SSHIA";
   if (data.organization === "Provider") return "Provider";
-  if (data.organization === "HMO") return "Provider"; // or whatever makes sense
+  if (data.organization === "HMO") return "Provider"; 
   
   // Check role for admin
   if (data.role?.toLowerCase().includes("admin")) {
@@ -74,10 +74,10 @@ export const useAuth = () => {
       const response = await authAPI.login(credentials);
       
       // Debug logging
-      console.log("Login Response:", response);
-      console.log("Role from backend:", response.data.role);
-      console.log("Organization from backend:", response.data.organization);
-      console.log("isProvider:", response.data.isProvider);
+      // console.log("Login Response:", response);
+      // console.log("Role from backend:", response.data.role);
+      // console.log("Organization from backend:", response.data.organization);
+      // console.log("isProvider:", response.data.isProvider);
 
       if (response.isSuccess && response.data) {
         const dataWithPossibleAltToken =
@@ -97,8 +97,8 @@ export const useAuth = () => {
         const normalizedRole = normalizeRole(response.data.role);
         const orgType = deriveOrgType(response.data);
         
-        console.log("Normalized Role:", normalizedRole);
-        console.log("Derived Org Type:", orgType);
+        // console.log("Normalized Role:", normalizedRole);
+        // console.log("Derived Org Type:", orgType);
         const user = {
           id: response.data.id,
           fullName: response.data.fullName,

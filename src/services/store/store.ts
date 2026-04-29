@@ -29,7 +29,8 @@ import StatesReducer from "../slices/statesSlice";
 import ClaimTrackingReducer from "../slices/claimTrackingSlice";
 import bankReducer from "../slices/bankSlice";
 import serviceVettingReducer from "../slices/serviceVettingSlice"
-import nhiaApprovedReducer from "../slices/nhiaApprovedSlice"
+import nhiaApprovedReducer from "../slices/nhiaApprovedSlice";
+import updateEmergencyBillReducer from "../slices/updateEmergencyBillSlice";
 
 export const store = configureStore({
   reducer: {
@@ -62,6 +63,7 @@ export const store = configureStore({
     banks: bankReducer,
     serviceVetting: serviceVettingReducer,
     nhiaApproved: nhiaApprovedReducer,
+    emergencyBillService: updateEmergencyBillReducer,
     [providerApiSlice.reducerPath]: providerApiSlice.reducer,
   },
   middleware: (getDefaultMiddleware) =>

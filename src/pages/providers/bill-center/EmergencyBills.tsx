@@ -212,7 +212,7 @@ export const EmergencyBills = () => {
   const [pageSize, setPageSize] = useState(10);
 
   const [selectedBill, setSelectedBill] = useState<any>(null);
-const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Get emergency bills state from Redux
   const {
@@ -228,11 +228,10 @@ const [isModalOpen, setIsModalOpen] = useState(false);
   const currentUser = useSelector((state: RootState) => state.auth.user);
   const { selectedProviderId } = useProviderContext();
 
-  
-      const handleViewBill = (bill: any) => {
-  setSelectedBill(bill.rawBill); // important: use rawBill
-  setIsModalOpen(true);
-};
+  const handleViewBill = (bill: any) => {
+    setSelectedBill(bill.rawBill); // important: use rawBill
+    setIsModalOpen(true);
+  };
 
   // Route to emergency bill creation page
   const routeToEmergencyBillPage = () => {
@@ -284,7 +283,6 @@ const [isModalOpen, setIsModalOpen] = useState(false);
 
       const patientName = `${firstName} ${lastName}`.trim() || "N/A";
       const patientNumber = patient.hospitalNumber || "N/A";
-
 
       // Calculate age from date of birth
       const calculateAgeFromDOB = (dob: string | undefined): string => {
@@ -425,9 +423,9 @@ const [isModalOpen, setIsModalOpen] = useState(false);
           //   navigate(`/emergency/bills/${row.original.id}`);
           // }}
           onClick={(e) => {
-  e.stopPropagation();
-  handleViewBill(row.original);
-}}
+            e.stopPropagation();
+            handleViewBill(row.original);
+          }}
           title="View Bill"
         >
           <Eye className="h-5 w-5" />
@@ -698,19 +696,19 @@ const [isModalOpen, setIsModalOpen] = useState(false);
         </div>
       </div>
       {selectedBill && (
-  <EmergencyBillModal
-    isOpen={isModalOpen}
-    onClose={() => {
-      setIsModalOpen(false);
-      setSelectedBill(null);
-    }}
-    billData={selectedBill}
-    providerId={selectedProviderId || currentUser?.providerId || ""}
-    onSuccess={() => {
-      loadEmergencyBills(); // refresh after edit
-    }}
-  />
-)}
+        <EmergencyBillModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedBill(null);
+          }}
+          billData={selectedBill}
+          // providerId={selectedProviderId || currentUser?.providerId || ""}
+          onSuccess={() => {
+            loadEmergencyBills(); // refresh after edit
+          }}
+        />
+      )}
     </>
   );
 };
