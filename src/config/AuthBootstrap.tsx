@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { loginSuccess, logout } from "../services/slices/authSlice";
+import { LoadingSpinner } from "../components/ui/LoadingSpinner";
 
 export const AuthBootstrap = ({ children }: { children: React.ReactNode }) => {
   const dispatch = useDispatch();
@@ -28,7 +29,13 @@ export const AuthBootstrap = ({ children }: { children: React.ReactNode }) => {
     setReady(true);
   }, [dispatch]);
 
-  if (!ready) return null; 
+  if (!ready) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <LoadingSpinner size="medium" color="text-red-500" />
+      </div>
+    );
+  }
 
   return children;
 };

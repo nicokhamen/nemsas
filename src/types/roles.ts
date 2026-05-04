@@ -23,6 +23,8 @@ export interface AuthUser {
   hmoId?: string;
   isProvider?: boolean;
   providerId?: string;
+  tenant?: string;
+  tenantId?: string;
   organization?: string;
   orgType: OrganizationType;
 }

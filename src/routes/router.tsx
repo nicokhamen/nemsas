@@ -1,39 +1,107 @@
+import {
+  Suspense,
+  lazy,
+  type ComponentType,
+  type LazyExoticComponent,
+  type ReactNode,
+} from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import type { RootState } from "../services/store/store";
 import { getDashboardPath } from "../utils/roleUtils";
-import Login from "../pages/auth/Login";
 import Layout from "../layouts";
 import ProtectedRoute from "./ProtectedRoute";
 import RoleRoute from "./RoleRoute";
-import Unauthorized from "../pages/Unauthorized";
-import Dashboard from "../pages/Dashboard";
-import Tariffs from "../pages/Tariffs";
-import Settings from "../pages/Settings";
-import { AllProviders } from "../pages/state/providers/AllProviders";
-import { EmergencyClaims } from "../pages/providers/claims-management/EmergencyClaims";
-import EmergencyClaimsDetails from "../pages/providers/claims-management/EmergencyClaimsDetails";
-import EmergencyClaimsView from "../pages/providers/claims-management/EmergencyClaimsView";
-import MdReviewPatients from "../pages/md-review/MdReviewPatients";
-import NewEmergencyBillWizard from "../pages/providers/bill-center/NewEmergencyBillWizard";
-import { EmergencyBills } from "../pages/providers/bill-center/EmergencyBills";
-import EmergencyBillDetails from "../pages/providers/bill-center/EmergencyBillDetails";
-import EditEmergencyBill from "../pages/providers/bill-center/EditEmergencyBill";
-import PatientEncounterDetails from "../pages/providers/claims-management/EncounterDetails";
-import RegisterProvider from "../pages/state/providers/RegisterProvider";
-import { StateClaims } from "../pages/state/vetting/StateClaimsVetting";
-import { ClaimsTracking } from "../pages/state/tracking/ClaimsTracking";
-import StateBillsVetting from "../pages/state/vetting/StateBillsVetting";
-import StatePatientVetting from "../pages/state/vetting/StatePatientVetting";
-import ErrorBoundary from "../pages/ErrorBoundary";
-import { MDReview } from "../pages/md-review/MdReviewIndex";
-import MdReviewBills from "../pages/md-review/MdReviewBills";
-import EndorsementReview from "../pages/md-review/EndorsementDetails";
 import type { Role } from "../types/roles";
+import { LoadingSpinner } from "../components/ui/LoadingSpinner";
+
+const Login = lazy(() => import("../pages/auth/Login"));
+const Unauthorized = lazy(() => import("../pages/Unauthorized"));
+const Dashboard = lazy(() => import("../pages/Dashboard"));
+const Tariffs = lazy(() => import("../pages/Tariffs"));
+const Settings = lazy(() => import("../pages/Settings"));
+
+const AllProviders = lazy(() =>
+  import("../pages/state/providers/AllProviders").then((module) => ({
+    default: module.AllProviders,
+  })),
+);
+const EmergencyClaims = lazy(() =>
+  import("../pages/providers/claims-management/EmergencyClaims").then(
+    (module) => ({
+      default: module.EmergencyClaims,
+    }),
+  ),
+);
+const EmergencyClaimsDetails = lazy(
+  () => import("../pages/providers/claims-management/EmergencyClaimsDetails"),
+);
+const EmergencyClaimsView = lazy(
+  () => import("../pages/providers/claims-management/EmergencyClaimsView"),
+);
+const MdReviewPatients = lazy(
+  () => import("../pages/md-review/MdReviewPatients"),
+);
+const NewEmergencyBillWizard = lazy(
+  () => import("../pages/providers/bill-center/NewEmergencyBillWizard"),
+);
+const EmergencyBills = lazy(() =>
+  import("../pages/providers/bill-center/EmergencyBills").then((module) => ({
+    default: module.EmergencyBills,
+  })),
+);
+const EmergencyBillDetails = lazy(
+  () => import("../pages/providers/bill-center/EmergencyBillDetails"),
+);
+const EditEmergencyBill = lazy(
+  () => import("../pages/providers/bill-center/EditEmergencyBill"),
+);
+const PatientEncounterDetails = lazy(
+  () => import("../pages/providers/claims-management/EncounterDetails"),
+);
+const RegisterProvider = lazy(
+  () => import("../pages/state/providers/RegisterProvider"),
+);
+const StateClaims = lazy(() =>
+  import("../pages/state/vetting/StateClaimsVetting").then((module) => ({
+    default: module.StateClaims,
+  })),
+);
+const ClaimsTracking = lazy(() =>
+  import("../pages/state/tracking/ClaimsTracking").then((module) => ({
+    default: module.ClaimsTracking,
+  })),
+);
+const StateBillsVetting = lazy(
+  () => import("../pages/state/vetting/StateBillsVetting"),
+);
+const StatePatientVetting = lazy(
+  () => import("../pages/state/vetting/StatePatientVetting"),
+);
+const ErrorBoundary = lazy(() => import("../pages/ErrorBoundary"));
+const MDReview = lazy(() =>
+  import("../pages/md-review/MdReviewIndex").then((module) => ({
+    default: module.MDReview,
+  })),
+);
+const MdReviewBills = lazy(() => import("../pages/md-review/MdReviewBills"));
+const EndorsementReview = lazy(
+  () => import("../pages/md-review/EndorsementDetails"),
+);
 
 export interface RouteHandle {
   title?: string;
 }
+
+const RouteFallback = () => (
+  <div className="flex min-h-[50vh] items-center justify-center">
+    <LoadingSpinner size="medium" color="text-red-500" />
+  </div>
+);
+
+const withSuspense = (element: ReactNode) => (
+  <Suspense fallback={<RouteFallback />}>{element}</Suspense>
+);
 
 // Dashboard Router Component
 const DashboardRouter = () => {
@@ -43,14 +111,14 @@ const DashboardRouter = () => {
 
 // Helper function to wrap routes with Layout and RoleRoute
 const createProtectedRoute = (
-  Component: React.ComponentType, 
-  allowedRoles: Role[], // Changed from Role to Role[]
-  title: string
+  Component: LazyExoticComponent<ComponentType>,
+  allowedRoles: Role[],
+  title: string,
 ) => ({
   element: (
     <RoleRoute allowedRoles={allowedRoles}>
       <Layout>
-        <Component />
+        {withSuspense(<Component />)}
       </Layout>
     </RoleRoute>
   ),
@@ -59,13 +127,13 @@ const createProtectedRoute = (
 
 // Helper for routes without Layout wrapper
 const createSimpleProtectedRoute = (
-  Component: React.ComponentType,
-  allowedRoles: Role[], // Changed from Role to Role[]
-  title: string
+  Component: LazyExoticComponent<ComponentType>,
+  allowedRoles: Role[],
+  title: string,
 ) => ({
   element: (
     <RoleRoute allowedRoles={allowedRoles}>
-      <Component />
+      {withSuspense(<Component />)}
     </RoleRoute>
   ),
   handle: { title },
@@ -78,11 +146,11 @@ export const router = createBrowserRouter([
   },
   {
     path: "/login",
-    element: <Login />,
+    element: withSuspense(<Login />),
   },
   {
     path: "/unauthorized",
-    element: <Unauthorized />,
+    element: withSuspense(<Unauthorized />),
   },
   
   // Protected Routes - Maintaining flat structure for compatibility
@@ -241,7 +309,7 @@ export const router = createBrowserRouter([
       // Catch-all error boundary
       {
         path: "*",
-        element: <ErrorBoundary />,
+        element: withSuspense(<ErrorBoundary />),
       },
     ],
   },

@@ -92,6 +92,6 @@ export const ADMIN_SIDEBAR: SidebarItem[] = [
 ];
 
 export const MD_SIDEBAR: SidebarItem[] = [
-  { icon: <DashboardIcon className="w-5 h-5" />, label: "Dashboard", path: "/dashboard" },
+  { icon: <DashboardIcon className="w-5 h-5" />, label: "Dashboard",  },
   { icon: <ClaimsIcon className="w-5 h-5" />, label: "MD Review & Endorsement", path: "/md-review" },
 ];

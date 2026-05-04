@@ -107,6 +107,8 @@ export const useAuth = () => {
           isProvider: response.data.isProvider,
           providerId: response.data.providerId,
           organization: response.data.organization,
+          tenant: response.data.tenant,
+          tenantId: response.data.tenantId,
 
           role: normalizeRole(response.data.role),
           orgType: deriveOrgType(response.data),

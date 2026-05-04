@@ -346,14 +346,14 @@ const handleSave = async () => {
               title="Products & Services"
               action={
                 <div className="flex items-center gap-2">
-                  <button
+                  {/* <button
                     onClick={() => setShowProductSearch(true)}
                     className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition"
                     type="button"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     Add Products/Services
-                  </button>
+                  </button> */}
                 </div>
               }
             >

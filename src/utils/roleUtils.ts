@@ -41,8 +41,9 @@ export const getDashboardPath = (role: Role): string => {
     case "NHIA":
       return "/state/dashboard";
     case "Provider":
+      return "/emergency/bills";
     case "MD":
-      return "/provider/dashboard";
+      return "/dashboard";
     case "HMO":
       return "/hmo/dashboard";
     case "Individual":
