@@ -17,6 +17,7 @@ export interface AuthUser {
 
   organizationId?: string;
   organization?: string;
+  tenant?: string;  
   tenantId?: string;
 
   orgType: OrganizationType;

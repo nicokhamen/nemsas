@@ -195,7 +195,7 @@ export const MDReview = () => {
       toast.success("Claims approved successfully");
     } catch (error) {
       console.error("Approval failed:", error);
-      toast.error("Failed to approve claims");
+      toast.error(typeof error === "string" ? error : "Failed to approve claims");
     } finally {
       setApprovalLoading(false);
     }

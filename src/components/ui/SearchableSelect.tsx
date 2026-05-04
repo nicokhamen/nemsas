@@ -15,6 +15,7 @@ interface SearchableSelectProps {
   placeholder?: string;
   onInputChange?: (input: string) => void;
   minSearchLength?: number;
+  
 }
 
 const SearchableSelect: React.FC<SearchableSelectProps> = ({
@@ -25,11 +26,11 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
   error,
   placeholder = "Search...",
   onInputChange,
-  minSearchLength,
 }) => {
   const [query, setQuery] = useState(value || "");
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  
 
   // Filter options
   const filteredOptions = useMemo(() => {
@@ -57,7 +58,6 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
         value={query}
         placeholder={placeholder}
         onFocus={() => setOpen(true)}
-        // onChange={(e) => setQuery(e.target.value)}
         onChange={(e) => {
           const val = e.target.value;
           setQuery(val);

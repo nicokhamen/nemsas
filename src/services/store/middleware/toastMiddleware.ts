@@ -4,7 +4,7 @@ import { useCustomToast } from "../../../hooks/useCustomToast";
 export const toastMiddleware = (): Middleware => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   return (_store) => (next) => (action: unknown) => {
-    const { success, error } = useCustomToast();
+    const { success, error, info } = useCustomToast();
 
     
     if (isAction(action) && typeof action === 'object' && action !== null) {
@@ -19,7 +19,7 @@ export const toastMiddleware = (): Middleware => {
           error((action as any).payload);
           break;
         case "auth/logout":
-          success("Logout successfully");
+          info("Logout successfully");
           break;
         default:
           break;

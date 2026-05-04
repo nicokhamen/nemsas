@@ -4,7 +4,7 @@ import {
   STATE_SIDEBAR, 
   PROVIDER_SIDEBAR, 
   ADMIN_SIDEBAR, MD_SIDEBAR,
-  type SidebarItem  // Import the existing type
+  type SidebarItem
 } from "../../constant/sideBarItems";
 import SidebarDropdown from "../../components/ui/SidebarDropdown";
 import { useAuth } from "../../hooks/useAuth";
@@ -29,20 +29,26 @@ const getBadgeStyles = (orgType: string): string => {
   return styles[orgType] || "bg-gray-100 text-gray-700 ring-1 ring-gray-200";
 };
 
-// Badge label mapping
-const getBadgeLabel = (orgType: string, providerName?: string): string => {
-  const labels: Record<string, string> = {
-    PROVIDER: "Provider",
-    SSHIA: providerName || "SSHIA",
-    ADMINISTRATIVE: "Admin",
-  };
-  return labels[orgType] || orgType;
+// ✅ FIXED: Compute label based on orgType
+const getBadgeLabel = (orgType: string, userName?: string, providerName?: string): string => {
+  switch (orgType) {
+    case "PROVIDER":
+      // Use user.tenant (hospital name) for Provider
+      return userName || "Provider";
+    case "SSHIA":
+      // Keep loggedProvider?.hospitalName for SSHIA
+      return providerName || "SSHIA";
+    case "ADMINISTRATIVE":
+      return "Admin";
+    default:
+      return orgType;
+  }
 };
 
 // Badge tooltip mapping
 const getBadgeTooltip = (orgType: string): string => {
   const tooltips: Record<string, string> = {
-    PROVIDER: "Provider: submit and manage claims",
+    PROVIDER: "Provider: Create Emergency Bills and view history",
     SSHIA: "SSHIA: review and oversee provider claims",
     ADMINISTRATIVE: "Administrative: system management and oversight",
   };
@@ -59,38 +65,29 @@ const SideNav: React.FC<SideNavProps> = () => {
 
   const orgType = normalizeOrgType(user?.orgType);
 
-  // Role-based sidebar mapping (BEST PRACTICE)
- const SIDEBAR_MAP: Record<string, SidebarItem[]> = {
-  PROVIDER: PROVIDER_SIDEBAR,
-  SSHIA: STATE_SIDEBAR,
-  ADMINISTRATIVE: ADMIN_SIDEBAR,
-};
+  // Role-based sidebar mapping
+  const role = user?.role;
 
-// const sidebarItems = SIDEBAR_MAP[orgType] || [];
+  const getSidebarItems = (): SidebarItem[] => {
+    switch (orgType) {
+      case "PROVIDER":
+        if (role === "MD") {
+          return MD_SIDEBAR;
+        }
+        return PROVIDER_SIDEBAR;
 
-const role = user?.role;
+      case "SSHIA":
+        return STATE_SIDEBAR;
 
-const getSidebarItems = (): SidebarItem[] => {
-  switch (orgType) {
-    case "PROVIDER":
-      if (role === "MD") {
-        return MD_SIDEBAR; // ✅ MD ONLY
-      }
+      case "ADMINISTRATIVE":
+        return ADMIN_SIDEBAR;
 
-      return PROVIDER_SIDEBAR; // ✅ ADMIN PROVIDER
+      default:
+        return [];
+    }
+  };
 
-    case "SSHIA":
-      return STATE_SIDEBAR;
-
-    case "ADMINISTRATIVE":
-      return ADMIN_SIDEBAR;
-
-    default:
-      return [];
-  }
-};
-
-const sidebarItems = getSidebarItems();
+  const sidebarItems = getSidebarItems();
 
   // Get selected provider (only relevant for SSHIA)
   const loggedProvider = providers?.find(
@@ -100,12 +97,15 @@ const sidebarItems = getSidebarItems();
   const isActive = (path?: string) => {
     return path && location.pathname === path;
   };
-
-  // Get org type safely
-  // const orgType = user?.orgType || "";
   
-  // Get provider name for badge (only used for SSHIA)
-  const providerName = orgType === "SSHIA" ? loggedProvider?.hospitalName : undefined;
+  // Get provider name for badge
+  // For PROVIDER: use user.tenant (hospital name from AuthUser)
+  // For SSHIA: use loggedProvider?.hospitalName
+  const displayName = orgType === "PROVIDER" 
+    ? user?.tenant  // 
+    : orgType === "SSHIA" 
+      ? loggedProvider?.hospitalName  // 
+      : undefined;
 
   // ❗ Guard: no user yet
   if (!user) return null;
@@ -122,12 +122,13 @@ const sidebarItems = getSidebarItems();
           </div>
 
           {/* ORG BADGE - Dynamic based on role */}
+          <br/>
           <div className="absolute bottom-0 right-[20%]">
             <span
               className={`w-fit inline-flex items-center px-2 pb-0.5 rounded text-[10px] font-semibold tracking-wide uppercase shadow-sm ${getBadgeStyles(orgType)}`}
               title={getBadgeTooltip(orgType)}
             >
-              {getBadgeLabel(orgType, providerName)}
+              {getBadgeLabel(orgType, displayName, loggedProvider?.hospitalName)}
             </span>
           </div>
         </div>
@@ -173,7 +174,7 @@ const sidebarItems = getSidebarItems();
           })}
         </nav>
 
-        {/* 🔻 FOOTER */}
+        {/* FOOTER */}
         <div className="p-4 mt-auto flex-shrink-0">
           <button
             className="w-full justify-center flex items-center gap-2 text-[#DC2626] hover:bg-red-50 rounded-md p-2 transition-colors"

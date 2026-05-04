@@ -11,7 +11,7 @@ interface AuthState {
   rememberMe: boolean;
 }
 
-// In authSlice.ts, update the initial state to handle existing users
+// update the initial state to handle existing users
 const initialState: AuthState = {
   token: localStorage.getItem("token"),
   user: localStorage.getItem("user")
@@ -25,6 +25,7 @@ const initialState: AuthState = {
         }
       })()
     : null,
+// isAuthenticated: localStorage.getItem("token") !== null
   isAuthenticated: !!localStorage.getItem("token"),
   loading: false,
   error: null,
