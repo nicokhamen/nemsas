@@ -103,6 +103,7 @@ const PatientEncounterDetails: React.FC = () => {
   );
   const [isDisputeModalOpen, setIsDisputeModalOpen] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [isResolveModalOpen, setIsResolveModalOpen] = useState(false);
   const [selectedServiceAction, setSelectedServiceAction] = useState<{
     action: "Dispute" | "Reject" | "Resolve";
     emergencyBillId: string;
@@ -210,6 +211,16 @@ const PatientEncounterDetails: React.FC = () => {
     setIsRejectModalOpen(true);
   };
 
+  const requestBillResolve = (emergencyBillIds?: string[]) => {
+    if (!emergencyBillIds?.length) {
+      toast.error("Unable to identify the bill for resolution.");
+      return;
+    }
+
+    setSelectedActionBillIds(emergencyBillIds);
+    setIsResolveModalOpen(true);
+  };
+
   const requestServiceAction = (
     action: "Dispute" | "Reject" | "Resolve",
     item: ProductService,
@@ -254,6 +265,7 @@ const PatientEncounterDetails: React.FC = () => {
     setSelectedActionBillIds([]);
     setIsDisputeModalOpen(false);
     setIsRejectModalOpen(false);
+    setIsResolveModalOpen(false);
     setEncounterRejectRemark("");
     setEncounterRejectError("");
   };
@@ -273,7 +285,7 @@ const PatientEncounterDetails: React.FC = () => {
       setIsActionLoading(true);
       setEncounterRejectError("");
 
-      await Promise.all(
+      const responses = await Promise.all(
         selectedActionBillIds.map((emergencyBillId) =>
           dispatch(
             disputeRejectBill({
@@ -287,7 +299,10 @@ const PatientEncounterDetails: React.FC = () => {
       );
 
       toast.error(
-        selectedActionBillIds.length > 1 ? "Bills rejected" : "Bill rejected",
+        responses[0]?.message ||
+          (selectedActionBillIds.length > 1
+            ? "Bills rejected"
+            : "Bill rejected"),
       );
       setSelectedActionBillIds([]);
       setEncounterRejectRemark("");
@@ -309,7 +324,7 @@ const PatientEncounterDetails: React.FC = () => {
     try {
       setIsActionLoading(true);
 
-      await Promise.all(
+      const responses = await Promise.all(
         selectedActionBillIds.map((emergencyBillId) =>
           dispatch(
             disputeRejectBill({
@@ -323,15 +338,54 @@ const PatientEncounterDetails: React.FC = () => {
       );
 
       toast.info(
-        selectedActionBillIds.length > 1
-          ? "Bills have been activated for dispute"
-          : "Bill has been activated for dispute",
+        responses[0]?.message ||
+          (selectedActionBillIds.length > 1
+            ? "Bills have been activated for dispute"
+            : "Bill has been activated for dispute"),
       );
       setSelectedActionBillIds([]);
       setIsDisputeModalOpen(false);
       handleRefresh();
     } catch (error) {
       toast.error(typeof error === "string" ? error : "Unable to dispute bill");
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleResolveBill = async (reason: string) => {
+    if (!selectedActionBillIds.length || !providerId) {
+      toast.error("Unable to identify the bill for this action.");
+      return;
+    }
+
+    try {
+      setIsActionLoading(true);
+
+      const responses = await Promise.all(
+        selectedActionBillIds.map((emergencyBillId) =>
+          dispatch(
+            disputeRejectBill({
+              emergencyBillId,
+              providerId,
+              remark: reason,
+              status: "Resolved",
+            }),
+          ).unwrap(),
+        ),
+      );
+
+      toast.success(
+        responses[0]?.message ||
+          (selectedActionBillIds.length > 1
+            ? "Bills have been resolved"
+            : "Bill has been resolved"),
+      );
+      setSelectedActionBillIds([]);
+      setIsResolveModalOpen(false);
+      handleRefresh();
+    } catch (error) {
+      toast.error(typeof error === "string" ? error : "Unable to resolve bill");
     } finally {
       setIsActionLoading(false);
     }
@@ -349,7 +403,7 @@ const PatientEncounterDetails: React.FC = () => {
       setIsActionLoading(true);
       setServiceActionError("");
 
-      await dispatch(
+      const response = await dispatch(
         serviceVettingThunk({
           emergencyBillId: selectedServiceAction.emergencyBillId,
           productId: selectedServiceAction.productId,
@@ -358,7 +412,9 @@ const PatientEncounterDetails: React.FC = () => {
         }),
       ).unwrap();
 
-      toast.success("Service vetting submitted successfully");
+      toast.success(
+        response?.message || "Service vetting submitted successfully",
+      );
       setSelectedServiceAction(null);
       setServiceActionRemark("");
       setServiceActionStatus("New");
@@ -502,32 +558,52 @@ const PatientEncounterDetails: React.FC = () => {
                       <div className="flex items-center gap-3">
                         {isMdReviewDetail && (
                           <div className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                requestBillDispute(
-                                  encounter.id ? [encounter.id] : undefined,
-                                );
-                              }}
-                              className="rounded border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-600 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
-                              disabled={isActionLoading}
-                            >
-                              Dispute
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                requestBillReject(
-                                  encounter.id ? [encounter.id] : undefined,
-                                );
-                              }}
-                              className="rounded border border-red-400 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
-                              disabled={isActionLoading}
-                            >
-                              Reject
-                            </button>
+                            {["rejected", "disputed"].includes(
+                              (encounter.status || "").toLowerCase(),
+                            ) ? (
+                              <button
+                                type="button"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  requestBillResolve(
+                                    encounter.id ? [encounter.id] : undefined,
+                                  );
+                                }}
+                                className="rounded border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                disabled={isActionLoading}
+                              >
+                                Resolve
+                              </button>
+                            ) : (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    requestBillDispute(
+                                      encounter.id ? [encounter.id] : undefined,
+                                    );
+                                  }}
+                                  className="rounded border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-600 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                  disabled={isActionLoading}
+                                >
+                                  Dispute
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    requestBillReject(
+                                      encounter.id ? [encounter.id] : undefined,
+                                    );
+                                  }}
+                                  className="rounded border border-red-400 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                  disabled={isActionLoading}
+                                >
+                                  Reject
+                                </button>
+                              </>
+                            )}
                           </div>
                         )}
 
@@ -798,6 +874,16 @@ const PatientEncounterDetails: React.FC = () => {
         confirmText="Submit Dispute"
         isLoading={isActionLoading}
       />
+      <DisputeVettingModal
+        isOpen={isResolveModalOpen}
+        onClose={resetBillAction}
+        onSubmit={handleResolveBill}
+        title={
+          selectedActionBillIds.length > 1 ? "Resolve Bills" : "Resolve Bill"
+        }
+        confirmText="Submit Resolution"
+        isLoading={isActionLoading}
+      />
       <ServiceVettingActionModal
         action={selectedServiceAction?.action || null}
         serviceName={selectedServiceAction?.serviceName || ""}
@@ -991,7 +1077,7 @@ const ServiceVettingActionModal: React.FC<ServiceVettingActionModalProps> = ({
         </p>
 
         <div className="space-y-4">
-          <div>
+          {/* <div>
             <label className="mb-2 block text-sm font-medium text-gray-700">
               Status
             </label>
@@ -1006,12 +1092,12 @@ const ServiceVettingActionModal: React.FC<ServiceVettingActionModalProps> = ({
             >
               {status}
             </div>
-          </div>
+          </div> */}
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">
+            {/* <label className="mb-2 block text-sm font-medium text-gray-700">
               Reason
-            </label>
+            </label> */}
             <textarea
               value={remark}
               onChange={(event) => onRemarkChange(event.target.value)}

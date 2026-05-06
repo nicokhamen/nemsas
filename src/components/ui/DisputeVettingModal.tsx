@@ -25,6 +25,14 @@ const DisputeVettingModal: React.FC<DisputeVettingModalProps> = ({
 }) => {
   const [reason, setReason] = useState("");
   const [error, setError] = useState("");
+  const normalizedTitle = title.toLowerCase();
+  const actionContext = normalizedTitle.includes("resolve")
+    ? "resolution"
+    : normalizedTitle.includes("reject")
+      ? "rejection"
+      : normalizedTitle.includes("dispute")
+        ? "dispute"
+        : "action";
 
   //  Auto-clear when modal closes
   useEffect(() => {
@@ -38,7 +46,7 @@ const DisputeVettingModal: React.FC<DisputeVettingModalProps> = ({
 
   const handleSubmit = () => {
     if (!reason.trim()) {
-      setError("Please enter a reason for disputing this bill.");
+      setError(`Please enter a reason for this ${actionContext}.`);
       return;
     }
 
@@ -72,7 +80,7 @@ const DisputeVettingModal: React.FC<DisputeVettingModalProps> = ({
         {/* Textarea */}
         <div className="mb-2">
           <label className="block text-sm text-gray-600 mb-2">
-            Reason for dispute
+            {`Reason for ${actionContext}`}
           </label>
 
           <textarea

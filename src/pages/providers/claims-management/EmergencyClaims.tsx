@@ -415,13 +415,13 @@ export const EmergencyClaims = () => {
       <div className="p-6">
         <div className="bg-gray-100 overflow-scroll h-full">
           <div className="bg-white rounded-md flex flex-col mb-36">
-            <div className="p-6 space-y-4">
-              {/* Filter By header */}
+            {/* <div className="p-6 space-y-4">
+            
               <h3 className="text-lg font-semibold text-gray-700">Filter By</h3>
 
-              {/* Filter controls in a row */}
+             
               <div className="flex flex-wrap gap-4 justify-between items-end">
-                {/* Date Range inputs */}
+               
                 <div className="flex-1 max-w-4xl">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Date Range
@@ -443,7 +443,7 @@ export const EmergencyClaims = () => {
                   </div>
                 </div>
 
-                {/* Action buttons */}
+               
                 <div className="flex gap-3 min-w-[240px]">
                   <button
                     onClick={() => {
@@ -464,7 +464,7 @@ export const EmergencyClaims = () => {
                   </button>
                 </div>
               </div>
-            </div>
+            </div> */}
             {/* Header */}
             <div className="flex flex-wrap gap-4 justify-between items-center p-6">
               <div className="flex items-center gap-8">
