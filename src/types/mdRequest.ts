@@ -36,7 +36,7 @@ export type SubmitVettingBillPayload = {
   providerId: string;
   emergencyBillId: string;
   remark?: string;
-  status: "New" | "Rejected" | "Disputed";
+  status: "New" | "Rejected" | "Disputed" | "Resolved";
 };
 export type VettingBill = {
   emergencybillId: string;
