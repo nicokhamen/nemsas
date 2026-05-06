@@ -888,7 +888,6 @@ const PatientEncounterDetails: React.FC = () => {
         action={selectedServiceAction?.action || null}
         serviceName={selectedServiceAction?.serviceName || ""}
         remark={serviceActionRemark}
-        status={serviceActionStatus}
         error={serviceActionError}
         isLoading={isActionLoading}
         onRemarkChange={(value) => {
@@ -1026,7 +1025,6 @@ interface ServiceVettingActionModalProps {
   action: "Dispute" | "Reject" | "Resolve" | null;
   serviceName: string;
   remark: string;
-  status: ServiceVettingStatus;
   error: string;
   isLoading: boolean;
   onRemarkChange: (value: string) => void;
@@ -1038,7 +1036,6 @@ const ServiceVettingActionModal: React.FC<ServiceVettingActionModalProps> = ({
   action,
   serviceName,
   remark,
-  status,
   error,
   isLoading,
   onRemarkChange,
