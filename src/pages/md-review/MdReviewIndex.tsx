@@ -174,7 +174,7 @@ export const MDReview = () => {
     setApprovalLoading(true);
 
     try {
-      await Promise.all(
+      const responses = await Promise.all(
         selectedData.map((claim) =>
           dispatch(
             submitVettingClaim({
@@ -192,7 +192,9 @@ export const MDReview = () => {
       setRowSelection({});
       loadClaims();
 
-      toast.success("Claims approved successfully");
+      toast.success(
+        responses[0]?.message || "Claims approved successfully",
+      );
     } catch (error) {
       console.error("Approval failed:", error);
       toast.error(typeof error === "string" ? error : "Failed to approve claims");
