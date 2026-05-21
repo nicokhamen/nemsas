@@ -131,39 +131,51 @@ export const StateClaims = () => {
     setShowConfirmModal(true);
   };
 
-  const handleApproveClaims = async () => {
-    const selectedData = selectedRows.map((row) => row.original);
+ const handleApproveClaims = async () => {
+  const selectedData = selectedRows.map((row) => row.original);
+  
+  if (selectedData.length === 0) {
+    toast.error("No claims selected");
+    return;
+  }
 
-    setApprovalLoading(true);
+  setApprovalLoading(true);
 
-    try {
-      await Promise.all(
-        selectedData.map((claim) =>
-          dispatch(
-            submitVettingClaim({
-              claimId: claim.id,
-              providerId: providerId,
-              emergencyClaimId: claim.id,
-              remark: "This Claim has been vetted",
-              status: "Vetted",
-            }),
-          ).unwrap(),
-        ),
-      );
+  try {
+    // Execute all approval requests and collect results
+    const results = await Promise.all(
+      selectedData.map((claim) =>
+        dispatch(
+          submitVettingClaim({
+            claimId: claim.id,
+            providerId: providerId,
+            emergencyClaimId: claim.id,
+            remark: "This Claim has been vetted",
+            status: "Vetted",
+          }),
+        ).unwrap(),
+      ),
+    );
 
-      setShowConfirmModal(false); //  close confirm modal
-      setShowSuccessModal(true); //  show success modal
-      setRowSelection({});
-      loadClaims();
+    // Get the success message from the first result (or use default)
+    const successMessage = results[0]?.message || "Claims approved successfully";
+    
+    setShowConfirmModal(false); // close confirm modal
+    setShowSuccessModal(true); // show success modal
+    setRowSelection({});
+    loadClaims();
 
-      toast.success("Claims approved successfully");
-    } catch (error) {
-      console.error("Approval failed:", error);
-      toast.error("Failed to approve claims");
-    } finally {
-      setApprovalLoading(false);
-    }
-  };
+    // Display toast with backend message
+    toast.success(successMessage);
+  } catch (error: any) {
+    console.error("Approval failed:", error);
+    // Display error message from backend if available
+    const errorMessage = error?.message || error?.data?.title || error?.data?.message || "Failed to approve claims";
+    toast.error(errorMessage);
+  } finally {
+    setApprovalLoading(false);
+  }
+};
 
   // file export
   const exportTableToPDF = (

@@ -221,10 +221,10 @@ export const MdReviewPatients = () => {
                     <th className="px-4 py-4 font-semibold">
                       Insurance Status
                     </th>
-                    <th className="px-4 py-4 font-semibold">DOB</th>
+                    {/* <th className="px-4 py-4 font-semibold">DOB</th> */}
                     <th className="px-4 py-4 font-semibold">Gender</th>
-                    <th className="px-4 py-4 font-semibold">Address</th>
-                    <th className="px-4 py-4 font-semibold">Email</th>
+                    {/* <th className="px-4 py-4 font-semibold">Address</th> */}
+                    {/* <th className="px-4 py-4 font-semibold">Email</th> */}
                     <th className="px-4 py-4 font-semibold">Phone Number</th>
                     <th className="px-4 py-4 font-semibold">Total Amount</th>
                     <th className="w-10 px-4 py-4 font-semibold"></th>
@@ -262,11 +262,11 @@ export const MdReviewPatients = () => {
                           {patient.insuranceStatus || "N/A"}
                         </span>
                       </td>
-                      <td className="px-4 py-4">
+                      {/* <td className="px-4 py-4">
                         {formatDate(patient.dateOfBirth)}
-                      </td>
+                      </td> */}
                       <td className="px-4 py-4">{patient.gender || "N/A"}</td>
-                      <td
+                      {/* <td
                         className="max-w-[120px] truncate px-4 py-4"
                         title={patient.address || "N/A"}
                       >
@@ -277,7 +277,7 @@ export const MdReviewPatients = () => {
                         title={patient.email || "N/A"}
                       >
                         {patient.email || "N/A"}
-                      </td>
+                      </td> */}
                       <td className="px-4 py-4">
                         {patient.phoneNumber || "N/A"}
                       </td>

@@ -4,7 +4,7 @@ export const OwnershipType = {
 
 } as const;
 
-export type OwnershipType = (typeof OwnershipType)[keyof typeof OwnershipType];
+export type OwnershipType = (typeof OwnershipType)[keyof typeof OwnershipType] | "";
 
 // Dropdown options
 export const ownershipTypeOptions = Object.values(OwnershipType).map(value => ({

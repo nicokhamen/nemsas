@@ -859,6 +859,7 @@ export default function NewEmergencyBillWizard() {
                         encounterStartDate: e.target.value,
                       })
                     }
+                     max={new Date().toISOString().split('T')[0]}
                     placeholder="mm/dd/yy"
                     className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#DC2626] focus:border-[#DC2626] focus:outline-none"
                   />
@@ -1573,7 +1574,7 @@ export default function NewEmergencyBillWizard() {
     }
   };
 
-  return (
+ return (
     <div className="min-h-screen bg-gray-50 py-6">
       <div className="max-w-6xl mx-auto px-6">
         {/* Main Content */}
@@ -1589,7 +1590,24 @@ export default function NewEmergencyBillWizard() {
           <div className="mt-10 max-w">{renderStepContent()}</div>
 
           {/* Navigation Buttons */}
-          <div className="mt-10 flex  items-center max-w-4xl">
+          <div className="mt-10 flex items-center max-w-4xl">
+            {currentStep > 1 ? (
+              <button
+                onClick={goToPreviousStep}
+                className="flex items-center gap-2 px-6 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors font-semibold"
+              >
+                <ChevronLeft className="h-5 w-5" />
+                Previous
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate("/emergency/bills")}
+                className="px-8 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors font-semibold"
+              >
+                Cancel
+              </button>
+            )}
+
             {currentStep < 5 ? (
               <button
                 onClick={goToNextStep}
@@ -1606,7 +1624,7 @@ export default function NewEmergencyBillWizard() {
               <button
                 onClick={() => setShowFinalConfirm(true)}
                 disabled={encounterLoading}
-                className={`px-8 py-2.5 rounded-sm font-normal transition-colors w-50  ${
+                className={`px-8 py-2.5 rounded-sm font-normal transition-colors w-50 ${
                   encounterLoading
                     ? "bg-red-200 text-red-400 cursor-not-allowed"
                     : "bg-[#DC2626] text-white hover:bg-red-700"
@@ -1614,25 +1632,6 @@ export default function NewEmergencyBillWizard() {
               >
                 {encounterLoading ? "Submitting..." : "Submit"}
               </button>
-            )}
-
-            {currentStep > 1 ? (
-              <button
-                onClick={goToPreviousStep}
-                className="flex items-center gap-2 px-6 py-2.5  text-gray-700 hover:bg-gray-50 transition-colors font-semibold"
-              >
-                <ChevronLeft className="h-5 w-5" />
-                Previous
-              </button>
-            ) : (
-              <>
-                <button
-                  onClick={() => navigate("/emergency/bills")}
-                  className="px-8 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors font-semibold"
-                >
-                  Cancel
-                </button>
-              </>
             )}
           </div>
         </div>

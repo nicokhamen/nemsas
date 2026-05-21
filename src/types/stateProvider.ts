@@ -30,7 +30,7 @@ export type CreateProviderPayload = {
   hmoId: string;
   organizationId: string;
 
-  providerType: "General";
+  providerType: string;
   ownership: string;
 
   contacts: ProviderContact[];

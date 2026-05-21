@@ -29,7 +29,7 @@ const getBadgeStyles = (orgType: string): string => {
   return styles[orgType] || "bg-gray-100 text-gray-700 ring-1 ring-gray-200";
 };
 
-// ✅ FIXED: Compute label based on orgType
+//  Compute label based on orgType
 const getBadgeLabel = (orgType: string, userName?: string, providerName?: string): string => {
   switch (orgType) {
     case "PROVIDER":
@@ -39,7 +39,7 @@ const getBadgeLabel = (orgType: string, userName?: string, providerName?: string
       // Keep loggedProvider?.hospitalName for SSHIA
       return providerName || "SSHIA";
     case "ADMINISTRATIVE":
-      return "Admin";
+      return "National";
     default:
       return orgType;
   }

@@ -7,31 +7,7 @@ export interface SubmitVettingClaimPayload extends VettingClaim {
   providerId: string;
 }
 
-// export const submitVettingClaim = createAsyncThunk<
-//   VettingClaimResponse, 
-//   SubmitVettingClaimPayload, 
-//   { rejectValue: string }
-// >("vettingClaim/submit", async (payload, { rejectWithValue }) => {
-//   try {
-//     const { claimId, ...vettingData } = payload;
 
-//     // Use the claimId in the URL
-//     // const response = await axiosInstance.put(
-//     //   `/emergency-claim/vetting/${claimId}`,
-//     //   vettingData
-//     // );
-//     const response = await axiosInstance.put(
-//       `/emergency-claim/vetting/${claimId}/${payload.providerId}`,
-//       vettingData,
-//     );
-
-//     return response.data;
-//   } catch (error: any) {
-//     return rejectWithValue(
-//       error?.response?.data?.message || "Something went wrong",
-//     );
-//   }
-// });
 export const submitVettingClaim = createAsyncThunk<
   VettingClaimResponse,
   SubmitVettingClaimPayload,

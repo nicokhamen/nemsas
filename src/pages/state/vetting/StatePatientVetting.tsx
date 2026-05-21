@@ -568,7 +568,7 @@ const StatePatientVetting: React.FC = () => {
                               {encounter.department || "N/A"}
                             </p>
                             <p>
-                              <span className="font-medium">Ward/Unit:</span>{" "}
+                              <span className="font-medium">Service Categories:</span>{" "}
                               {encounter.serviceCategories?.join(", ") || "N/A"}
                             </p>
                           </div>

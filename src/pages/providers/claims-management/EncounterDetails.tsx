@@ -626,14 +626,22 @@ const PatientEncounterDetails: React.FC = () => {
                             label="Emergency Type:"
                             value={encounter.serviceType || "N/A"}
                           />
-                          <DetailRow
-                            label="Ward/Unit:"
+                           <DetailRow
+                            label="Department:"
+                            value={
+                              
+                              encounter.department ||
+                              "N/A"
+                            }
+                          />
+                          {/* <DetailRow
+                            label="Service Categories:"
                             value={
                               encounter.serviceCategories?.join(", ") ||
                               encounter.department ||
                               "N/A"
                             }
-                          />
+                          /> */}
                           <DetailRow
                             label="Comment:"
                             value={encounter.attendingPhysician || "..."}

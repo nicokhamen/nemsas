@@ -42,7 +42,7 @@ import { useLocation } from "react-router-dom";
 const insuranceStatusColor: Record<string, string> = {
   NHIA: "#2196f3",
   Private: "#4caf50",
-  'Self-Pay': "#9c27b0",
+  "Self-Pay": "#9c27b0",
   Default: "#6b6f80",
 };
 
@@ -75,18 +75,18 @@ export const EmergencyClaimsDetails = () => {
   const { id: claimId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  
+
   // Get providerId from auth context
   const currentUser = useSelector((state: RootState) => state.auth.user);
   const providerId = currentUser?.providerId || "";
-  
+
   // Get emergency bill patients data from Redux store
-  const { 
+  const {
     data: emergencyBillPatients,
-    loading, 
+    loading,
     error,
   } = useSelector((state: RootState) => state.emergencyBillPatients);
-  
+
   // Local state
   const [searchTerm, setSearchTerm] = useState("");
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -102,10 +102,12 @@ export const EmergencyClaimsDetails = () => {
   // Load emergency bill patients when claimId and providerId are available
   const loadEmergencyBillPatients = useCallback(() => {
     if (claimId && providerId) {
-      dispatch(fetchEmergencyBillPatients({ 
-        emergencyClaimId: claimId, 
-        providerId 
-      }));
+      dispatch(
+        fetchEmergencyBillPatients({
+          emergencyClaimId: claimId,
+          providerId,
+        }),
+      );
     }
   }, [dispatch, claimId, providerId]);
 
@@ -114,7 +116,7 @@ export const EmergencyClaimsDetails = () => {
     if (claimId && providerId) {
       loadEmergencyBillPatients();
     }
-    
+
     // Clear data when component unmounts
     return () => {
       dispatch(clearEmergencyBillPatients());
@@ -124,22 +126,23 @@ export const EmergencyClaimsDetails = () => {
   // Map emergency bill patients to table format
   const tablePatients = useMemo(() => {
     if (!emergencyBillPatients?.data) return [];
-    
+
     return emergencyBillPatients.data.map((patient, index) => ({
       sn: index + 1,
-      hospitalNumber: patient.hospitalNumber || 'N/A',
-      firstName: patient.firstName || '',
-      lastName: patient.lastName || '',
-      fullName: `${patient.firstName || ''} ${patient.lastName || ''}`.trim() || 'N/A',
-      insuranceStatus: patient.insuranceStatus || 'N/A',
+      hospitalNumber: patient.hospitalNumber || "N/A",
+      firstName: patient.firstName || "",
+      lastName: patient.lastName || "",
+      fullName:
+        `${patient.firstName || ""} ${patient.lastName || ""}`.trim() || "N/A",
+      insuranceStatus: patient.insuranceStatus || "N/A",
       // dateOfBirth: patient.dateOfBirth ? formatDate(patient.dateOfBirth) : 'N/A',
-      gender: patient.gender || 'N/A',
-      address: patient.address || 'N/A',
+      gender: patient.gender || "N/A",
+      address: patient.address || "N/A",
       // email: patient.email || 'N/A',
-      phoneNumber: patient.phoneNumber || 'N/A',
+      phoneNumber: patient.phoneNumber || "N/A",
       id: patient.id,
-      isActive: patient.isActive,
-      age: patient.age || 'N/A',
+      // isActive: patient.isActive,
+      age: patient.age || "N/A",
       totalAmount: patient.totalAmount || 0,
       numberOfEncounters: patient.numberOfEncounters || 0,
     }));
@@ -172,7 +175,8 @@ export const EmergencyClaimsDetails = () => {
             className="px-2 py-1 rounded-full text-xs font-medium"
             style={{
               backgroundColor: `${insuranceStatusColor[status] || insuranceStatusColor.Default}20`,
-              color: insuranceStatusColor[status] || insuranceStatusColor.Default,
+              color:
+                insuranceStatusColor[status] || insuranceStatusColor.Default,
             }}
           >
             {status}
@@ -181,11 +185,6 @@ export const EmergencyClaimsDetails = () => {
       },
       enableSorting: true,
     },
-    // {
-    //   accessorKey: "dateOfBirth",
-    //   header: "Date of Birth",
-    //   enableSorting: true,
-    // },
     {
       accessorKey: "age",
       header: "Age",
@@ -215,16 +214,6 @@ export const EmergencyClaimsDetails = () => {
       header: "Phone",
       enableSorting: true,
     },
-    // {
-    //   accessorKey: "email",
-    //   header: "Email",
-    //   enableSorting: true,
-    //   cell: ({ row }) => (
-    //     <span className="text-sm truncate max-w-[200px] block">
-    //       {row.original.email}
-    //     </span>
-    //   ),
-    // },
     {
       accessorKey: "totalAmount",
       header: "Total Amount",
@@ -246,51 +235,31 @@ export const EmergencyClaimsDetails = () => {
       ),
     },
     {
-      accessorKey: "isActive",
-      header: "Status",
-      cell: ({ row }) => {
-        const isActive = row.original.isActive;
-        return (
-          <span
-            className="px-2 py-1 rounded-full text-xs font-medium"
-            style={{
-              backgroundColor: isActive ? '#4caf5020' : '#f4433620',
-              color: isActive ? '#4caf50' : '#f44336',
-            }}
-          >
-            {isActive ? 'Active' : 'Inactive'}
-          </span>
-        );
-      },
-      enableSorting: true,
+      id: "action",
+      header: "Action",
+      enableHiding: false,
+      cell: ({ row }) => (
+        <button
+          className="flex items-center justify-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/emergency-bills/${claimId}/${row.original.id}`, {
+              state: {
+                patientId: row.original.id,
+                claimId,
+                claimNumber,
+                providerId,
+                fromEmergencyClaims: true,
+              },
+            });
+          }}
+          title="View Patient Encounters"
+        >
+          <Eye className="h-5 w-5" />
+        </button>
+      ),
     },
-    {
-  id: "action",
-  header: "Action",
-  enableHiding: false,
-  cell: ({ row }) => (
-    <button
-      className="flex items-center justify-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
-      onClick={(e) => {
-        e.stopPropagation();
-        navigate(`/emergency-bills/${claimId}/${row.original.id}`, {
-          state: {
-            patientId: row.original.id,
-            claimId,
-            claimNumber,
-            providerId,
-            fromEmergencyClaims: true
-          }
-        });
-      }}
-      title="View Patient Encounters"
-    >
-      <Eye className="h-5 w-5" />
-    </button>
-  ),
-}
   ];
-
 
   // Initialize table
   const table = useReactTable({
@@ -337,17 +306,17 @@ export const EmergencyClaimsDetails = () => {
 
   // Handle row click to view patient details
   const handleRowClick = (patientId: string) => {
-  // Navigate to PatientEncounterDetails with patient data in state
-  navigate(`/emergency-bills/${claimId}/${patientId}`, {
-    state: {
-      patientId,
-      claimId, 
-      claimNumber,
-      providerId,
-      fromEmergencyClaims: true
-    }
-  });
-};
+    // Navigate to PatientEncounterDetails with patient data in state
+    navigate(`/emergency-bills/${claimId}/${patientId}`, {
+      state: {
+        patientId,
+        claimId,
+        claimNumber,
+        providerId,
+        fromEmergencyClaims: true,
+      },
+    });
+  };
 
   // Show loading while waiting for user data
   if (!currentUser) {
@@ -360,214 +329,232 @@ export const EmergencyClaimsDetails = () => {
 
   return (
     <>
-    <div className="p-6">
-      <div className="bg-gray-100 overflow-scroll h-full">
-        <div className="bg-white rounded-md flex flex-col mb-36">
-          {/* Header */}
-          <div className="flex flex-wrap gap-4 justify-between items-center p-6">
-            <div className="flex items-center gap-8">
-              <div className="flex items-center gap-4">
+      <div className="p-6">
+        <div className="bg-gray-100 overflow-scroll h-full">
+          <div className="bg-white rounded-md flex flex-col mb-36">
+            {/* Header */}
+            <div className="flex flex-wrap gap-4 justify-between items-center p-6">
+              <div className="flex items-center gap-8">
+                <div className="flex items-center gap-4">
+                  <Button
+                    variant="outline"
+                    onClick={handleBack}
+                    className="flex items-center gap-2"
+                  >
+                    ← Back
+                  </Button>
+                  <FormHeader>Emergency Bill Patients</FormHeader>
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search patients by name, hospital no., or phone"
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    table.setColumnFilters([
+                      {
+                        id: "fullName",
+                        value: e.target.value,
+                      },
+                      {
+                        id: "hospitalNumber",
+                        value: e.target.value,
+                      },
+                      {
+                        id: "phoneNumber",
+                        value: e.target.value,
+                      },
+                    ]);
+                  }}
+                  className="border rounded-lg hidden lg:block px-4 py-2 lg:w-96 lg:max-w-2xl focus:outline-none"
+                />
+              </div>
+              <div className="flex gap-4 items-center">
                 <Button
                   variant="outline"
-                  onClick={handleBack}
-                  className="flex items-center gap-2"
+                  onClick={handleRefresh}
+                  disabled={loading}
                 >
-                  ← Back
+                  {loading ? <LoadingSpinner size="small" /> : "Refresh"}
                 </Button>
-                <FormHeader>Emergency Bill Patients</FormHeader>
               </div>
-              <input
-                type="text"
-                placeholder="Search patients by name, hospital no., or phone"
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  table.setColumnFilters([
-                    {
-                      id: "fullName",
-                      value: e.target.value,
-                    },
-                    {
-                      id: "hospitalNumber",
-                      value: e.target.value,
-                    },
-                    {
-                      id: "phoneNumber",
-                      value: e.target.value,
-                    },
-                  ]);
-                }}
-                className="border rounded-lg hidden lg:block px-4 py-2 lg:w-96 lg:max-w-2xl focus:outline-none"
-              />
             </div>
-            <div className="flex gap-4 items-center">
-              <Button
-                variant="outline"
-                onClick={handleRefresh}
-                disabled={loading}
-              >
-                {loading ? <LoadingSpinner size="small" /> : "Refresh"}
-              </Button>
-            </div>
-          </div>
 
-          {/* Error Messages */}
-          {error && (
-            <div className="px-6 py-3 bg-red-50 border-l-4 border-red-500">
-              <p className="text-red-700">{error}</p>
-              <Button 
-                onClick={handleRefresh} 
-                className="mt-2 text-red-600 hover:text-red-700"
-                variant="outline"
-              >
-                Retry
-              </Button>
-            </div>
-          )}
+            {/* Error Messages */}
+            {error && (
+              <div className="px-6 py-3 bg-red-50 border-l-4 border-red-500">
+                <p className="text-red-700">{error}</p>
+                <Button
+                  onClick={handleRefresh}
+                  className="mt-2 text-red-600 hover:text-red-700"
+                  variant="outline"
+                >
+                  Retry
+                </Button>
+              </div>
+            )}
 
-          {/* Content */}
-          <div>
-            {loading && !emergencyBillPatients ? (
-              <div className="flex items-center justify-center h-64">
-                <LoadingSpinner />
-              </div>
-            ) : !providerId ? (
-              <div className="text-center py-10">
-                <div className="text-gray-500 mb-4">
-                  Provider ID is required to view emergency bill patients
+            {/* Content */}
+            <div>
+              {loading && !emergencyBillPatients ? (
+                <div className="flex items-center justify-center h-64">
+                  <LoadingSpinner />
                 </div>
-              </div>
-            ) : !claimId ? (
-              <div className="text-center py-10">
-                <div className="text-gray-500 mb-4">
-                  Claim ID is missing. Please go back and select a claim.
+              ) : !providerId ? (
+                <div className="text-center py-10">
+                  <div className="text-gray-500 mb-4">
+                    Provider ID is required to view emergency bill patients
+                  </div>
                 </div>
-                <Button onClick={handleBack}>Back to Claims</Button>
-              </div>
-            ) : tablePatients.length === 0 ? (
-              <EmptyState
-                icon={<span className="text-2xl">🏥</span>}
-                title="No emergency bill patients available"
-                description={error ? "Failed to load patients" : "No patients found for this claim."}
-                action={
-                  <Button onClick={handleBack}>
-                    ← Back to Claims
-                  </Button>
-                }
-              />
-            ) : (
-              <>
-                {/* Summary Stats */}
-                <div className="px-6 py-4 bg-gray-50 border-y border-gray-200">
-                  <div className="flex flex-wrap gap-6">
-                    <div className="flex flex-col">
-                      <span className="text-sm text-gray-500">Total Patients</span>
-                      <span className="text-2xl font-semibold">{tablePatients.length}</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-sm text-gray-500">Total Amount</span>
-                      <span className="text-2xl font-semibold text-green-600">
-                        {formatCurrency(tablePatients.reduce((sum, patient) => sum + patient.totalAmount, 0))}
-                      </span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-sm text-gray-500">Total Encounters</span>
-                      <span className="text-2xl font-semibold">
-                        {tablePatients.reduce((sum, patient) => sum + patient.numberOfEncounters, 0)}
-                      </span>
-                    </div>
-                    {/* <div className="flex flex-col">
+              ) : !claimId ? (
+                <div className="text-center py-10">
+                  <div className="text-gray-500 mb-4">
+                    Claim ID is missing. Please go back and select a claim.
+                  </div>
+                  <Button onClick={handleBack}>Back to Claims</Button>
+                </div>
+              ) : tablePatients.length === 0 ? (
+                <EmptyState
+                  icon={<span className="text-2xl">🏥</span>}
+                  title="No emergency bill patients available"
+                  description={
+                    error
+                      ? "Failed to load patients"
+                      : "No patients found for this claim."
+                  }
+                  action={
+                    <Button onClick={handleBack}>← Back to Claims</Button>
+                  }
+                />
+              ) : (
+                <>
+                  {/* Summary Stats */}
+                  <div className="px-6 py-4 bg-gray-50 border-y border-gray-200">
+                    <div className="flex flex-wrap gap-6">
+                      <div className="flex flex-col">
+                        <span className="text-sm text-gray-500">
+                          Total Patients
+                        </span>
+                        <span className="text-2xl font-semibold">
+                          {tablePatients.length}
+                        </span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-sm text-gray-500">
+                          Total Amount
+                        </span>
+                        <span className="text-2xl font-semibold text-green-600">
+                          {formatCurrency(
+                            tablePatients.reduce(
+                              (sum, patient) => sum + patient.totalAmount,
+                              0,
+                            ),
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-sm text-gray-500">
+                          Total Encounters
+                        </span>
+                        <span className="text-2xl font-semibold">
+                          {tablePatients.reduce(
+                            (sum, patient) => sum + patient.numberOfEncounters,
+                            0,
+                          )}
+                        </span>
+                      </div>
+                      {/* <div className="flex flex-col">
                       <span className="text-sm text-gray-500">Active Patients</span>
                       <span className="text-2xl font-semibold text-green-600">
                         {tablePatients.filter(p => p.isActive).length}
                       </span>
                     </div> */}
+                    </div>
                   </div>
-                </div>
 
-                {/* Table - Fixed with horizontal scroll */}
-                <div className="flex-1 lg:px-0 lg:mt-4">
-                  <div className="overflow-x-auto">
-                    <Table className="min-w-full">
-                      <TableHeader className="border-y border-gray-200">
-                        {table.getHeaderGroups().map((headerGroup) => (
-                          <TableRow key={headerGroup.id}>
-                            {headerGroup.headers.map((header) => (
-                              <TableHead key={header.id}>
-                                {header.isPlaceholder
-                                  ? null
-                                  : flexRender(
-                                      header.column.columnDef.header,
-                                      header.getContext()
-                                    )}
-                              </TableHead>
-                            ))}
-                          </TableRow>
-                        ))}
-                      </TableHeader>
-                      <TableBody>
-                        {table.getRowModel().rows.length ? (
-                          table.getRowModel().rows.map((row) => (
-                            <TableRow
-                              key={row.id}
-                              className="cursor-pointer hover:bg-gray-50 transition-colors"
-                              onClick={() => handleRowClick(row.original.id)}
-                            >
-                              {row.getVisibleCells().map((cell) => (
-                                <TableCell key={cell.id}>
-                                  {flexRender(
-                                    cell.column.columnDef.cell,
-                                    cell.getContext()
-                                  )}
-                                </TableCell>
+                  {/* Table - Fixed with horizontal scroll */}
+                  <div className="flex-1 lg:px-0 lg:mt-4">
+                    <div className="overflow-x-auto">
+                      <Table className="min-w-full">
+                        <TableHeader className="border-y border-gray-200">
+                          {table.getHeaderGroups().map((headerGroup) => (
+                            <TableRow key={headerGroup.id}>
+                              {headerGroup.headers.map((header) => (
+                                <TableHead key={header.id}>
+                                  {header.isPlaceholder
+                                    ? null
+                                    : flexRender(
+                                        header.column.columnDef.header,
+                                        header.getContext(),
+                                      )}
+                                </TableHead>
                               ))}
                             </TableRow>
-                          ))
-                        ) : (
-                          <TableRow>
-                            <TableCell
-                              colSpan={columns.length}
-                              className="h-24 text-center"
-                            >
-                              <div className="flex flex-col items-center gap-4">
-                                <span className="font-medium">
-                                  No patients found
-                                </span>
-                                <span className="text-gray-500">
-                                  Try adjusting your search criteria
-                                </span>
-                                <Button onClick={handleRefresh}>
-                                  Refresh Data
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
+                          ))}
+                        </TableHeader>
+                        <TableBody>
+                          {table.getRowModel().rows.length ? (
+                            table.getRowModel().rows.map((row) => (
+                              <TableRow
+                                key={row.id}
+                                className="cursor-pointer hover:bg-gray-50 transition-colors"
+                                onClick={() => handleRowClick(row.original.id)}
+                              >
+                                {row.getVisibleCells().map((cell) => (
+                                  <TableCell key={cell.id}>
+                                    {flexRender(
+                                      cell.column.columnDef.cell,
+                                      cell.getContext(),
+                                    )}
+                                  </TableCell>
+                                ))}
+                              </TableRow>
+                            ))
+                          ) : (
+                            <TableRow>
+                              <TableCell
+                                colSpan={columns.length}
+                                className="h-24 text-center"
+                              >
+                                <div className="flex flex-col items-center gap-4">
+                                  <span className="font-medium">
+                                    No patients found
+                                  </span>
+                                  <span className="text-gray-500">
+                                    Try adjusting your search criteria
+                                  </span>
+                                  <Button onClick={handleRefresh}>
+                                    Refresh Data
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </div>
-                </div>
 
-                {/* Pagination */}
-                <div className="p-4 flex items-center justify-end">
-                  <Pagination
-                    totalEntriesSize={table.getFilteredRowModel().rows.length}
-                    currentPage={pageIndex + 1}
-                    totalPages={totalPages}
-                    pageSize={pageSize}
-                    onPageChange={(p) => setPageIndex(p - 1)}
-                    onPageSizeChange={(size) => {
-                      setPageSize(size);
-                      setPageIndex(0);
-                    }}
-                  />
-                </div>
-              </>
-            )}
+                  {/* Pagination */}
+                  <div className="p-4 flex items-center justify-end">
+                    <Pagination
+                      totalEntriesSize={table.getFilteredRowModel().rows.length}
+                      currentPage={pageIndex + 1}
+                      totalPages={totalPages}
+                      pageSize={pageSize}
+                      onPageChange={(p) => setPageIndex(p - 1)}
+                      onPageSizeChange={(size) => {
+                        setPageSize(size);
+                        setPageIndex(0);
+                      }}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </div>
     </>
   );
 };

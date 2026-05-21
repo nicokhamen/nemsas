@@ -4,7 +4,7 @@ export const ProviderType = {
 } as const;
 // SSHIA: "SSHIA"
 
-export type ProviderType = (typeof ProviderType)[keyof typeof ProviderType];
+export type ProviderType = (typeof ProviderType)[keyof typeof ProviderType] | "";
 
 // Dropdown options
 export const providerTypeOptions = Object.values(ProviderType).map(value => ({

@@ -32,10 +32,8 @@ import {
   TableRow,
 } from "../../../components/table";
 import { Pagination } from "../../../components/pagination";
-import { useNavigate } from "react-router-dom";
+import {  useNavigate } from "react-router-dom";
 import type { EmergencyBill } from "../../../types/emergency-bills";
-import { patientNameFilter } from "../../../components/ui/patientNameFilter";
-import Input from "../../../components/form/Input";
 // import DatePicker from "../../components/form/DatePicker";
 // Files export
 import jsPDF from "jspdf";
@@ -559,9 +557,8 @@ export const EmergencyBills = () => {
             </div>
             {/* Header */}
             <div className="flex flex-wrap gap-4 justify-between items-center py-6 px-6 bg-gray-50">
-              <label className="text-lg font-semibold text-gray-700">
-                Emergency Bill Capture List
-              </label>
+              
+              <FormHeader>Emergency Bill Capture List</FormHeader>
               <div className="flex gap-4 items-center">
                 <button
                   onClick={routeToEmergencyBillPage}

@@ -88,6 +88,10 @@ const MdReviewBills = lazy(() => import("../pages/md-review/MdReviewBills"));
 const EndorsementReview = lazy(
   () => import("../pages/md-review/EndorsementDetails"),
 );
+const NationalReviews = lazy(
+  () => import("../pages/national/NationalReviews"),
+);
+
 
 export interface RouteHandle {
   title?: string;
@@ -280,6 +284,10 @@ export const router = createBrowserRouter([
       {
         path: "admin/dashboard",
         ...createProtectedRoute(Dashboard, ["Administrator", "SuperAdmin"], "Admin Dashboard"),
+      },
+       {
+        path: "admin/national/reviews",
+        ...createProtectedRoute(NationalReviews, ["Administrator", "SuperAdmin"], "National Reviews"),
       },
       {
         path: "admin/settings",

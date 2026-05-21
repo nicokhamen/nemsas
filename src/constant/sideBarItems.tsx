@@ -89,6 +89,11 @@ export const ADMIN_SIDEBAR: SidebarItem[] = [
     label: "Dashboard",
     path: "/dashboard",
   },
+   {
+    icon: <DashboardIcon className="w-5 h-5" />,
+    label: "National Review",
+    path: "/admin/national/reviews",
+  },
 ];
 
 export const MD_SIDEBAR: SidebarItem[] = [
