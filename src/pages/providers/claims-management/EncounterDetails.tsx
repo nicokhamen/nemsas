@@ -675,7 +675,7 @@ const PatientEncounterDetails: React.FC = () => {
               />
             </div>
 
-            <SectionTitle>Emergency History</SectionTitle>
+            {/* <SectionTitle>Emergency History</SectionTitle>
             <div className="grid gap-x-24 gap-y-5 md:grid-cols-2">
               {[
                 "Road traffic accidents",
@@ -686,24 +686,24 @@ const PatientEncounterDetails: React.FC = () => {
                 "Assault Cases",
                 "Other",
               ].map((label) => (
-                // <CheckboxLine
-                //   key={label}
-                //   label={label}
-                //   checked={
-                //     selectedEncounter.serviceCategories?.some((category) =>
-                //       category.toLowerCase().includes(label.toLowerCase()),
-                //     ) ||
-                //     selectedEncounter.serviceType
-                //       ?.toLowerCase()
-                //       .includes(label.toLowerCase()) ||
-                //     false
-                //   }
-                // />
+                <CheckboxLine
+                  key={label}
+                  label={label}
+                  checked={
+                    selectedEncounter.serviceCategories?.some((category) =>
+                      category.toLowerCase().includes(label.toLowerCase()),
+                    ) ||
+                    selectedEncounter.serviceType
+                      ?.toLowerCase()
+                      .includes(label.toLowerCase()) ||
+                    false
+                  }
+                />
                 <p>{label}</p>
               ))}
-            </div>
+            </div> */}
 
-            <SectionTitle>Uploaded Documents</SectionTitle>
+            {/* <SectionTitle>Uploaded Documents</SectionTitle>
             {selectedEncounter.supportingDocuments?.length ? (
               <div className="grid gap-x-20 md:grid-cols-2">
                 {selectedEncounter.supportingDocuments.map(
@@ -724,7 +724,7 @@ const PatientEncounterDetails: React.FC = () => {
               <p className="py-4 text-gray-500">
                 No uploaded documents available.
               </p>
-            )}
+            )} */}
 
             <SectionTitle>Product/Service</SectionTitle>
             <div className="overflow-x-auto">
